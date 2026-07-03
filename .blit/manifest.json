@@ -1,0 +1,121 @@
+{
+  "kitVersion": "1.2.0",
+  "createdAt": "2026-07-03T20:45:21.309Z",
+  "vars": {
+    "projectName": "blit386-scaffold-tmp",
+    "packageName": "blit386-scaffold-tmp",
+    "blit386Version": "^1.2.0",
+    "kitVersion": "^1.2.0",
+    "pmInstall": "npm install",
+    "pmRunDev": "npm run dev",
+    "pmRunBuild": "npm run build",
+    "pmRunFormat": "npm run format",
+    "pmRunLint": "npm run lint",
+    "entryFile": "/src/game.js",
+    "gameFile": "src/game.js"
+  },
+  "files": [
+    {
+      "path": ".editorconfig",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "23c1bed6d5ba8a8931aad55dd6da727612cc3f0f1a536ddc6785f685fad5806f"
+    },
+    {
+      "path": ".gitignore",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "bfa5f8365a7772ac194672c136ef9187d729bc5008ae858106307be49d390578"
+    },
+    {
+      "path": "AGENTS.md",
+      "class": "shared",
+      "kitVersion": "1.2.0",
+      "sha256": "980d5a3e08879e25267674f8e9c43ae749934a7dee2abc5a0ac73517f48bfee6"
+    },
+    {
+      "path": "biome.json",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "cd83d330fb229efb311f31c1c7a1d2c7c8ebb9a5d48691ebed9adf305932016e"
+    },
+    {
+      "path": "docs/basics.md",
+      "class": "kit-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "2dae9085e3e656eeaf24129c24bcdcdcb090d450fab3b5ba44108b57a8a73b78"
+    },
+    {
+      "path": "docs/drawing.md",
+      "class": "kit-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "9ad9199ba130df4d9913efbaa7a2dd104db02bfb58969119992b64f7fc17850b"
+    },
+    {
+      "path": "docs/getting-started.md",
+      "class": "kit-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "2be93db4817110ba96c25a847cf724b8b7a031c95ad95e6db5d1d8b76c1f2ed0"
+    },
+    {
+      "path": "docs/input.md",
+      "class": "kit-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "f6d8d058a61e5ddf6f075617d39bc46cb29cedcf7932be7308e62903f78d752f"
+    },
+    {
+      "path": "docs/palette.md",
+      "class": "kit-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "02132a905db652de3c09b19370df2d39b7e9c17936a193bdc693e87903ab19fc"
+    },
+    {
+      "path": "docs/when-something-breaks.md",
+      "class": "kit-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "f409738ff208dfe1c8abe827db4573415bdfcfc516df2d7c3291dfc2734e7a8e"
+    },
+    {
+      "path": "index.html",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "1a6daa0c37703df2085371b33e544b28dc650da729fa6502303a18abb7e44309"
+    },
+    {
+      "path": "jsconfig.json",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "54fadfd967f71372e9f801a3157987212a73c30ea9f01df292cba21f233062e7"
+    },
+    {
+      "path": "package.json",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "588615129d9d187dec697cc64017f5fd5e4cee77edc3497e59862379b3e4c4a0"
+    },
+    {
+      "path": "public/.gitkeep",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "README.md",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "1a0f5d07dbf547d35cc02c6853adc98de9bef53f6a11364d5bbbfdf04fc9af89"
+    },
+    {
+      "path": "src/game.js",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "b06c1608c5eff0c02c035678f70ed666949afbc4b3b6d45790a209ac103549bd"
+    },
+    {
+      "path": "vite.config.js",
+      "class": "user-owned",
+      "kitVersion": "1.2.0",
+      "sha256": "0ef210987c2e768238b67e65cca37b44d63570a88a20ee3230a6a322151db2e6"
+    }
+  ]
+}
