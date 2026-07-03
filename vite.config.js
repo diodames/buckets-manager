@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 // You usually do not need to change anything here.
 export default defineConfig({
     server: {
-        // Open the game in your browser automatically when you run `npm run dev`.
-        open: true,
+        // Keep the browser closed on start; open http://localhost:5173 manually.
+        open: false,
     },
 });

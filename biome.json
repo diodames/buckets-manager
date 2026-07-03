@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["src/**/*.js", "*.js", "*.json"]
+    "includes": ["src/**/*.ts", "tests/**/*.ts", "*.js", "*.json"]
   },
   "formatter": {
     "enabled": true,
@@ -38,5 +38,24 @@
         "noConsole": "off"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/core/**", "src/i18n/**", "src/config/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "blit386": "Game logic must stay engine-free: core/i18n/config may not import blit386."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
