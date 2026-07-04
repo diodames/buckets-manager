@@ -1,4 +1,6 @@
 import type { OffenseFocus, Pace } from '../../config/balance';
+import type { FacilityKey } from '../../config/economy';
+import type { TrainingFocus } from '../../config/training';
 
 export type TeamId = string;
 export type PlayerId = string;
@@ -47,11 +49,13 @@ export interface Player {
     heightCm: number;
     position: Position;
     attributes: Attributes;
-    // Hidden development ceiling, 1..99 (used from M3 on).
+    // Hidden development ceiling, 1..99.
     potential: number;
-    // 0 = fresh, 100 = exhausted (used from M3 on).
+    // 0 = fresh, 100 = exhausted.
     fatigue: number;
     morale: number;
+    // null = healthy; otherwise rounds remaining out.
+    injury: { roundsOut: number } | null;
     teamId: TeamId | null;
 }
 
@@ -109,6 +113,43 @@ export interface StandingsRow {
     pointsAgainst: number;
 }
 
+export interface LedgerEntry {
+    round: number;
+    // i18n key suffix under ledger.<kind>.
+    kind: 'tickets' | 'sponsors' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus';
+    amount: number;
+}
+
+export interface SponsorDeal {
+    id: string;
+    brandKey: string;
+    tier: number;
+    perRound: number;
+    // Remaining seasons including the current one.
+    seasonsRemaining: number;
+    relationship: number;
+}
+
+export interface SponsorOffer {
+    id: string;
+    brandKey: string;
+    tier: number;
+    perRound: number;
+    seasons: number;
+    // Offer expires after this round.
+    expiresRound: number;
+}
+
+export interface ClubState {
+    budget: number;
+    fanSupport: number;
+    facilities: Record<FacilityKey, number>;
+    sponsors: SponsorDeal[];
+    sponsorOffers: SponsorOffer[];
+    ledger: LedgerEntry[];
+    trainingFocus: TrainingFocus;
+}
+
 export interface GameState {
     version: number;
     masterSeed: number;
@@ -119,6 +160,8 @@ export interface GameState {
     teams: Record<TeamId, Team>;
     players: Record<PlayerId, Player>;
     fixtures: Fixture[];
+    // The user club's management state (AI clubs keep no books).
+    club: ClubState;
 }
 
 export function createEmptyBoxLine(): BoxLine {

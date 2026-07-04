@@ -1,5 +1,9 @@
 import { BT, Vector2i, type HardwareSettings } from 'blit386';
 import { balanceConfig, displayConfig, leagueConfig, namePools, validateAllConfigs } from '../config';
+import { economyConfig } from '../config/economy';
+import { momentsConfig } from '../config/moments';
+import { pressConfig } from '../config/press';
+import { trainingConfig } from '../config/training';
 import { setLocale, type Locale } from '../i18n';
 import { LocalStorageAdapter, SETTINGS_KEY } from '../services/storage';
 import { drawChromeErrorFallback } from '../ui/errorScreen';
@@ -54,7 +58,15 @@ export class ManagerGame {
                 grid: TextGrid.measure(),
                 screens: new ScreenStack(),
                 storage,
-                config: { league: leagueConfig, balance: balanceConfig, names: namePools },
+                config: {
+                    league: leagueConfig,
+                    balance: balanceConfig,
+                    names: namePools,
+                    moments: momentsConfig,
+                    economy: economyConfig,
+                    training: trainingConfig,
+                    press: pressConfig,
+                },
                 settings,
                 session: null,
                 saveSettings() {

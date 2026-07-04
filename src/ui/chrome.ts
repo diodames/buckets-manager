@@ -2,6 +2,7 @@ import type { AppContext } from '../app/Screen';
 import { leagueConfig } from '../config/league';
 import { seasonRounds } from '../core/game';
 import { t, teamDisplayName } from '../i18n';
+import { formatMoney } from './format';
 import { ROLE } from './theme';
 import type { TextGrid } from './text';
 
@@ -22,6 +23,8 @@ export function drawChrome(ctx: AppContext, title: string, hints: string[]): voi
             teamDef ? teamDisplayName(teamDef) : session.state.userTeamId,
             t('common.season', { year: session.state.seasonYear }),
             t('common.round', { round: Math.min(session.state.currentRound, rounds) }),
+            formatMoney(session.state.club.budget),
+            t('chrome.fans', { n: Math.round(session.state.club.fanSupport) }),
         ].join('  ');
         grid.putRight(grid.cols - 1, 0, ROLE.text, right);
     }

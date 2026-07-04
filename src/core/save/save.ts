@@ -17,9 +17,14 @@ export class SaveError extends Error {
     }
 }
 
-// Migration chain: index N upgrades a version-N save to version N+1. Empty
-// until the first format change lands (M3).
-const migrations: Record<number, (old: unknown) => unknown> = {};
+// Migration chain: index N upgrades a version-N save to version N+1.
+const migrations: Record<number, (old: unknown) => unknown> = {
+    // v1 saves come from the pre-NBL fictional league; their team ids no
+    // longer exist, so they cannot be migrated meaningfully.
+    1: () => {
+        throw new SaveError('corrupt', 'Save predates the real NBL league data and cannot be loaded');
+    },
+};
 
 export function serializeSave(state: GameState, name: string, savedAtIso: string): string {
     const file: SaveFile = { formatVersion: SAVE_FORMAT_VERSION, name, savedAtIso, state };

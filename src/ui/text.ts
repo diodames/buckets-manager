@@ -7,6 +7,11 @@ const FOLD_MAP: Record<string, string> = {
     ť: 't', ú: 'u', ů: 'u', ý: 'y', ž: 'z',
     Á: 'A', Č: 'C', Ď: 'D', É: 'E', Ě: 'E', Í: 'I', Ň: 'N', Ó: 'O', Ř: 'R', Š: 'S',
     Ť: 'T', Ú: 'U', Ů: 'U', Ý: 'Y', Ž: 'Z',
+    // Common European letters appearing in real NBL rosters.
+    ä: 'a', ë: 'e', ï: 'i', ö: 'o', ü: 'u', à: 'a', è: 'e', ì: 'i', ò: 'o', ù: 'u',
+    â: 'a', ê: 'e', î: 'i', ô: 'o', û: 'u', ã: 'a', õ: 'o', ç: 'c', ñ: 'n',
+    ć: 'c', đ: 'd', ş: 's', ą: 'a', ę: 'e', ł: 'l', ś: 's', ź: 'z', ż: 'z',
+    Ä: 'A', Ö: 'O', Ü: 'U', Ç: 'C', Ć: 'C', Đ: 'D', Ł: 'L', Ś: 'S',
 };
 
 export function foldAscii(text: string): string {

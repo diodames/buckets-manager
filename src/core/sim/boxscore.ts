@@ -89,6 +89,12 @@ export function foldEvents(events: readonly MatchEvent[], homeTeamId: TeamId): F
                 }
                 break;
             }
+            case 'substitution':
+            case 'timeout':
+            case 'injury':
+            case 'moment':
+                // Narrative events: no box-score impact.
+                break;
         }
     }
 

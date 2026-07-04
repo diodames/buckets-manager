@@ -10,6 +10,8 @@ export interface Rgb {
 export const paletteConfig = Object.freeze({
     size: 64,
     teamColorBase: 16,
+    // Slots 40..47 belong to the match viewer (see config/court.ts).
+    courtSlotBase: 40,
     roles: Object.freeze({
         bg: 1,
         panel: 2,

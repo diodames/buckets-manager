@@ -47,6 +47,39 @@ export const balanceConfig = Object.freeze({
         // rest for a quarter in favor of the best bench players.
         quarterSwapCount: 2,
     }),
+    energy: Object.freeze({
+        // In-match energy: 100 = fresh. Effective skill multiplier spans
+        // [minSkillMult, 1.0] as energy falls from 100 to 0.
+        minSkillMult: 0.72,
+        // Energy drained per second on court, scaled by pace factor.
+        drainPerSecond: 0.028,
+        // Energy regained per second on the bench.
+        benchRegenPerSecond: 0.05,
+        // Auto-substitution threshold: active player below this energy is
+        // swapped for the freshest bench player when possible.
+        autoSubThreshold: 35,
+        // Minimum energy advantage the bench player must have to sub in.
+        autoSubMinGain: 20,
+        // Pre-match: accumulated fatigue reduces starting energy.
+        fatigueToEnergy: 0.6,
+    }),
+    timeouts: Object.freeze({
+        perTeam: 4,
+        // Energy restored to the calling team's active five.
+        energyBoost: 10,
+        // Temporary skill buff for the calling team, in possessions.
+        buffMultiplier: 1.06,
+        buffPossessions: 6,
+    }),
+    injuries: Object.freeze({
+        // Per-possession base chance an on-court player takes a knock,
+        // multiplied when energy is low.
+        basePerPossession: 0.0006,
+        lowEnergyMultiplier: 3,
+        lowEnergyThreshold: 30,
+        // Rounds out: 1..maxRoundsOut uniformly.
+        maxRoundsOut: 5,
+    }),
     playerGen: Object.freeze({
         attributeMin: 1,
         attributeMax: 99,

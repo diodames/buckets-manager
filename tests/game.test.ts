@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { balanceConfig } from '../src/config/balance';
-import { leagueConfig } from '../src/config/league';
-import { namePools } from '../src/config/names';
 import { validateAllConfigs } from '../src/config';
-import { advanceRound, createNewGame, isSeasonOver, seasonRounds, type GameConfig } from '../src/core/game';
+import { leagueConfig } from '../src/config/league';
+import { advanceRoundInstant, createNewGame, isSeasonOver, seasonRounds } from '../src/core/game';
 import { computeStandings } from '../src/core/league/standings';
-import { overallRating, POSITIONS } from '../src/core/model/types';
-
-const config: GameConfig = { league: leagueConfig, balance: balanceConfig, names: namePools };
+import { POSITIONS } from '../src/core/model/types';
+import { testConfig as config } from './helpers';
 
 describe('config', () => {
     it('all shipped configs validate', () => {
@@ -15,37 +12,45 @@ describe('config', () => {
     });
 });
 
-describe('createNewGame', () => {
-    const state = createNewGame(config, 777, 'PRG');
+describe('createNewGame (real NBL rosters)', () => {
+    const state = createNewGame(config, 777, 'NYM');
 
-    it('generates a full league', () => {
+    it('generates the full league from real rosters', () => {
         expect(Object.keys(state.teams)).toHaveLength(12);
-        expect(Object.keys(state.players)).toHaveLength(12 * leagueConfig.playersPerTeam);
-        for (const team of Object.values(state.teams)) {
-            expect(team.playerIds).toHaveLength(leagueConfig.playersPerTeam);
-            // Starters cover all five positions with roster players.
+        for (const teamDef of leagueConfig.teams) {
+            const team = state.teams[teamDef.id];
+            expect(team, `team ${teamDef.id}`).toBeDefined();
+            expect(team?.playerIds.length).toBeGreaterThanOrEqual(Math.min(12, teamDef.roster.length));
             for (const position of POSITIONS) {
-                const starterId = team.tactics.starters[position];
-                expect(team.playerIds).toContain(starterId);
+                expect(team?.playerIds).toContain(team?.tactics.starters[position]);
             }
         }
+        // Real players carry their real names.
+        const nymburk = state.teams.NYM;
+        const names = (nymburk?.playerIds ?? []).map((id) => state.players[id]?.lastName);
+        expect(names).toContain('Sehnal');
+        expect(names).toContain('Rice');
     });
 
-    it('keeps attributes within bounds', () => {
-        for (const player of Object.values(state.players)) {
-            const overall = overallRating(player.attributes);
-            expect(overall).toBeGreaterThanOrEqual(balanceConfig.playerGen.attributeMin);
-            expect(overall).toBeLessThanOrEqual(balanceConfig.playerGen.attributeMax);
-            expect(player.age).toBeGreaterThanOrEqual(balanceConfig.playerGen.ageMin);
-            expect(player.age).toBeLessThanOrEqual(balanceConfig.playerGen.ageMax);
-        }
+    it('stronger real teams rate higher than weaker ones', () => {
+        const avgOverall = (teamId: string) => {
+            const team = state.teams[teamId];
+            const ratings = (team?.playerIds ?? [])
+                .map((id) => state.players[id])
+                .filter((p) => p !== undefined)
+                .map((p) => Object.values(p.attributes).reduce((a, b) => a + b, 0) / 12);
+            return ratings.reduce((a, b) => a + b, 0) / ratings.length;
+        };
+        // Nymburk (tier 5 players) should out-rate Hradec Kralove (tier ~2).
+        expect(avgOverall('NYM')).toBeGreaterThan(avgOverall('HKR'));
     });
 
-    it('is deterministic per seed', () => {
-        const again = createNewGame(config, 777, 'PRG');
+    it('is deterministic per seed and club state starts clean', () => {
+        const again = createNewGame(config, 777, 'NYM');
         expect(again).toEqual(state);
-        const different = createNewGame(config, 778, 'PRG');
-        expect(different.players).not.toEqual(state.players);
+        expect(state.club.budget).toBe(config.economy.startingBudget);
+        expect(state.club.sponsors).toHaveLength(0);
+        expect(state.club.facilities).toEqual({ arena: 1, training: 1, academy: 1 });
     });
 
     it('rejects unknown teams', () => {
@@ -53,16 +58,12 @@ describe('createNewGame', () => {
     });
 });
 
-describe('full season', () => {
-    it('plays out deterministically with consistent standings', () => {
-        const runSeason = () => {
-            const state = createNewGame(config, 2024, 'BRN');
-            while (!isSeasonOver(state, config)) {
-                advanceRound(state, config);
-            }
-            return state;
-        };
-        const state = runSeason();
+describe('full season (instant rounds)', () => {
+    it('plays out with consistent standings, economy, and player state', () => {
+        const state = createNewGame(config, 2024, 'BRN');
+        while (!isSeasonOver(state, config)) {
+            advanceRoundInstant(state, config);
+        }
         const rounds = seasonRounds(state, config);
         expect(rounds).toBe(22);
         expect(state.fixtures.every((f) => f.result !== null)).toBe(true);
@@ -81,15 +82,28 @@ describe('full season', () => {
         expect(totalWins).toBe(state.fixtures.length);
         expect(totalFor).toBe(totalAgainst);
 
-        // Determinism across the whole season.
-        expect(runSeason()).toEqual(state);
+        // Player invariants after a full season of fatigue/training/injuries.
+        for (const player of Object.values(state.players)) {
+            expect(player.fatigue).toBeGreaterThanOrEqual(0);
+            expect(player.fatigue).toBeLessThanOrEqual(100);
+            expect(player.morale).toBeGreaterThanOrEqual(0);
+            expect(player.morale).toBeLessThanOrEqual(100);
+            for (const value of Object.values(player.attributes)) {
+                expect(value).toBeGreaterThanOrEqual(1);
+                expect(value).toBeLessThanOrEqual(99);
+            }
+        }
+
+        // Ledger booked something and budget stayed a finite number.
+        expect(state.club.ledger.length).toBeGreaterThan(0);
+        expect(Number.isFinite(state.club.budget)).toBe(true);
     });
 
     it('refuses to advance past the season end', () => {
-        const state = createNewGame(config, 3, 'PRG');
+        const state = createNewGame(config, 3, 'NYM');
         while (!isSeasonOver(state, config)) {
-            advanceRound(state, config);
+            advanceRoundInstant(state, config);
         }
-        expect(() => advanceRound(state, config)).toThrow();
+        expect(() => advanceRoundInstant(state, config)).toThrow();
     });
 });

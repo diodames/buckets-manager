@@ -28,7 +28,8 @@ export function validateAllConfigs(): void {
         assertConfig(role in paletteConfig.roleColors, `palette role '${role}' is missing a color`);
     }
     const teamSlotsEnd = paletteConfig.teamColorBase + leagueConfig.teams.length * 2;
-    assertConfig(teamSlotsEnd <= paletteConfig.size, 'palette too small for team colors');
+    assertConfig(teamSlotsEnd <= paletteConfig.courtSlotBase, 'team colors overlap match-viewer palette slots');
+    assertConfig(paletteConfig.courtSlotBase + 8 <= paletteConfig.size, 'palette too small for match-viewer slots');
 
     // League
     const teamCount = leagueConfig.teams.length;
@@ -37,13 +38,17 @@ export function validateAllConfigs(): void {
     assertConfig(new Set(ids).size === ids.length, 'team ids must be unique');
     assertConfig(leagueConfig.playersPerTeam >= 10, 'playersPerTeam must be >= 10 (two full five-man units)');
     assertConfig(leagueConfig.roundRobinLegs >= 1, 'roundRobinLegs must be >= 1');
+    for (const team of leagueConfig.teams) {
+        assertConfig(team.roster.length >= 8, `team ${team.id} roster must have at least 8 real players`);
+        assertConfig(
+            team.tier >= 1 && team.tier <= 5 && team.roster.every((r) => r.tier >= 1 && r.tier <= 5),
+            `team ${team.id} has a tier outside 1..5`,
+        );
+    }
 
-    // Names: enough unique combinations for the whole league.
+    // Names: enough unique combinations for youth fill-ins.
     const combinations = namePools.firstNames.length * namePools.lastNames.length;
-    assertConfig(
-        combinations >= teamCount * leagueConfig.playersPerTeam * 4,
-        'name pools too small for the league size',
-    );
+    assertConfig(combinations >= teamCount * leagueConfig.playersPerTeam, 'name pools too small for youth generation');
 
     // Balance
     const match = balanceConfig.match;

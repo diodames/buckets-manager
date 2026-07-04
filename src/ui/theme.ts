@@ -1,4 +1,5 @@
 import { BT, Color32, type Palette } from 'blit386';
+import { courtConfig } from '../config/court';
 import { leagueConfig } from '../config/league';
 import { paletteConfig, type Rgb } from '../config/palette';
 
@@ -24,6 +25,15 @@ export function buildPalette(): Palette {
         palette.set(paletteConfig.teamColorBase + index * 2, color(team.primary));
         palette.set(paletteConfig.teamColorBase + index * 2 + 1, color(team.secondary));
     });
+    const slots = courtConfig.slots;
+    palette.set(slots.floor, color(courtConfig.colors.floor as Rgb));
+    palette.set(slots.lines, color(courtConfig.colors.lines as Rgb));
+    palette.set(slots.ball, color(courtConfig.colors.ball as Rgb));
+    palette.set(slots.rim, color(courtConfig.colors.rim as Rgb));
+    palette.set(slots.crowdBase, color(courtConfig.colors.crowd1 as Rgb));
+    palette.set(slots.crowdBase + 1, color(courtConfig.colors.crowd2 as Rgb));
+    palette.set(slots.crowdBase + 2, color(courtConfig.colors.crowd3 as Rgb));
+    palette.set(slots.crowdBase + 3, color(courtConfig.colors.crowd4 as Rgb));
     return palette;
 }
 

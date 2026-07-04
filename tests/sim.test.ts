@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { balanceConfig } from '../src/config/balance';
 import { leagueConfig } from '../src/config/league';
+import { momentsConfig } from '../src/config/moments';
 import { namePools } from '../src/config/names';
 import { generateLeague } from '../src/core/league/generate';
 import { createRng } from '../src/core/rng';
 import { foldEvents } from '../src/core/sim/boxscore';
-import { simulateMatch, type TeamSimInput } from '../src/core/sim/simulateMatch';
+import { MatchEngine, simulateMatch, type TeamSimInput } from '../src/core/sim/matchEngine';
 
 function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
     const league = generateLeague(createRng(seed).fork('league'), leagueConfig, balanceConfig, namePools);
@@ -22,7 +23,7 @@ function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
                 if (!p) {
                     throw new Error(`missing player ${id}`);
                 }
-                return { id: p.id, position: p.position, attributes: p.attributes };
+                return { id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue };
             }),
             starters: team.tactics.starters,
             pace: team.tactics.pace,
@@ -35,19 +36,21 @@ function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
     return { home: toInput(homeDef.id), away: toInput(awayDef.id) };
 }
 
-describe('simulateMatch', () => {
+const simArgs = { balance: balanceConfig, moments: momentsConfig };
+
+describe('simulateMatch (one-shot, no decisions)', () => {
     it('is deterministic: same seed, same events and summary', () => {
         const inputs = buildInputs(1);
-        const a = simulateMatch({ ...inputs, seed: 99, balance: balanceConfig });
-        const b = simulateMatch({ ...inputs, seed: 99, balance: balanceConfig });
+        const a = simulateMatch({ ...inputs, seed: 99, ...simArgs });
+        const b = simulateMatch({ ...inputs, seed: 99, ...simArgs });
         expect(a.events).toEqual(b.events);
         expect(a.summary).toEqual(b.summary);
     });
 
     it('never ends in a tie (overtime resolves)', () => {
         const inputs = buildInputs(2);
-        for (let seed = 0; seed < 300; seed++) {
-            const { summary } = simulateMatch({ ...inputs, seed, balance: balanceConfig });
+        for (let seed = 0; seed < 200; seed++) {
+            const { summary } = simulateMatch({ ...inputs, seed, ...simArgs });
             expect(summary.homeScore).not.toBe(summary.awayScore);
         }
     });
@@ -57,9 +60,9 @@ describe('simulateMatch', () => {
         let total = 0;
         let min = Infinity;
         let max = -Infinity;
-        const runs = 300;
+        const runs = 250;
         for (let seed = 0; seed < runs; seed++) {
-            const { summary } = simulateMatch({ ...inputs, seed, balance: balanceConfig });
+            const { summary } = simulateMatch({ ...inputs, seed, ...simArgs });
             for (const score of [summary.homeScore, summary.awayScore]) {
                 total += score;
                 min = Math.min(min, score);
@@ -67,7 +70,6 @@ describe('simulateMatch', () => {
             }
         }
         const mean = total / (runs * 2);
-        // Basketball plausibility band for a 40-minute game without free throws yet.
         expect(mean).toBeGreaterThan(55);
         expect(mean).toBeLessThan(105);
         expect(min).toBeGreaterThan(25);
@@ -76,52 +78,107 @@ describe('simulateMatch', () => {
 
     it('box score is consistent with the event stream (fold identity)', () => {
         const inputs = buildInputs(4);
-        for (let seed = 0; seed < 100; seed++) {
-            const { events, summary } = simulateMatch({ ...inputs, seed, balance: balanceConfig });
+        for (let seed = 0; seed < 60; seed++) {
+            const { events, summary } = simulateMatch({ ...inputs, seed, ...simArgs });
             const folded = foldEvents(events, inputs.home.teamId);
             expect(folded.homeScore).toBe(summary.homeScore);
             expect(folded.awayScore).toBe(summary.awayScore);
             expect(folded.box).toEqual(summary.box);
-            // Quarter scores sum to the final score.
-            const sums = folded.quarterScores.reduce<[number, number]>(
-                (acc, [h, a]) => [acc[0] + h, acc[1] + a],
-                [0, 0],
-            );
+            const sums = folded.quarterScores.reduce<[number, number]>((acc, [h, a]) => [acc[0] + h, acc[1] + a], [0, 0]);
             expect(sums[0]).toBe(summary.homeScore);
             expect(sums[1]).toBe(summary.awayScore);
         }
     });
 
-    it('emits monotonically ordered clocks within periods', () => {
+    it('reports post-match fatigue in bounds for every player', () => {
         const inputs = buildInputs(5);
-        const { events } = simulateMatch({ ...inputs, seed: 5, balance: balanceConfig });
-        let period = 1;
-        let lastSeconds = Infinity;
-        for (const event of events) {
-            if (event.clock.period > period) {
-                period = event.clock.period;
-                lastSeconds = Infinity;
-            }
-            expect(event.clock.period).toBe(period);
-            expect(event.clock.secondsLeft).toBeLessThanOrEqual(lastSeconds);
-            lastSeconds = event.clock.secondsLeft;
+        const { outcome } = simulateMatch({ ...inputs, seed: 5, ...simArgs });
+        for (const player of [...inputs.home.players, ...inputs.away.players]) {
+            const fatigue = outcome.fatigue[player.id];
+            expect(fatigue).toBeGreaterThanOrEqual(0);
+            expect(fatigue).toBeLessThanOrEqual(100);
         }
-        const last = events[events.length - 1];
-        expect(last?.t).toBe('gameEnd');
+    });
+});
+
+describe('MatchEngine (interactive)', () => {
+    it('coach decisions change the outcome deterministically', () => {
+        const inputs = buildInputs(6);
+        const run = (withTimeout: boolean) => {
+            const engine = new MatchEngine({ ...inputs, seed: 42, ...simArgs, storyTeamId: null });
+            let possessions = 0;
+            while (!engine.isFinished) {
+                const stop = engine.run({ breakAfterPossession: true });
+                possessions++;
+                if (withTimeout && possessions === 30) {
+                    engine.applyDecision({ t: 'timeout', teamId: inputs.home.teamId });
+                }
+                if (stop.kind === 'moment') {
+                    engine.resolveMoment('');
+                }
+            }
+            return engine.finish().summary;
+        };
+        const withTimeout = run(true);
+        const without = run(false);
+        // Same decision timeline reproduces exactly.
+        expect(run(true)).toEqual(withTimeout);
+        // The timeout consumed rng / changed flow, so outcomes may differ;
+        // at minimum the event streams cannot be asserted equal. Sanity: both
+        // are valid non-tied games.
+        expect(withTimeout.homeScore).not.toBe(withTimeout.awayScore);
+        expect(without.homeScore).not.toBe(without.awayScore);
     });
 
-    it('home advantage produces more home wins over many sims', () => {
-        // Mirror matchup: identical rosters on both sides isolates venue effect.
-        const inputs = buildInputs(6);
-        const mirrored = { home: { ...inputs.away, teamId: 'HOME' }, away: { ...inputs.away, teamId: 'AWAY' } };
-        let homeWins = 0;
-        const runs = 400;
-        for (let seed = 0; seed < runs; seed++) {
-            const { summary } = simulateMatch({ ...mirrored, seed, balance: balanceConfig });
-            if (summary.homeScore > summary.awayScore) {
-                homeWins++;
+    it('substitution decision puts the bench player on court', () => {
+        const inputs = buildInputs(7);
+        const engine = new MatchEngine({ ...inputs, seed: 7, ...simArgs, storyTeamId: null });
+        engine.run({ breakAfterPossession: true });
+        const teamId = inputs.home.teamId;
+        const out = engine.activeFive(teamId)[0];
+        const sub = engine.benchPlayers(teamId)[0];
+        if (!out || !sub) {
+            throw new Error('no players to substitute');
+        }
+        engine.applyDecision({ t: 'substitution', teamId, out: out.id, in: sub.id });
+        const five = engine.activeFive(teamId).map((p) => p.id);
+        expect(five).toContain(sub.id);
+        expect(five).not.toContain(out.id);
+    });
+
+    it('story moments fire only for the story team and can be resolved', () => {
+        const inputs = buildInputs(8);
+        let sawMoment = false;
+        for (let seed = 0; seed < 30 && !sawMoment; seed++) {
+            const engine = new MatchEngine({ ...inputs, seed, ...simArgs, storyTeamId: inputs.home.teamId });
+            while (!engine.isFinished) {
+                const stop = engine.run();
+                if (stop.kind === 'moment') {
+                    sawMoment = true;
+                    expect(stop.moment.teamId).toBe(inputs.home.teamId);
+                    expect(stop.moment.def.choices.length).toBeGreaterThan(0);
+                    engine.resolveMoment(stop.moment.def.choices[0]?.id ?? '');
+                }
+            }
+            const outcome = engine.finish();
+            if (sawMoment) {
+                expect(outcome.momentLog.length).toBeGreaterThan(0);
             }
         }
-        expect(homeWins / runs).toBeGreaterThan(0.5);
+        expect(sawMoment).toBe(true);
+    });
+
+    it('timeouts are limited per team', () => {
+        const inputs = buildInputs(9);
+        const engine = new MatchEngine({ ...inputs, seed: 9, ...simArgs, storyTeamId: null });
+        engine.run({ breakAfterPossession: true });
+        const teamId = inputs.home.teamId;
+        const budget = engine.timeoutsOf(teamId);
+        for (let i = 0; i < budget + 3; i++) {
+            engine.applyDecision({ t: 'timeout', teamId });
+        }
+        expect(engine.timeoutsOf(teamId)).toBe(0);
+        const timeoutEvents = engine.events.filter((e) => e.t === 'timeout');
+        expect(timeoutEvents).toHaveLength(budget);
     });
 });

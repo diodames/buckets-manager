@@ -1,18 +1,29 @@
 import type { BalanceConfig } from '../config/balance';
+import type { EconomyConfig } from '../config/economy';
 import type { LeagueConfig } from '../config/league';
+import type { MomentsConfig } from '../config/moments';
 import type { NamePools } from '../config/names';
+import type { PressConfig } from '../config/press';
+import type { TrainingConfig } from '../config/training';
+import { realArenaCapacity, roundEconomyTick, type RoundEconomyResult } from './economy';
 import { generateLeague } from './league/generate';
 import { createSchedule, totalRounds } from './league/schedule';
-import type { Fixture, GameState, MatchSummary, TeamId } from './model/types';
+import type { Fixture, GameState, MatchSummary, Player, PlayerId, Position, TeamId } from './model/types';
+import { overallRating, POSITIONS } from './model/types';
 import { createRng, hashString } from './rng';
-import { simulateMatch, type TeamSimInput } from './sim/simulateMatch';
+import { MatchEngine, simulateMatch, type MatchOutcome, type TeamSimInput } from './sim/matchEngine';
+import { weeklyTrainingTick } from './training';
 
-export const SAVE_FORMAT_VERSION = 1;
+export const SAVE_FORMAT_VERSION = 2;
 
 export interface GameConfig {
     league: LeagueConfig;
     balance: BalanceConfig;
     names: NamePools;
+    moments: MomentsConfig;
+    economy: EconomyConfig;
+    training: TrainingConfig;
+    press: PressConfig;
 }
 
 export function createNewGame(config: GameConfig, seed: number, userTeamId: TeamId): GameState {
@@ -31,6 +42,15 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
         teams,
         players,
         fixtures: createSchedule(teamIds, config.league.roundRobinLegs),
+        club: {
+            budget: config.economy.startingBudget,
+            fanSupport: config.economy.fanSupport.start,
+            facilities: { arena: 1, training: 1, academy: 1 },
+            sponsors: [],
+            sponsorOffers: [],
+            ledger: [],
+            trainingFocus: 'balanced',
+        },
     };
 }
 
@@ -49,31 +69,9 @@ export function fixturesOfRound(state: GameState, round: number): Fixture[] {
 export function nextUserFixture(state: GameState): Fixture | null {
     return (
         state.fixtures.find(
-            (f) =>
-                f.result === null &&
-                (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
+            (f) => f.result === null && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
         ) ?? null
     );
-}
-
-function toSimInput(state: GameState, teamId: TeamId): TeamSimInput {
-    const team = state.teams[teamId];
-    if (!team) {
-        throw new Error(`toSimInput: unknown team '${teamId}'`);
-    }
-    return {
-        teamId,
-        players: team.playerIds.map((id) => {
-            const player = state.players[id];
-            if (!player) {
-                throw new Error(`toSimInput: player '${id}' missing from state`);
-            }
-            return { id: player.id, position: player.position, attributes: player.attributes };
-        }),
-        starters: team.tactics.starters,
-        pace: team.tactics.pace,
-        offenseFocus: team.tactics.offenseFocus,
-    };
 }
 
 /** Deterministic per-fixture seed derived from the master seed. */
@@ -81,34 +79,207 @@ export function fixtureSeed(state: GameState, fixtureId: string): number {
     return (state.masterSeed ^ hashString(`fixture:${fixtureId}`)) >>> 0;
 }
 
+/** Roster snapshot for the sim: healthy players only, injured starters replaced. */
+export function toSimInput(state: GameState, teamId: TeamId): TeamSimInput {
+    const team = state.teams[teamId];
+    if (!team) {
+        throw new Error(`toSimInput: unknown team '${teamId}'`);
+    }
+    const available = team.playerIds
+        .map((id) => state.players[id])
+        .filter((p): p is Player => p !== undefined && p.injury === null);
+    if (available.length < 5) {
+        // Emergency: field injured players rather than forfeiting.
+        const everyone = team.playerIds.map((id) => state.players[id]).filter((p): p is Player => p !== undefined);
+        return buildInput(team.id, everyone, team.tactics.starters, team.tactics.pace, team.tactics.offenseFocus);
+    }
+    return buildInput(team.id, available, team.tactics.starters, team.tactics.pace, team.tactics.offenseFocus);
+}
+
+function buildInput(
+    teamId: TeamId,
+    players: Player[],
+    starters: Record<Position, PlayerId>,
+    pace: TeamSimInput['pace'],
+    offenseFocus: TeamSimInput['offenseFocus'],
+): TeamSimInput {
+    const ids = new Set(players.map((p) => p.id));
+    const effectiveStarters = {} as Record<Position, PlayerId>;
+    const taken = new Set<PlayerId>();
+    for (const position of POSITIONS) {
+        let starterId: PlayerId | null = ids.has(starters[position]) ? starters[position] : null;
+        if (starterId === null || taken.has(starterId)) {
+            const replacement = players
+                .filter((p) => !taken.has(p.id))
+                .sort(
+                    (a, b) =>
+                        (b.position === position ? 1000 : 0) + overallRating(b.attributes) -
+                        ((a.position === position ? 1000 : 0) + overallRating(a.attributes)),
+                )[0];
+            starterId = replacement?.id ?? null;
+        }
+        if (!starterId) {
+            throw new Error(`buildInput: team ${teamId} cannot field five players`);
+        }
+        taken.add(starterId);
+        effectiveStarters[position] = starterId;
+    }
+    return {
+        teamId,
+        players: players.map((p) => ({ id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue })),
+        starters: effectiveStarters,
+        pace,
+        offenseFocus,
+    };
+}
+
+/** Builds the interactive engine for the user's fixture of the current round. */
+export function prepareUserMatch(state: GameState, config: GameConfig): { fixture: Fixture; engine: MatchEngine } {
+    const fixture = fixturesOfRound(state, state.currentRound).find(
+        (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
+    );
+    if (!fixture || fixture.result) {
+        throw new Error('prepareUserMatch: no pending user fixture this round');
+    }
+    const engine = new MatchEngine({
+        home: toSimInput(state, fixture.homeTeamId),
+        away: toSimInput(state, fixture.awayTeamId),
+        seed: fixtureSeed(state, fixture.id),
+        balance: config.balance,
+        moments: config.moments,
+        storyTeamId: state.userTeamId,
+    });
+    return { fixture, engine };
+}
+
+function applyOutcomeToPlayers(state: GameState, outcome: MatchOutcome): void {
+    for (const [playerId, fatigue] of Object.entries(outcome.fatigue)) {
+        const player = state.players[playerId];
+        if (player) {
+            player.fatigue = Math.max(player.fatigue, fatigue);
+        }
+    }
+    for (const [playerId, roundsOut] of Object.entries(outcome.injuries)) {
+        const player = state.players[playerId];
+        if (player) {
+            player.injury = { roundsOut };
+        }
+    }
+    for (const [teamId, delta] of Object.entries(outcome.moraleDeltas.team)) {
+        const team = state.teams[teamId];
+        for (const playerId of team?.playerIds ?? []) {
+            const player = state.players[playerId];
+            if (player) {
+                player.morale = Math.max(0, Math.min(100, player.morale + delta));
+            }
+        }
+    }
+    for (const [playerId, delta] of Object.entries(outcome.moraleDeltas.players)) {
+        const player = state.players[playerId];
+        if (player) {
+            player.morale = Math.max(0, Math.min(100, player.morale + delta));
+        }
+    }
+    // Winning lifts morale slightly, losing dents it (applied by caller via summary).
+}
+
 export interface RoundResult {
     round: number;
     results: Array<{ fixture: Fixture; summary: MatchSummary }>;
+    economy: RoundEconomyResult | null;
+    // First user player injured this round (feeds the press conference).
+    userInjuredId: PlayerId | null;
 }
 
 /**
- * Simulates every fixture of the current round in place and advances the
- * round counter. Throws when the season is already over.
+ * Completes the current round: books the user match outcome (from the live
+ * engine or instant sim), sims all AI fixtures, then runs the weekly economy
+ * and training ticks and advances the round counter.
  */
-export function advanceRound(state: GameState, config: GameConfig): RoundResult {
+export function completeRound(
+    state: GameState,
+    config: GameConfig,
+    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
+): RoundResult {
     if (isSeasonOver(state, config)) {
-        throw new Error('advanceRound: season is over');
+        throw new Error('completeRound: season is over');
     }
     const round = state.currentRound;
     const results: RoundResult['results'] = [];
+    let userInjuredId: PlayerId | null = null;
+
+    if (userMatch) {
+        userMatch.fixture.result = userMatch.outcome.summary;
+        applyOutcomeToPlayers(state, userMatch.outcome);
+        const userTeam = state.teams[state.userTeamId];
+        userInjuredId =
+            Object.keys(userMatch.outcome.injuries).find((id) => userTeam?.playerIds.includes(id)) ?? null;
+        results.push({ fixture: userMatch.fixture, summary: userMatch.outcome.summary });
+    }
+
     for (const fixture of fixturesOfRound(state, round)) {
         if (fixture.result) {
             continue;
         }
-        const { summary } = simulateMatch({
+        const { summary, outcome } = simulateMatch({
             home: toSimInput(state, fixture.homeTeamId),
             away: toSimInput(state, fixture.awayTeamId),
             seed: fixtureSeed(state, fixture.id),
             balance: config.balance,
+            moments: config.moments,
         });
         fixture.result = summary;
+        applyOutcomeToPlayers(state, outcome);
         results.push({ fixture, summary });
     }
+
+    // Economy tick from the user's perspective.
+    let economy: RoundEconomyResult | null = null;
+    const userFixture = results.find(
+        (r) => r.fixture.homeTeamId === state.userTeamId || r.fixture.awayTeamId === state.userTeamId,
+    );
+    if (userFixture?.fixture.result) {
+        const isHome = userFixture.fixture.homeTeamId === state.userTeamId;
+        const summary = userFixture.fixture.result;
+        const userScore = isHome ? summary.homeScore : summary.awayScore;
+        const oppScore = isHome ? summary.awayScore : summary.homeScore;
+        economy = roundEconomyTick(
+            state,
+            {
+                playedHome: isHome,
+                won: userScore > oppScore,
+                margin: Math.abs(userScore - oppScore),
+                realArenaCapacity: realArenaCapacity(config.league, state.userTeamId),
+                totalRounds: seasonRounds(state, config),
+            },
+            config.economy,
+            createRng(state.masterSeed).fork(`economy:${round}`),
+        );
+        // Result morale drift for the user team.
+        const drift = userScore > oppScore ? 1.5 : -1;
+        const team = state.teams[state.userTeamId];
+        for (const playerId of team?.playerIds ?? []) {
+            const player = state.players[playerId];
+            if (player) {
+                player.morale = Math.max(0, Math.min(100, player.morale + drift));
+            }
+        }
+    }
+
+    weeklyTrainingTick(state, { training: config.training, economy: config.economy }, createRng(state.masterSeed).fork(`training:${round}`));
     state.currentRound++;
-    return { round, results };
+    return { round, results, economy, userInjuredId };
+}
+
+/** Convenience: instant-sim the user match and complete the round in one call. */
+export function advanceRoundInstant(state: GameState, config: GameConfig): RoundResult {
+    const pending = fixturesOfRound(state, state.currentRound).some(
+        (f) => !f.result && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
+    );
+    if (!pending) {
+        return completeRound(state, config, null);
+    }
+    const { fixture, engine } = prepareUserMatch(state, config);
+    const outcome = engine.finish();
+    return completeRound(state, config, { fixture, outcome });
 }

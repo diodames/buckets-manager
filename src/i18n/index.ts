@@ -35,13 +35,17 @@ export function t(key: TranslationKey, params?: Record<string, string | number>)
     });
 }
 
-/** Locale-aware display name for a configured team, e.g. "Sokoli Praha". */
-export function teamDisplayName(team: TeamDef, locale: Locale = currentLocale): string {
-    return locale === 'cs' ? `${team.nameCs} ${team.cityCs}` : `${team.cityEn} ${team.nameEn}`;
+/** Display name for a configured team (real NBL club names are not localized). */
+export function teamDisplayName(team: TeamDef): string {
+    return team.shortName;
 }
 
-export function teamCityName(team: TeamDef, locale: Locale = currentLocale): string {
-    return locale === 'cs' ? team.cityCs : team.cityEn;
+export function teamFullName(team: TeamDef): string {
+    return team.name;
+}
+
+export function teamCityName(team: TeamDef): string {
+    return team.city;
 }
 
 export type { TranslationKey };
