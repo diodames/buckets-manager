@@ -117,6 +117,10 @@ export const cs: Record<TranslationKey, string> = {
     'tactics.focus.inside': 'Pod koš',
     'tactics.focus.balanced': 'Vyvážený',
     'tactics.focus.perimeter': 'Za trojku',
+    'tactics.defense.man': 'Osobní obrana',
+    'tactics.defense.zone': 'Zóna 2-3',
+    'tactics.defense.press': 'Celoplošný presink',
+    'live.defense': 'Obrana: < {defense} >',
 
     'cmt.made.inside': '{player} skóruje zpod koše!',
     'cmt.made.mid': '{player} proměňuje střední vzdálenost.',
@@ -134,6 +138,11 @@ export const cs: Record<TranslationKey, string> = {
     'cmt.injury': '{player} zůstává ležet a míří do šatny!',
     'cmt.periodEnd': 'Konec Q{period}: {home}:{away}',
     'cmt.gameEnd': 'KONEČNÝ STAV {home}:{away}',
+    'cmt.fastBreak': '{team} jede rychlý protiútok!',
+    'cmt.blocked': '{blocker} BLOKUJE střelu, {player} nevěří!',
+    'cmt.foul': 'Faul: {player} na hráči {on}.',
+    'cmt.ft.made': '{player} proměňuje trestný hod {n}/{of}.',
+    'cmt.ft.miss': '{player} zahazuje trestný hod {n}/{of}.',
 
     'moment.title': 'MOMENT ZÁPASU - rozhodni, kouči',
     'moment.hotStreak.text': '{player} hoří - čtyři proměněné střely v řadě!',

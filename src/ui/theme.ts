@@ -27,6 +27,9 @@ export function buildPalette(): Palette {
     });
     const slots = courtConfig.slots;
     palette.set(slots.floor, color(courtConfig.colors.floor as Rgb));
+    palette.set(slots.floorDark, color(courtConfig.colors.floorDark as Rgb));
+    palette.set(slots.keyFill, color(courtConfig.colors.keyFill as Rgb));
+    palette.set(slots.skin, color(courtConfig.colors.skin as Rgb));
     palette.set(slots.lines, color(courtConfig.colors.lines as Rgb));
     palette.set(slots.ball, color(courtConfig.colors.ball as Rgb));
     palette.set(slots.rim, color(courtConfig.colors.rim as Rgb));

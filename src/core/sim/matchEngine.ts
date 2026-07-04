@@ -1,4 +1,4 @@
-import type { BalanceConfig, OffenseFocus, Pace } from '../../config/balance';
+import type { BalanceConfig, DefenseScheme, OffenseFocus, Pace, PlayType } from '../../config/balance';
 import type { MomentDef, MomentsConfig } from '../../config/moments';
 import type { Attributes, MatchSummary, PlayerId, Position, TeamId } from '../model/types';
 import { POSITIONS } from '../model/types';
@@ -22,13 +22,14 @@ export interface TeamSimInput {
     starters: Record<Position, PlayerId>;
     pace: Pace;
     offenseFocus: OffenseFocus;
+    defenseScheme: DefenseScheme;
 }
 
 // Coach decisions accepted between possessions.
 export type MatchDecision =
     | { t: 'timeout'; teamId: TeamId }
     | { t: 'substitution'; teamId: TeamId; out: PlayerId; in: PlayerId }
-    | { t: 'tactics'; teamId: TeamId; pace?: Pace; offenseFocus?: OffenseFocus };
+    | { t: 'tactics'; teamId: TeamId; pace?: Pace; offenseFocus?: OffenseFocus; defenseScheme?: DefenseScheme };
 
 // A pending story moment: the engine pauses until resolveMoment is called.
 export interface PendingMoment {
@@ -74,10 +75,6 @@ interface TeamState {
     recentShots: boolean[];
 }
 
-function otherTeam(engine: MatchEngine, team: TeamState): TeamState {
-    return team === engine.homeState ? engine.awayState : engine.homeState;
-}
-
 function normalizedDelta(a: number, b: number, attributeMax: number): number {
     return (a - b) / attributeMax;
 }
@@ -86,9 +83,11 @@ function normalizedDelta(a: number, b: number, attributeMax: number): number {
  * Stepwise possession-based match simulator. Deterministic given seed and
  * the identical sequence of decisions at identical possession indexes.
  *
- * Usage: repeatedly call run(...) which simulates possessions until a stop
- * condition (story moment, period end, requested break, game end). Between
- * calls, apply coach decisions. finish() folds everything into a summary.
+ * Each possession: play call -> (turnover | shot), where a shot attempt can
+ * be blocked, draw a shooting foul (free throws), and end in a rebound
+ * battle. Defensive schemes (man/zone/press) shift steal pressure, interior
+ * defense, rebounding, fouling, and energy drain; steals and defensive
+ * boards can trigger fast breaks.
  */
 export class MatchEngine {
     readonly events: MatchEvent[] = [];
@@ -113,6 +112,7 @@ export class MatchEngine {
     private lastMomentPossession = -Infinity;
     private pendingMoment: PendingMoment | null = null;
     private buffs: Buff[] = [];
+    private fastBreakFor: TeamId | null = null;
     private injuryRisk = new Map<PlayerId, number>();
     private injuries: Record<PlayerId, number> = {};
     private moraleTeam: Record<TeamId, number> = {};
@@ -201,6 +201,10 @@ export class MatchEngine {
         return this.teamById(teamId).timeoutsLeft;
     }
 
+    schemeOf(teamId: TeamId): DefenseScheme {
+        return this.teamById(teamId).input.defenseScheme;
+    }
+
     private teamById(teamId: TeamId): TeamState {
         if (this.homeState.input.teamId === teamId) {
             return this.homeState;
@@ -209,6 +213,10 @@ export class MatchEngine {
             return this.awayState;
         }
         throw new Error(`MatchEngine: unknown team '${teamId}'`);
+    }
+
+    private otherTeam(team: TeamState): TeamState {
+        return team === this.homeState ? this.awayState : this.homeState;
     }
 
     // --- decisions ---
@@ -239,6 +247,9 @@ export class MatchEngine {
                 }
                 if (decision.offenseFocus) {
                     team.input.offenseFocus = decision.offenseFocus;
+                }
+                if (decision.defenseScheme) {
+                    team.input.defenseScheme = decision.defenseScheme;
                 }
                 break;
             }
@@ -423,7 +434,7 @@ export class MatchEngine {
         }
     }
 
-    private maybeInjury(team: TeamState, clock: EventClock): PendingMoment | null {
+    private maybeInjury(team: TeamState, clock: EventClock): void {
         const cfg = this.balance.injuries;
         for (const p of team.active.values()) {
             const energy = team.energy.get(p.id) ?? 100;
@@ -437,7 +448,6 @@ export class MatchEngine {
                 this.forceOff(team, p.id);
             }
         }
-        return null;
     }
 
     private maybeStoryMoment(clock: EventClock): PendingMoment | null {
@@ -490,14 +500,108 @@ export class MatchEngine {
         return { def, teamId: this.storyTeamId, playerId, clock };
     }
 
+    private choosePlay(offense: TeamState): PlayType {
+        if (this.fastBreakFor === offense.input.teamId) {
+            return 'fastBreak';
+        }
+        const plays = this.balance.plays;
+        const bias = plays.focusBias[offense.input.offenseFocus];
+        const names: Array<keyof typeof plays.baseWeights> = ['pickRoll', 'motion', 'iso', 'post'];
+        const weights = names.map((name) => Math.max(0.02, plays.baseWeights[name] + (bias[name] ?? 0)));
+        return names[this.rng.weightedIndex(weights)] as PlayType;
+    }
+
+    private shooterFor(play: PlayType, offense: TeamState): SimPlayer {
+        const five = [...offense.active.values()];
+        switch (play) {
+            case 'pickRoll':
+                return this.pickWeighted(five, (p) =>
+                    p.position === 'PG' || p.position === 'SG'
+                        ? p.attributes.dribbling + p.attributes.shooting2
+                        : p.attributes.rebounding + p.attributes.shooting2,
+                );
+            case 'motion':
+                return this.pickWeighted(five, (p) => p.attributes.shooting3 * 1.4 + p.attributes.shooting2 * 0.6);
+            case 'iso':
+                return this.pickWeighted(five, (p) => (p.attributes.dribbling + p.attributes.shooting2 + p.attributes.shooting3) ** 2 / 120);
+            case 'post':
+                return this.pickWeighted(five, (p) => p.attributes.rebounding + p.attributes.blocking + p.attributes.shooting2 / 2);
+            case 'fastBreak':
+                return this.pickWeighted(five, (p) => p.attributes.speed * 1.3 + p.attributes.shooting2 * 0.7);
+        }
+    }
+
+    private freeThrowSequence(offense: TeamState, shooter: SimPlayer, count: number, clock: EventClock): void {
+        const fouls = this.balance.fouls;
+        const ftProb = fouls.ftBase + (shooter.attributes.freeThrows / this.balance.playerGen.attributeMax) * fouls.ftSkillWeight;
+        let lastMade = true;
+        for (let n = 1; n <= count; n++) {
+            const made = this.rng.chance(ftProb);
+            lastMade = made;
+            if (made) {
+                if (offense === this.homeState) {
+                    this.homeScore++;
+                } else {
+                    this.awayScore++;
+                }
+            }
+            this.events.push({
+                t: 'freeThrow', clock, teamId: offense.input.teamId, playerId: shooter.id, made, n, of: count,
+            });
+        }
+        if (lastMade) {
+            this.offense = this.otherTeam(offense);
+        } else {
+            this.reboundBattle(offense, clock, fouls.ftMissOffRebMult);
+        }
+    }
+
+    private reboundBattle(offense: TeamState, clock: EventClock, offRebMult = 1): void {
+        const balance = this.balance;
+        const defense = this.otherTeam(offense);
+        const offFive = [...offense.active.values()];
+        const defFive = [...defense.active.values()];
+        const scheme = balance.defense[defense.input.defenseScheme];
+        const offReb = offFive.reduce((s, p) => s + this.skill(offense, p, 'rebounding'), 0) / offFive.length;
+        const defReb = defFive.reduce((s, p) => s + this.skill(defense, p, 'rebounding'), 0) / defFive.length;
+        const offRebProb =
+            Math.min(
+                0.5,
+                Math.max(
+                    0.05,
+                    balance.rebounds.offensiveChance +
+                        normalizedDelta(offReb, defReb, balance.playerGen.attributeMax) * balance.rebounds.skillSwing * 5 -
+                        scheme.reboundBonus,
+                ),
+            ) * offRebMult;
+        if (this.rng.chance(offRebProb)) {
+            const rebounder = this.pickWeighted(offFive, (p) => p.attributes.rebounding);
+            this.events.push({ t: 'rebound', clock, teamId: offense.input.teamId, playerId: rebounder.id, offensive: true });
+        } else {
+            const rebounder = this.pickWeighted(defFive, (p) => p.attributes.rebounding);
+            this.events.push({ t: 'rebound', clock, teamId: defense.input.teamId, playerId: rebounder.id, offensive: false });
+            this.offense = defense;
+            // Defensive boards can ignite a fast break, more so against a press.
+            const fb = this.balance.plays.fastBreak;
+            let chance = fb.afterDefRebound;
+            if (defense.input.defenseScheme !== 'press' && offense.input.defenseScheme === 'press') {
+                chance += fb.vsPressBonus;
+            }
+            if (this.rng.chance(chance)) {
+                this.fastBreakFor = defense.input.teamId;
+            }
+        }
+    }
+
     /** Plays one possession; returns a stop condition or null. */
     private playPossession(): EngineStop | null {
         const balance = this.balance;
         const match = balance.match;
         const offense = this.offense;
-        const defense = otherTeam(this, offense);
+        const defense = this.otherTeam(offense);
         const clock: EventClock = this.clock;
         const attributeMax = balance.playerGen.attributeMax;
+        const scheme = balance.defense[defense.input.defenseScheme];
 
         this.possessionIndex++;
         for (const buff of this.buffs) {
@@ -505,17 +609,28 @@ export class MatchEngine {
         }
         this.buffs = this.buffs.filter((b) => b.possessionsLeft > 0);
 
+        // Play call.
+        const play = this.choosePlay(offense);
+        this.fastBreakFor = null;
+        const playMod = balance.plays.modifiers[play];
+        this.events.push({ t: 'playCall', clock, teamId: offense.input.teamId, play });
+
         // Clock and energy.
         const paceFactor = match.paceFactor[offense.input.pace];
-        const rawSeconds = this.rng.int(match.possessionMinSeconds, match.possessionMaxSeconds);
-        const used = Math.max(4, Math.round(rawSeconds * paceFactor));
+        const rawSeconds =
+            play === 'fastBreak'
+                ? balance.plays.fastBreak.possessionSeconds
+                : this.rng.int(match.possessionMinSeconds, match.possessionMaxSeconds);
+        const used = Math.max(4, Math.round(rawSeconds * (play === 'fastBreak' ? 1 : paceFactor)));
         this.secondsLeft = Math.max(0, this.secondsLeft - used);
         for (const team of [this.homeState, this.awayState]) {
+            const isDefending = team === defense;
+            const drainMult = isDefending ? balance.defense[team.input.defenseScheme].energyDrainMult : 1;
             const activeIds = new Set([...team.active.values()].map((p) => p.id));
             for (const p of team.input.players) {
                 if (activeIds.has(p.id)) {
                     team.secondsPlayed.set(p.id, (team.secondsPlayed.get(p.id) ?? 0) + used);
-                    this.addEnergy(team, p.id, -balance.energy.drainPerSecond * used * paceFactor);
+                    this.addEnergy(team, p.id, -balance.energy.drainPerSecond * used * paceFactor * drainMult);
                 } else {
                     this.addEnergy(team, p.id, balance.energy.benchRegenPerSecond * used);
                 }
@@ -526,82 +641,141 @@ export class MatchEngine {
         const defFive = [...defense.active.values()];
         const handler = this.pickWeighted(offFive, (p) => p.attributes.dribbling + p.attributes.passing + p.attributes.iq);
 
-        // Turnover check.
+        // Turnover check: scheme pressure and play risk.
         const handling = (this.skill(offense, handler, 'dribbling') + this.skill(offense, handler, 'passing')) / 2;
-        const pressure = defFive.reduce((sum, p) => sum + this.skill(defense, p, 'stealing'), 0) / defFive.length;
+        const pressure = (defFive.reduce((sum, p) => sum + this.skill(defense, p, 'stealing'), 0) / defFive.length) * scheme.stealMult;
         const turnoverProb = Math.min(
             0.4,
-            Math.max(0.02, balance.turnovers.base - normalizedDelta(handling, pressure, attributeMax) * balance.turnovers.ballHandlingSwing * 10),
+            Math.max(
+                0.02,
+                (balance.turnovers.base - normalizedDelta(handling, pressure, attributeMax) * balance.turnovers.ballHandlingSwing * 10) *
+                    playMod.turnoverMult,
+            ),
         );
         if (this.rng.chance(turnoverProb)) {
-            const stolen = this.rng.chance(balance.turnovers.stealShare);
+            const stolen = this.rng.chance(Math.min(0.9, balance.turnovers.stealShare * scheme.stealMult));
             const stealer = stolen ? this.pickWeighted(defFive, (p) => p.attributes.stealing) : null;
             this.events.push({ t: 'turnover', clock, teamId: offense.input.teamId, playerId: handler.id, stolenBy: stealer?.id ?? null });
             this.offense = defense;
+            if (stolen && this.rng.chance(balance.plays.fastBreak.afterSteal)) {
+                this.fastBreakFor = defense.input.teamId;
+            }
             return this.endOfPossession(clock);
         }
 
-        // Shot.
-        const mix = balance.shots.mix[offense.input.offenseFocus];
+        // Shot attempt from the play's mix.
         const kinds: ShotKind[] = ['inside', 'mid', 'three'];
-        const kind = kinds[this.rng.weightedIndex([mix.inside, mix.mid, mix.three])] as ShotKind;
-        const shooterSkill = (p: SimPlayer): number =>
+        const kind = kinds[this.rng.weightedIndex([playMod.shotMix.inside, playMod.shotMix.mid, playMod.shotMix.three])] as ShotKind;
+        const shooter = this.shooterFor(play, offense);
+        const shooterSkill =
             kind === 'three'
-                ? this.skill(offense, p, 'shooting3')
+                ? this.skill(offense, shooter, 'shooting3')
                 : kind === 'mid'
-                  ? this.skill(offense, p, 'shooting2')
-                  : (this.skill(offense, p, 'shooting2') + this.skill(offense, p, 'rebounding')) / 2;
-        const shooter = this.pickWeighted(offFive, (p) => shooterSkill(p) + p.attributes.iq / 2);
+                  ? this.skill(offense, shooter, 'shooting2')
+                  : (this.skill(offense, shooter, 'shooting2') + this.skill(offense, shooter, 'rebounding')) / 2;
         const defender = defense.active.get(shooter.position) ?? this.pickWeighted(defFive, (p) => p.attributes.defense);
+        const spot = this.shotSpot(kind, offense === this.homeState);
+
+        // Block check: best rim protector contests inside/mid shots.
+        if (play !== 'fastBreak' || this.rng.chance(0.5)) {
+            const protector = this.pickWeighted(defFive, (p) => p.attributes.blocking ** 2 / 50);
+            const blockProb = Math.max(
+                0.002,
+                balance.blocks.baseChance[kind] +
+                    normalizedDelta(this.skill(defense, protector, 'blocking'), shooterSkill, attributeMax) * balance.blocks.skillSwing,
+            );
+            if (this.rng.chance(blockProb)) {
+                this.events.push({
+                    t: 'shot', clock, teamId: offense.input.teamId, playerId: shooter.id, kind, play,
+                    made: false, points: 0, assistBy: null, blockedBy: protector.id, spot,
+                });
+                offense.recentShots.push(false);
+                this.trimRecent(offense);
+                this.reboundBattle(offense, clock);
+                return this.endOfPossession(clock);
+            }
+        }
+
+        // Shooting foul check.
+        const foulProb = balance.fouls.shootingFoulChance[kind] * scheme.foulMult;
+        const fouled = this.rng.chance(foulProb);
 
         let makeProb =
             balance.shots.base[kind] +
-            normalizedDelta(shooterSkill(shooter), this.skill(defense, defender, 'defense'), attributeMax) * balance.shots.skillSwing;
+            normalizedDelta(shooterSkill, this.skill(defense, defender, 'defense'), attributeMax) * balance.shots.skillSwing +
+            playMod.makeBonus +
+            (kind === 'inside' ? -scheme.insideDefBonus : kind === 'three' ? -scheme.threeDefBonus : 0);
         if (offense === this.homeState) {
             makeProb += match.homeAdvantage;
         }
+        if (fouled) {
+            makeProb -= balance.fouls.contactMakePenalty;
+        }
         makeProb = Math.min(balance.shots.makeProbMax, Math.max(balance.shots.makeProbMin, makeProb));
-
         const made = this.rng.chance(makeProb);
-        const points = made ? (kind === 'three' ? 3 : 2) : 0;
-        let assistBy: PlayerId | null = null;
-        if (made && this.rng.chance(balance.shots.assistChance)) {
-            const mates = offFive.filter((p) => p.id !== shooter.id);
-            assistBy = this.pickWeighted(mates, (p) => p.attributes.passing).id;
-        }
-        const spot = this.shotSpot(kind, offense === this.homeState);
-        this.events.push({ t: 'shot', clock, teamId: offense.input.teamId, playerId: shooter.id, kind, made, points, assistBy, spot });
-        offense.recentShots.push(made);
-        if (offense.recentShots.length > 8) {
-            offense.recentShots.shift();
+
+        if (fouled) {
+            this.events.push({ t: 'foul', clock, teamId: defense.input.teamId, playerId: defender.id, onPlayerId: shooter.id });
+            if (made) {
+                // And-one: the bucket counts plus a single free throw.
+                const points = kind === 'three' ? 3 : 2;
+                this.pushShot(offense, shooter, kind, play, true, points, clock, spot, offFive);
+                this.freeThrowSequence(offense, shooter, 1, clock);
+            } else {
+                // Missed while fouled: no field-goal attempt, only free throws.
+                this.freeThrowSequence(offense, shooter, kind === 'three' ? 3 : 2, clock);
+            }
+            return this.endOfPossession(clock);
         }
 
+        const points = made ? (kind === 'three' ? 3 : 2) : 0;
+        this.pushShot(offense, shooter, kind, play, made, points, clock, spot, offFive);
+        if (made) {
+            this.offense = defense;
+        } else {
+            this.reboundBattle(offense, clock);
+        }
+        return this.endOfPossession(clock);
+    }
+
+    private pushShot(
+        offense: TeamState,
+        shooter: SimPlayer,
+        kind: ShotKind,
+        play: PlayType,
+        made: boolean,
+        points: number,
+        clock: EventClock,
+        spot: CourtSpot,
+        offFive: SimPlayer[],
+    ): void {
+        let assistBy: PlayerId | null = null;
+        const playMod = this.balance.plays.modifiers[play];
+        if (made && this.rng.chance(playMod.assistChance)) {
+            const mates = offFive.filter((p) => p.id !== shooter.id);
+            if (mates.length > 0) {
+                assistBy = this.pickWeighted(mates, (p) => p.attributes.passing).id;
+            }
+        }
+        this.events.push({
+            t: 'shot', clock, teamId: offense.input.teamId, playerId: shooter.id, kind, play,
+            made, points, assistBy, blockedBy: null, spot,
+        });
+        offense.recentShots.push(made);
+        this.trimRecent(offense);
         if (made) {
             if (offense === this.homeState) {
                 this.homeScore += points;
             } else {
                 this.awayScore += points;
             }
-            this.offense = defense;
-            return this.endOfPossession(clock);
         }
+    }
 
-        // Rebound battle.
-        const offReb = offFive.reduce((s, p) => s + this.skill(offense, p, 'rebounding'), 0) / offFive.length;
-        const defReb = defFive.reduce((s, p) => s + this.skill(defense, p, 'rebounding'), 0) / defFive.length;
-        const offRebProb = Math.min(
-            0.5,
-            Math.max(0.05, balance.rebounds.offensiveChance + normalizedDelta(offReb, defReb, attributeMax) * balance.rebounds.skillSwing * 5),
-        );
-        if (this.rng.chance(offRebProb)) {
-            const rebounder = this.pickWeighted(offFive, (p) => p.attributes.rebounding);
-            this.events.push({ t: 'rebound', clock, teamId: offense.input.teamId, playerId: rebounder.id, offensive: true });
-        } else {
-            const rebounder = this.pickWeighted(defFive, (p) => p.attributes.rebounding);
-            this.events.push({ t: 'rebound', clock, teamId: defense.input.teamId, playerId: rebounder.id, offensive: false });
-            this.offense = defense;
+    private trimRecent(team: TeamState): void {
+        if (team.recentShots.length > 8) {
+            team.recentShots.shift();
         }
-        return this.endOfPossession(clock);
     }
 
     private shotSpot(kind: ShotKind, homeAttack: boolean): CourtSpot {
@@ -619,6 +793,7 @@ export class MatchEngine {
         this.autoSubstitutions(this.awayState);
 
         if (this.secondsLeft <= 0) {
+            this.fastBreakFor = null;
             this.events.push({ t: 'periodEnd', clock: { period: this.period, secondsLeft: 0 }, score: [this.homeScore, this.awayScore] });
             const isLastScheduled = this.period === this.periodLengths.length;
             if (isLastScheduled && this.homeScore === this.awayScore) {

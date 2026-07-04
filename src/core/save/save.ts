@@ -24,6 +24,26 @@ const migrations: Record<number, (old: unknown) => unknown> = {
     1: () => {
         throw new SaveError('corrupt', 'Save predates the real NBL league data and cannot be loaded');
     },
+    // v2 -> v3: defensive schemes and extended box scores (ftm/fta/blocks).
+    2: (old) => {
+        const file = old as { formatVersion: number; state: Record<string, unknown> };
+        const teams = (file.state.teams ?? {}) as Record<string, { tactics?: Record<string, unknown> }>;
+        for (const team of Object.values(teams)) {
+            if (team.tactics && !('defenseScheme' in team.tactics)) {
+                team.tactics.defenseScheme = 'man';
+            }
+        }
+        const fixtures = (file.state.fixtures ?? []) as Array<{ result?: { box?: Record<string, Record<string, number>> } | null }>;
+        for (const fixture of fixtures) {
+            for (const line of Object.values(fixture.result?.box ?? {})) {
+                line.ftm ??= 0;
+                line.fta ??= 0;
+                line.blocks ??= 0;
+            }
+        }
+        file.state.version = 3;
+        return { ...file, formatVersion: 3 };
+    },
 };
 
 export function serializeSave(state: GameState, name: string, savedAtIso: string): string {

@@ -20,9 +20,15 @@ export const courtConfig = Object.freeze({
         ball: 42,
         crowdBase: 43, // 4 slots: 43..46 cycled for crowd shimmer
         rim: 47,
+        floorDark: 48,
+        keyFill: 49,
+        skin: 50,
     }),
     colors: Object.freeze<Record<string, Rgb>>({
-        floor: { r: 168, g: 116, b: 60 },
+        floor: { r: 172, g: 120, b: 64 },
+        floorDark: { r: 158, g: 108, b: 56 },
+        keyFill: { r: 146, g: 96, b: 52 },
+        skin: { r: 236, g: 188, b: 148 },
         lines: { r: 232, g: 220, b: 200 },
         ball: { r: 240, g: 128, b: 32 },
         crowd1: { r: 52, g: 56, b: 84 },
@@ -36,7 +42,10 @@ export const courtConfig = Object.freeze({
     crowdCycleSpeed: 3,
     // Playback: milliseconds an event stays on screen at speed 1.
     eventDelaysMs: Object.freeze({
+        playCall: 500,
         shot: 950,
+        foul: 700,
+        freeThrow: 700,
         rebound: 550,
         turnover: 750,
         substitution: 500,
@@ -47,9 +56,10 @@ export const courtConfig = Object.freeze({
         gameEnd: 1200,
     }),
     speeds: Object.freeze([1, 2, 4]),
-    // Dot movement: pixels per frame toward the target.
-    playerStepPx: 2.2,
-    ballStepPx: 5,
+    // Sprite movement: pixels per frame toward the target.
+    playerStepPx: 1.6,
+    fastBreakStepMult: 2.2,
+    ballFlightTicks: 26,
     commentaryLines: 7,
 });
 

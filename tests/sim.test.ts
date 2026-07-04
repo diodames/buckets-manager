@@ -28,6 +28,7 @@ function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
             starters: team.tactics.starters,
             pace: team.tactics.pace,
             offenseFocus: team.tactics.offenseFocus,
+            defenseScheme: team.tactics.defenseScheme,
         };
     };
     if (!homeDef || !awayDef) {
@@ -88,6 +89,53 @@ describe('simulateMatch (one-shot, no decisions)', () => {
             expect(sums[0]).toBe(summary.homeScore);
             expect(sums[1]).toBe(summary.awayScore);
         }
+    });
+
+    it('scores decompose into field goals plus free throws', () => {
+        const inputs = buildInputs(10);
+        for (let seed = 0; seed < 40; seed++) {
+            const { summary } = simulateMatch({ ...inputs, seed, ...simArgs });
+            let points = 0;
+            let fta = 0;
+            for (const line of Object.values(summary.box)) {
+                expect(line.points).toBe(line.fgm2 * 2 + line.fgm3 * 3 + line.ftm);
+                expect(line.ftm).toBeLessThanOrEqual(line.fta);
+                fta += line.fta;
+                points += line.points;
+            }
+            expect(points).toBe(summary.homeScore + summary.awayScore);
+            expect(fta).toBeGreaterThan(0);
+        }
+    });
+
+    it('press defense forces more steals than zone over many sims', () => {
+        const inputs = buildInputs(11);
+        const stealsWith = (scheme: 'zone' | 'press') => {
+            let steals = 0;
+            for (let seed = 0; seed < 80; seed++) {
+                const home = { ...inputs.home, defenseScheme: scheme } as TeamSimInput;
+                const { summary } = simulateMatch({ home, away: inputs.away, seed, ...simArgs });
+                for (const playerId of inputs.home.players.map((p) => p.id)) {
+                    steals += summary.box[playerId]?.steals ?? 0;
+                }
+            }
+            return steals;
+        };
+        expect(stealsWith('press')).toBeGreaterThan(stealsWith('zone'));
+    });
+
+    it('emits play calls and occasional fast breaks and blocks', () => {
+        const inputs = buildInputs(12);
+        let fastBreaks = 0;
+        let blocks = 0;
+        for (let seed = 0; seed < 20; seed++) {
+            const { events } = simulateMatch({ ...inputs, seed, ...simArgs });
+            expect(events.some((e) => e.t === 'playCall')).toBe(true);
+            fastBreaks += events.filter((e) => e.t === 'playCall' && e.play === 'fastBreak').length;
+            blocks += events.filter((e) => e.t === 'shot' && e.blockedBy !== null).length;
+        }
+        expect(fastBreaks).toBeGreaterThan(0);
+        expect(blocks).toBeGreaterThan(0);
     });
 
     it('reports post-match fatigue in bounds for every player', () => {

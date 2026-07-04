@@ -41,6 +41,9 @@ export function foldEvents(events: readonly MatchEvent[], homeTeamId: TeamId): F
                 } else {
                     shooter.fga2++;
                 }
+                if (event.blockedBy) {
+                    line(event.blockedBy).blocks++;
+                }
                 if (event.made) {
                     if (isThree) {
                         shooter.fgm3++;
@@ -55,6 +58,20 @@ export function foldEvents(events: readonly MatchEvent[], homeTeamId: TeamId): F
                     }
                     if (event.assistBy) {
                         line(event.assistBy).assists++;
+                    }
+                }
+                break;
+            }
+            case 'freeThrow': {
+                const shooter = line(event.playerId);
+                shooter.fta++;
+                if (event.made) {
+                    shooter.ftm++;
+                    shooter.points++;
+                    if (event.teamId === homeTeamId) {
+                        homeScore++;
+                    } else {
+                        awayScore++;
                     }
                 }
                 break;
@@ -89,6 +106,8 @@ export function foldEvents(events: readonly MatchEvent[], homeTeamId: TeamId): F
                 }
                 break;
             }
+            case 'playCall':
+            case 'foul':
             case 'substitution':
             case 'timeout':
             case 'injury':

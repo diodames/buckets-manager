@@ -115,6 +115,10 @@ export const en = {
     'tactics.focus.inside': 'Inside',
     'tactics.focus.balanced': 'Balanced',
     'tactics.focus.perimeter': 'Perimeter',
+    'tactics.defense.man': 'Man-to-man',
+    'tactics.defense.zone': 'Zone 2-3',
+    'tactics.defense.press': 'Full-court press',
+    'live.defense': 'Defense: < {defense} >',
 
     'cmt.made.inside': '{player} scores inside!',
     'cmt.made.mid': '{player} hits the mid-range jumper.',
@@ -132,6 +136,11 @@ export const en = {
     'cmt.injury': '{player} is down and heads to the locker room!',
     'cmt.periodEnd': 'End of Q{period}: {home}:{away}',
     'cmt.gameEnd': 'FINAL SCORE {home}:{away}',
+    'cmt.fastBreak': '{team} runs the fast break!',
+    'cmt.blocked': '{blocker} BLOCKS {player}\'s shot!',
+    'cmt.foul': 'Foul by {player} on {on}.',
+    'cmt.ft.made': '{player} sinks free throw {n}/{of}.',
+    'cmt.ft.miss': '{player} misses free throw {n}/{of}.',
 
     'moment.title': 'STORY MOMENT - your call, coach',
     'moment.hotStreak.text': '{player} is on fire - four makes in a row!',

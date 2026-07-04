@@ -24,7 +24,18 @@ export function commentaryLine(state: GameState, event: MatchEvent): string | nu
     let key: TranslationKey;
     let params: Record<string, string | number> = {};
     switch (event.t) {
+        case 'playCall':
+            // Only the fast break is worth a shout; half-court sets stay silent.
+            if (event.play === 'fastBreak') {
+                return `${clockText(event)}  ${t('cmt.fastBreak', { team: abbr(event.teamId) })}`;
+            }
+            return null;
         case 'shot': {
+            if (event.blockedBy) {
+                key = 'cmt.blocked';
+                params = { blocker: playerName(state, event.blockedBy), player: playerName(state, event.playerId) };
+                break;
+            }
             key = event.made ? (`cmt.made.${event.kind}` as TranslationKey) : (`cmt.miss.${event.kind}` as TranslationKey);
             params = { player: playerName(state, event.playerId), team: abbr(event.teamId) };
             if (event.made && event.assistBy) {
@@ -33,6 +44,14 @@ export function commentaryLine(state: GameState, event: MatchEvent): string | nu
             }
             break;
         }
+        case 'foul':
+            key = 'cmt.foul';
+            params = { player: playerName(state, event.playerId), on: playerName(state, event.onPlayerId) };
+            break;
+        case 'freeThrow':
+            key = event.made ? 'cmt.ft.made' : 'cmt.ft.miss';
+            params = { player: playerName(state, event.playerId), n: event.n, of: event.of };
+            break;
         case 'rebound':
             key = event.offensive ? 'cmt.rebound.off' : 'cmt.rebound.def';
             params = { player: playerName(state, event.playerId) };

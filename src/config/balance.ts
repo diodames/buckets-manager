@@ -29,6 +29,54 @@ export const balanceConfig = Object.freeze({
         }),
         assistChance: 0.58,
     }),
+    // Offensive play types: per-possession play call shifts shooter choice,
+    // shot mix, assists, and turnover risk. Weights are relative.
+    plays: Object.freeze({
+        baseWeights: Object.freeze({ pickRoll: 0.34, motion: 0.26, iso: 0.16, post: 0.24 }),
+        // Additive weight bias by offensive focus.
+        focusBias: Object.freeze({
+            inside: Object.freeze({ pickRoll: 0.05, motion: -0.14, iso: -0.04, post: 0.13 }),
+            balanced: Object.freeze({ pickRoll: 0, motion: 0, iso: 0, post: 0 }),
+            perimeter: Object.freeze({ pickRoll: 0.04, motion: 0.14, iso: 0.02, post: -0.2 }),
+        }),
+        modifiers: Object.freeze({
+            pickRoll: Object.freeze({ shotMix: Object.freeze({ inside: 0.45, mid: 0.3, three: 0.25 }), assistChance: 0.68, turnoverMult: 1.0, makeBonus: 0.01 }),
+            motion: Object.freeze({ shotMix: Object.freeze({ inside: 0.2, mid: 0.25, three: 0.55 }), assistChance: 0.75, turnoverMult: 0.9, makeBonus: 0.0 }),
+            iso: Object.freeze({ shotMix: Object.freeze({ inside: 0.3, mid: 0.4, three: 0.3 }), assistChance: 0.05, turnoverMult: 1.15, makeBonus: -0.02 }),
+            post: Object.freeze({ shotMix: Object.freeze({ inside: 0.65, mid: 0.3, three: 0.05 }), assistChance: 0.45, turnoverMult: 1.05, makeBonus: 0.0 }),
+            fastBreak: Object.freeze({ shotMix: Object.freeze({ inside: 0.72, mid: 0.08, three: 0.2 }), assistChance: 0.6, turnoverMult: 0.9, makeBonus: 0.14 }),
+        }),
+        // Fast break trigger chances; press defense concedes extra breaks.
+        fastBreak: Object.freeze({
+            afterSteal: 0.55,
+            afterDefRebound: 0.16,
+            vsPressBonus: 0.15,
+            possessionSeconds: 6,
+        }),
+    }),
+    // Defensive schemes: multipliers applied to the DEFENDING team's effect.
+    defense: Object.freeze({
+        man: Object.freeze({ insideDefBonus: 0, threeDefBonus: 0, stealMult: 1.0, reboundBonus: 0, energyDrainMult: 1.0, foulMult: 1.0 }),
+        zone: Object.freeze({ insideDefBonus: 0.05, threeDefBonus: -0.04, stealMult: 0.8, reboundBonus: 0.04, energyDrainMult: 0.92, foulMult: 0.85 }),
+        press: Object.freeze({ insideDefBonus: -0.03, threeDefBonus: 0.01, stealMult: 1.5, reboundBonus: -0.03, energyDrainMult: 1.45, foulMult: 1.25 }),
+    }),
+    fouls: Object.freeze({
+        // Chance a shot attempt draws a shooting foul, by shot kind.
+        shootingFoulChance: Object.freeze({ inside: 0.13, mid: 0.06, three: 0.03 }),
+        // Make probability penalty when shooting through contact (and-one case).
+        contactMakePenalty: 0.22,
+        // Free-throw make probability from the freeThrows attribute.
+        ftBase: 0.45,
+        ftSkillWeight: 0.45,
+        // Offensive rebound chance multiplier after a missed final free throw.
+        ftMissOffRebMult: 0.6,
+    }),
+    blocks: Object.freeze({
+        // Base chance an attempted shot is blocked, by kind, scaled by the
+        // best rim protector's blocking vs the shooter.
+        baseChance: Object.freeze({ inside: 0.08, mid: 0.04, three: 0.012 }),
+        skillSwing: 0.06,
+    }),
     turnovers: Object.freeze({
         base: 0.13,
         // Ball-handling delta (normalized -1..1) scales the base turnover rate.
@@ -110,3 +158,5 @@ export const balanceConfig = Object.freeze({
 export type BalanceConfig = typeof balanceConfig;
 export type Pace = keyof typeof balanceConfig.match.paceFactor;
 export type OffenseFocus = keyof typeof balanceConfig.shots.mix;
+export type DefenseScheme = keyof typeof balanceConfig.defense;
+export type PlayType = keyof typeof balanceConfig.plays.modifiers;

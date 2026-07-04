@@ -22,6 +22,7 @@ type Phase = 'pregame' | 'playing' | 'paused' | 'subOut' | 'subIn' | 'tactics' |
 
 const PACES = ['slow', 'normal', 'fast'] as const;
 const FOCUSES = ['inside', 'balanced', 'perimeter'] as const;
+const DEFENSES = ['man', 'zone', 'press'] as const;
 
 export class MatchLiveScreen implements Screen {
     private readonly ctx: AppContext;
@@ -73,7 +74,22 @@ export class MatchLiveScreen implements Screen {
 
     private teamSlots(teamId: string): { fill: number; edge: number } {
         const team = this.state.teams[teamId];
-        return { fill: team?.colorSlotPrimary ?? ROLE.text, edge: team?.colorSlotSecondary ?? ROLE.textDim };
+        let fill = team?.colorSlotPrimary ?? ROLE.text;
+        let edge = team?.colorSlotSecondary ?? ROLE.textDim;
+        // Jersey clash: when both primaries are near-identical (e.g. two
+        // black kits), the away side switches to its secondary color.
+        if (teamId === this.fixture.awayTeamId) {
+            const homeDef = teamDef(this.fixture.homeTeamId);
+            const awayDef = teamDef(this.fixture.awayTeamId);
+            const dist =
+                Math.abs(homeDef.primary.r - awayDef.primary.r) +
+                Math.abs(homeDef.primary.g - awayDef.primary.g) +
+                Math.abs(homeDef.primary.b - awayDef.primary.b);
+            if (dist < 120) {
+                [fill, edge] = [edge, fill];
+            }
+        }
+        return { fill, edge };
     }
 
     private syncLineups(): void {
@@ -110,11 +126,12 @@ export class MatchLiveScreen implements Screen {
         this.consumedEvents++;
         const event = next.event;
         this.lastClock = event.clock;
-        if (event.t === 'shot' && event.made) {
+        if ((event.t === 'shot' && event.made) || (event.t === 'freeThrow' && event.made)) {
+            const points = event.t === 'shot' ? event.points : 1;
             if (event.teamId === this.fixture.homeTeamId) {
-                this.score = [this.score[0] + event.points, this.score[1]];
+                this.score = [this.score[0] + points, this.score[1]];
             } else {
-                this.score = [this.score[0], this.score[1] + event.points];
+                this.score = [this.score[0], this.score[1] + points];
             }
         }
         if (event.t === 'periodEnd' || event.t === 'gameEnd') {
@@ -126,13 +143,13 @@ export class MatchLiveScreen implements Screen {
         if (event.t === 'substitution') {
             this.syncLineups();
         }
-        if ('teamId' in event && (event.t === 'shot' || event.t === 'turnover')) {
+        if (event.t === 'playCall') {
             const offense = event.teamId;
             const defense = offense === this.fixture.homeTeamId ? this.fixture.awayTeamId : this.fixture.homeTeamId;
-            this.court.setPossession(
-                offense,
-                this.engine.activeFive(offense).map((p) => p.id),
-                this.engine.activeFive(defense).map((p) => p.id),
+            this.court.onPlayCall(
+                event.play,
+                { teamId: offense, ids: this.engine.activeFive(offense).map((p) => p.id) },
+                { ids: this.engine.activeFive(defense).map((p) => p.id), scheme: this.engine.schemeOf(defense) },
             );
         }
         this.court.onEvent(event);
@@ -235,6 +252,7 @@ export class MatchLiveScreen implements Screen {
             [
                 { id: 'pace', label: '' },
                 { id: 'focus', label: '' },
+                { id: 'defense', label: '' },
                 { id: 'back', label: t('common.back') },
             ],
             { col: 4, row: 6, width: 40 },
@@ -394,20 +412,24 @@ export class MatchLiveScreen implements Screen {
             return;
         }
         const selectedId = this.menu.items[this.menu.selected]?.id;
-        if ((input.left || input.right) && (selectedId === 'pace' || selectedId === 'focus')) {
+        if ((input.left || input.right) && (selectedId === 'pace' || selectedId === 'focus' || selectedId === 'defense')) {
             const dir = input.right ? 1 : -1;
             if (selectedId === 'pace') {
                 const index = (PACES.indexOf(team.tactics.pace) + dir + PACES.length) % PACES.length;
                 team.tactics.pace = PACES[index] as (typeof PACES)[number];
-            } else {
+            } else if (selectedId === 'focus') {
                 const index = (FOCUSES.indexOf(team.tactics.offenseFocus) + dir + FOCUSES.length) % FOCUSES.length;
                 team.tactics.offenseFocus = FOCUSES[index] as (typeof FOCUSES)[number];
+            } else {
+                const index = (DEFENSES.indexOf(team.tactics.defenseScheme) + dir + DEFENSES.length) % DEFENSES.length;
+                team.tactics.defenseScheme = DEFENSES[index] as (typeof DEFENSES)[number];
             }
             this.engine.applyDecision({
                 t: 'tactics',
                 teamId: team.id,
                 pace: team.tactics.pace,
                 offenseFocus: team.tactics.offenseFocus,
+                defenseScheme: team.tactics.defenseScheme,
             });
         }
         const action = this.menu.update(input, this.ctx.grid);
@@ -477,11 +499,15 @@ export class MatchLiveScreen implements Screen {
                 const team = this.state.teams[this.state.userTeamId];
                 const first = this.menu?.items[0];
                 const second = this.menu?.items[1];
+                const third = this.menu?.items[2];
                 if (first && team) {
                     first.label = t('live.pace', { pace: t(`tactics.pace.${team.tactics.pace}` as Parameters<typeof t>[0]) });
                 }
                 if (second && team) {
                     second.label = t('live.focus', { focus: t(`tactics.focus.${team.tactics.offenseFocus}` as Parameters<typeof t>[0]) });
+                }
+                if (third && team) {
+                    third.label = t('live.defense', { defense: t(`tactics.defense.${team.tactics.defenseScheme}` as Parameters<typeof t>[0]) });
                 }
             }
             this.menu?.render(grid);

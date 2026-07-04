@@ -25,6 +25,27 @@ describe('save round-trip', () => {
         expect(raw.length).toBeLessThan(1024 * 1024);
     });
 
+    it('migrates v2 saves: adds defenseScheme and extended box lines', () => {
+        const v2 = {
+            formatVersion: 2,
+            name: 'v2',
+            savedAtIso: '2026-07-04T00:00:00.000Z',
+            state: {
+                version: 2,
+                teams: { NYM: { tactics: { pace: 'normal', offenseFocus: 'balanced' } } },
+                fixtures: [{ result: { box: { 'NYM-P1': { points: 10, fgm2: 5, fga2: 8 } } } }],
+            },
+        };
+        const migrated = deserializeSave(JSON.stringify(v2));
+        expect(migrated.formatVersion).toBe(3);
+        const team = (migrated.state.teams as Record<string, { tactics: { defenseScheme?: string } }>).NYM;
+        expect(team?.tactics.defenseScheme).toBe('man');
+        const line = migrated.state.fixtures[0]?.result?.box['NYM-P1'];
+        expect(line?.ftm).toBe(0);
+        expect(line?.fta).toBe(0);
+        expect(line?.blocks).toBe(0);
+    });
+
     it('rejects v1 saves (pre-NBL fictional league) with a typed error', () => {
         const v1 = { formatVersion: 1, name: 'old', savedAtIso: '2026-07-04T00:00:00.000Z', state: { version: 1 } };
         try {

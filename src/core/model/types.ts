@@ -1,4 +1,4 @@
-import type { OffenseFocus, Pace } from '../../config/balance';
+import type { DefenseScheme, OffenseFocus, Pace } from '../../config/balance';
 import type { FacilityKey } from '../../config/economy';
 import type { TrainingFocus } from '../../config/training';
 
@@ -63,6 +63,7 @@ export interface Tactics {
     starters: Record<Position, PlayerId>;
     pace: Pace;
     offenseFocus: OffenseFocus;
+    defenseScheme: DefenseScheme;
 }
 
 export interface Team {
@@ -80,9 +81,12 @@ export interface BoxLine {
     fga2: number;
     fgm3: number;
     fga3: number;
+    ftm: number;
+    fta: number;
     rebounds: number;
     assists: number;
     steals: number;
+    blocks: number;
     turnovers: number;
 }
 
@@ -165,7 +169,10 @@ export interface GameState {
 }
 
 export function createEmptyBoxLine(): BoxLine {
-    return { points: 0, fgm2: 0, fga2: 0, fgm3: 0, fga3: 0, rebounds: 0, assists: 0, steals: 0, turnovers: 0 };
+    return {
+        points: 0, fgm2: 0, fga2: 0, fgm3: 0, fga3: 0, ftm: 0, fta: 0,
+        rebounds: 0, assists: 0, steals: 0, blocks: 0, turnovers: 0,
+    };
 }
 
 /** Simple overall rating: mean of all attributes, rounded. */

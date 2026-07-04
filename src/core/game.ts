@@ -8,13 +8,13 @@ import type { TrainingConfig } from '../config/training';
 import { realArenaCapacity, roundEconomyTick, type RoundEconomyResult } from './economy';
 import { generateLeague } from './league/generate';
 import { createSchedule, totalRounds } from './league/schedule';
-import type { Fixture, GameState, MatchSummary, Player, PlayerId, Position, TeamId } from './model/types';
+import type { Fixture, GameState, MatchSummary, Player, PlayerId, Position, Tactics, TeamId } from './model/types';
 import { overallRating, POSITIONS } from './model/types';
 import { createRng, hashString } from './rng';
 import { MatchEngine, simulateMatch, type MatchOutcome, type TeamSimInput } from './sim/matchEngine';
 import { weeklyTrainingTick } from './training';
 
-export const SAVE_FORMAT_VERSION = 2;
+export const SAVE_FORMAT_VERSION = 3;
 
 export interface GameConfig {
     league: LeagueConfig;
@@ -91,18 +91,13 @@ export function toSimInput(state: GameState, teamId: TeamId): TeamSimInput {
     if (available.length < 5) {
         // Emergency: field injured players rather than forfeiting.
         const everyone = team.playerIds.map((id) => state.players[id]).filter((p): p is Player => p !== undefined);
-        return buildInput(team.id, everyone, team.tactics.starters, team.tactics.pace, team.tactics.offenseFocus);
+        return buildInput(team.id, everyone, team.tactics);
     }
-    return buildInput(team.id, available, team.tactics.starters, team.tactics.pace, team.tactics.offenseFocus);
+    return buildInput(team.id, available, team.tactics);
 }
 
-function buildInput(
-    teamId: TeamId,
-    players: Player[],
-    starters: Record<Position, PlayerId>,
-    pace: TeamSimInput['pace'],
-    offenseFocus: TeamSimInput['offenseFocus'],
-): TeamSimInput {
+function buildInput(teamId: TeamId, players: Player[], tactics: Tactics): TeamSimInput {
+    const { starters, pace, offenseFocus, defenseScheme } = tactics;
     const ids = new Set(players.map((p) => p.id));
     const effectiveStarters = {} as Record<Position, PlayerId>;
     const taken = new Set<PlayerId>();
@@ -130,6 +125,7 @@ function buildInput(
         starters: effectiveStarters,
         pace,
         offenseFocus,
+        defenseScheme,
     };
 }
 

@@ -142,6 +142,8 @@ export function generateLeague(rng: Rng, league: LeagueConfig, balance: BalanceC
         for (const player of teamPlayers) {
             players[player.id] = player;
         }
+        // AI clubs get a house defensive style; man-to-man is the league norm.
+        const schemes = ['man', 'man', 'man', 'man', 'man', 'man', 'man', 'zone', 'zone', 'press'] as const;
         teams[teamDef.id] = {
             id: teamDef.id,
             playerIds: teamPlayers.map((pl) => pl.id),
@@ -149,6 +151,7 @@ export function generateLeague(rng: Rng, league: LeagueConfig, balance: BalanceC
                 starters: pickStarters(teamPlayers),
                 pace: 'normal',
                 offenseFocus: 'balanced',
+                defenseScheme: teamRng.pick(schemes),
             },
             colorSlotPrimary: 16 + teamIndex * 2,
             colorSlotSecondary: 16 + teamIndex * 2 + 1,

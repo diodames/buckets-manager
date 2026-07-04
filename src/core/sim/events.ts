@@ -1,3 +1,4 @@
+import type { PlayType } from '../../config/balance';
 import type { PlayerId, TeamId } from '../model/types';
 
 // Every match is simulated into an ordered event stream. Three consumers
@@ -20,17 +21,22 @@ export interface CourtSpot {
 }
 
 export type MatchEvent =
+    | { t: 'playCall'; clock: EventClock; teamId: TeamId; play: PlayType }
     | {
           t: 'shot';
           clock: EventClock;
           teamId: TeamId;
           playerId: PlayerId;
           kind: ShotKind;
+          play: PlayType;
           made: boolean;
           points: number;
           assistBy: PlayerId | null;
+          blockedBy: PlayerId | null;
           spot: CourtSpot;
       }
+    | { t: 'foul'; clock: EventClock; teamId: TeamId; playerId: PlayerId; onPlayerId: PlayerId }
+    | { t: 'freeThrow'; clock: EventClock; teamId: TeamId; playerId: PlayerId; made: boolean; n: number; of: number }
     | { t: 'rebound'; clock: EventClock; teamId: TeamId; playerId: PlayerId; offensive: boolean }
     | { t: 'turnover'; clock: EventClock; teamId: TeamId; playerId: PlayerId; stolenBy: PlayerId | null }
     | { t: 'substitution'; clock: EventClock; teamId: TeamId; out: PlayerId; in: PlayerId }
