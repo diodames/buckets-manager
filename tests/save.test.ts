@@ -37,13 +37,16 @@ describe('save round-trip', () => {
             },
         };
         const migrated = deserializeSave(JSON.stringify(v2));
-        expect(migrated.formatVersion).toBe(3);
+        expect(migrated.formatVersion).toBe(SAVE_FORMAT_VERSION);
         const team = (migrated.state.teams as Record<string, { tactics: { defenseScheme?: string } }>).NYM;
         expect(team?.tactics.defenseScheme).toBe('man');
         const line = migrated.state.fixtures[0]?.result?.box['NYM-P1'];
         expect(line?.ftm).toBe(0);
         expect(line?.fta).toBe(0);
         expect(line?.blocks).toBe(0);
+        // v3 -> v4 chain: market state appears.
+        expect(migrated.state.market).toBeDefined();
+        expect(migrated.state.market.youthIntakeDone).toBe(false);
     });
 
     it('rejects v1 saves (pre-NBL fictional league) with a typed error', () => {

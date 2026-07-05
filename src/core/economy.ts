@@ -17,6 +17,9 @@ export function playerSalary(state: GameState, playerId: string, economy: Econom
     if (!player) {
         return 0;
     }
+    if (player.contract) {
+        return player.contract.salary;
+    }
     const overall = ATTRIBUTE_KEYS.reduce((s, k) => s + player.attributes[k], 0) / ATTRIBUTE_KEYS.length;
     return Math.max(economy.salary.min, Math.round(economy.salary.base + (overall - 50) * economy.salary.perPoint));
 }

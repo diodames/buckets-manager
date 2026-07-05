@@ -13,7 +13,9 @@ import { ROLE } from '../theme';
 import { MenuList } from '../widgets/MenuList';
 import { ClubScreen } from './ClubScreen';
 import { FinancesScreen } from './FinancesScreen';
+import { MarketScreen } from './MarketScreen';
 import { MatchLiveScreen } from './MatchLiveScreen';
+import { YouthIntakeScreen } from './YouthIntakeScreen';
 import { PressConferenceScreen } from './PressConferenceScreen';
 import { RosterScreen } from './RosterScreen';
 import { SaveLoadScreen } from './SaveLoadScreen';
@@ -50,6 +52,10 @@ export class DashboardScreen implements Screen {
             },
             { id: 'instant', label: t('dashboard.playInstant'), disabled: seasonOver },
             { id: 'roster', label: t('dashboard.roster') },
+            { id: 'market', label: t('market.title') },
+            ...(session.state.market.youthProspects.length > 0
+                ? [{ id: 'youth', label: `${t('youth.title')} (${session.state.market.youthProspects.length})` }]
+                : []),
             { id: 'training', label: t('training.title') },
             { id: 'club', label: t('club.title') },
             { id: 'finances', label: t('finance.title') },
@@ -103,6 +109,12 @@ export class DashboardScreen implements Screen {
                 break;
             case 'roster':
                 this.ctx.screens.push(new RosterScreen(this.ctx));
+                break;
+            case 'market':
+                this.ctx.screens.push(new MarketScreen(this.ctx));
+                break;
+            case 'youth':
+                this.ctx.screens.push(new YouthIntakeScreen(this.ctx));
                 break;
             case 'training':
                 this.ctx.screens.push(new TrainingScreen(this.ctx));

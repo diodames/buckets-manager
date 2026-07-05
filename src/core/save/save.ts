@@ -44,6 +44,29 @@ const migrations: Record<number, (old: unknown) => unknown> = {
         file.state.version = 3;
         return { ...file, formatVersion: 3 };
     },
+    // v3 -> v4: player contracts and the transfer market state.
+    3: (old) => {
+        const file = old as { formatVersion: number; state: Record<string, unknown> };
+        const players = (file.state.players ?? {}) as Record<string, { attributes?: Record<string, number>; contract?: unknown }>;
+        for (const player of Object.values(players)) {
+            if (!('contract' in player) || player.contract === undefined) {
+                const values = Object.values(player.attributes ?? {});
+                const overall = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 50;
+                // Mirrors economyConfig.salary defaults at the time of v4.
+                player.contract = { salary: Math.max(300_000, Math.round(600_000 + (overall - 50) * 40_000)), yearsLeft: 1 };
+            }
+        }
+        file.state.market = {
+            listings: [],
+            incomingOffers: [],
+            negotiations: [],
+            negotiationLocks: {},
+            youthProspects: [],
+            youthIntakeDone: false,
+        };
+        file.state.version = 4;
+        return { ...file, formatVersion: 4 };
+    },
 };
 
 export function serializeSave(state: GameState, name: string, savedAtIso: string): string {

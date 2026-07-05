@@ -6,7 +6,7 @@ import { MenuList } from '../widgets/MenuList';
 
 /** Modal yes/no dialog rendered as an overlay over its parent screen. */
 export class ConfirmDialog implements Screen {
-    readonly isOverlay = true;
+    readonly isOverlay = false;
     private readonly ctx: AppContext;
     private readonly message: string;
     private readonly onResult: (confirmed: boolean) => void;

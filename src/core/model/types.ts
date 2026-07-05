@@ -41,6 +41,11 @@ export const ATTRIBUTE_KEYS: readonly AttributeKey[] = [
     'iq',
 ];
 
+export interface Contract {
+    salary: number;
+    yearsLeft: number;
+}
+
 export interface Player {
     id: PlayerId;
     firstName: string;
@@ -57,6 +62,8 @@ export interface Player {
     // null = healthy; otherwise rounds remaining out.
     injury: { roundsOut: number } | null;
     teamId: TeamId | null;
+    // null only for unsigned youth prospects / free agents.
+    contract: Contract | null;
 }
 
 export interface Tactics {
@@ -120,7 +127,7 @@ export interface StandingsRow {
 export interface LedgerEntry {
     round: number;
     // i18n key suffix under ledger.<kind>.
-    kind: 'tickets' | 'sponsors' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus';
+    kind: 'tickets' | 'sponsors' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'transferIn' | 'transferOut';
     amount: number;
 }
 
@@ -154,6 +161,50 @@ export interface ClubState {
     trainingFocus: TrainingFocus;
 }
 
+export interface TransferListing {
+    playerId: PlayerId;
+    askingPrice: number | null;
+    listedRound: number;
+}
+
+export interface TransferOffer {
+    id: string;
+    playerId: PlayerId;
+    fromTeamId: TeamId;
+    amount: number;
+    expiresRound: number;
+    // The user may counter once (M7).
+    countered: boolean;
+}
+
+export interface NegotiationState {
+    playerId: PlayerId;
+    // 1-based negotiation round, max marketConfig.contracts.maxRounds.
+    round: number;
+    // Revealed information after rejections.
+    hintSalary: number | null;
+    mode: 'renew' | 'freeAgent' | 'transferTerms';
+}
+
+export interface YouthProspect {
+    player: Player;
+    // Star-range presentation of hidden potential (M12), 1..5 with halves.
+    starMin: number;
+    starMax: number;
+    quoteIndex: number;
+    decideByRound: number;
+}
+
+export interface MarketState {
+    listings: TransferListing[];
+    incomingOffers: TransferOffer[];
+    negotiations: NegotiationState[];
+    // playerId -> locked until round (failed negotiations, M3).
+    negotiationLocks: Record<PlayerId, number>;
+    youthProspects: YouthProspect[];
+    youthIntakeDone: boolean;
+}
+
 export interface GameState {
     version: number;
     masterSeed: number;
@@ -166,6 +217,7 @@ export interface GameState {
     fixtures: Fixture[];
     // The user club's management state (AI clubs keep no books).
     club: ClubState;
+    market: MarketState;
 }
 
 export function createEmptyBoxLine(): BoxLine {

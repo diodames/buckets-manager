@@ -60,6 +60,7 @@ function playerFromReal(rng: Rng, id: string, teamId: string, def: RealPlayerDef
         morale: 70,
         injury: null,
         teamId,
+        contract: null,
     };
 }
 
@@ -91,6 +92,7 @@ function generateYouthPlayer(
         morale: 70,
         injury: null,
         teamId,
+        contract: null,
     };
 }
 
@@ -117,6 +119,37 @@ function pickStarters(players: readonly Player[]): Tactics['starters'] {
 function missingPositions(roster: readonly RealPlayerDef[]): Position[] {
     const covered = new Set(roster.map((r) => r.position));
     return POSITIONS.filter((pos) => !covered.has(pos));
+}
+
+/** Journeyman free agents available on the market from day one. */
+export function generateFreeAgents(rng: Rng, count: number, pools: NamePools, balance: BalanceConfig): Player[] {
+    const usedNames = new Set<string>();
+    const agents: Player[] = [];
+    for (let i = 0; i < count; i++) {
+        const gen = balance.playerGen;
+        const name = generateName(rng, pools, usedNames);
+        const position = rng.pick(POSITIONS);
+        const attributes = generateAttributes(rng, position, 50, 9, balance);
+        const heights = gen.heightRangeCm[position];
+        const overall = overallRating(attributes);
+        const age = rng.int(22, 33);
+        agents.push({
+            id: `FA-${i + 1}`,
+            firstName: name.firstName,
+            lastName: name.lastName,
+            age,
+            heightCm: rng.int(heights.min, heights.max),
+            position,
+            attributes,
+            potential: clampAttribute(overall + (age <= 25 ? rng.int(3, 12) : rng.int(0, 3)), gen.attributeMin, gen.attributeMax),
+            fatigue: 0,
+            morale: 60,
+            injury: null,
+            teamId: null,
+            contract: null,
+        });
+    }
+    return agents;
 }
 
 /** Builds the league from the real NBL rosters in the league config. */

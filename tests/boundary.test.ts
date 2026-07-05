@@ -18,7 +18,9 @@ describe('architecture boundary', () => {
             for (const file of tsFilesUnder(dir)) {
                 const source = readFileSync(file, 'utf8');
                 expect(source.includes("from 'blit386'"), `${file} imports blit386`).toBe(false);
-                expect(/\b(window|document|localStorage)\b/.test(source), `${file} touches browser globals`).toBe(
+                // Match API usage (window.x, document.x, localStorage.x), not
+                // the plain English word "window" in UI strings.
+                expect(/\b(window|document|localStorage)\s*[.[(]/.test(source), `${file} touches browser globals`).toBe(
                     false,
                 );
             }

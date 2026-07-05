@@ -5,8 +5,10 @@ import type { MomentsConfig } from '../config/moments';
 import type { NamePools } from '../config/names';
 import type { PressConfig } from '../config/press';
 import type { TrainingConfig } from '../config/training';
+import type { MarketConfig } from '../config/market';
 import { realArenaCapacity, roundEconomyTick, type RoundEconomyResult } from './economy';
-import { generateLeague } from './league/generate';
+import { generateFreeAgents, generateLeague } from './league/generate';
+import { baseSalary, marketTick, runYouthIntake } from './market';
 import { createSchedule, totalRounds } from './league/schedule';
 import type { Fixture, GameState, MatchSummary, Player, PlayerId, Position, Tactics, TeamId } from './model/types';
 import { overallRating, POSITIONS } from './model/types';
@@ -14,7 +16,7 @@ import { createRng, hashString } from './rng';
 import { MatchEngine, simulateMatch, type MatchOutcome, type TeamSimInput } from './sim/matchEngine';
 import { weeklyTrainingTick } from './training';
 
-export const SAVE_FORMAT_VERSION = 3;
+export const SAVE_FORMAT_VERSION = 4;
 
 export interface GameConfig {
     league: LeagueConfig;
@@ -24,6 +26,7 @@ export interface GameConfig {
     economy: EconomyConfig;
     training: TrainingConfig;
     press: PressConfig;
+    market: MarketConfig;
 }
 
 export function createNewGame(config: GameConfig, seed: number, userTeamId: TeamId): GameState {
@@ -32,6 +35,17 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
     }
     const rng = createRng(seed);
     const { teams, players } = generateLeague(rng.fork('league'), config.league, config.balance, config.names);
+    // Contracts for every rostered player (M1); free agents start unsigned.
+    const contractRng = rng.fork('contracts');
+    for (const player of Object.values(players)) {
+        player.contract = {
+            salary: baseSalary(overallRating(player.attributes), config.economy),
+            yearsLeft: contractRng.int(1, 3),
+        };
+    }
+    for (const agent of generateFreeAgents(rng.fork('freeAgents'), 12, config.names, config.balance)) {
+        players[agent.id] = agent;
+    }
     const teamIds = config.league.teams.map((t) => t.id);
     return {
         version: SAVE_FORMAT_VERSION,
@@ -50,6 +64,14 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
             sponsorOffers: [],
             ledger: [],
             trainingFocus: 'balanced',
+        },
+        market: {
+            listings: [],
+            incomingOffers: [],
+            negotiations: [],
+            negotiationLocks: {},
+            youthProspects: [],
+            youthIntakeDone: false,
         },
     };
 }
@@ -185,6 +207,8 @@ export interface RoundResult {
     economy: RoundEconomyResult | null;
     // First user player injured this round (feeds the press conference).
     userInjuredId: PlayerId | null;
+    // New academy prospects arrived this round.
+    youthIntake: boolean;
 }
 
 /**
@@ -263,8 +287,17 @@ export function completeRound(
     }
 
     weeklyTrainingTick(state, { training: config.training, economy: config.economy }, createRng(state.masterSeed).fork(`training:${round}`));
+
+    // Transfer market activity and the once-a-season youth intake (M11).
+    marketTick(state, config.market, config.economy, createRng(state.masterSeed).fork(`market:${round}`));
+    let youthIntake = false;
+    if (!state.market.youthIntakeDone && round >= config.market.youth.intakeRound) {
+        runYouthIntake(state, config.market, config.economy, config.names, createRng(state.masterSeed).fork(`youth:${round}`));
+        youthIntake = true;
+    }
+
     state.currentRound++;
-    return { round, results, economy, userInjuredId };
+    return { round, results, economy, userInjuredId, youthIntake };
 }
 
 /** Convenience: instant-sim the user match and complete the round in one call. */

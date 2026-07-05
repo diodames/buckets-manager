@@ -1,20 +1,25 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
+import { marketConfig } from '../../config/market';
+import { canNegotiate, listPlayer, unlistPlayer } from '../../core/market';
 import type { Player } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
-import { playerName, teamName } from '../format';
+import { formatMoney, playerName, teamName } from '../format';
 import { ROLE } from '../theme';
+import { ActionDialog } from './ActionDialog';
 import { DataTable } from '../widgets/DataTable';
+import { NegotiationScreen } from './NegotiationScreen';
 
 export class RosterScreen implements Screen {
     private readonly ctx: AppContext;
     private readonly table: DataTable;
+    private message: string | null = null;
 
     constructor(ctx: AppContext) {
         this.ctx = ctx;
-        this.table = new DataTable({ col: 2, row: 4, visibleRows: ctx.config.league.playersPerTeam }, true);
+        this.table = new DataTable({ col: 2, row: 4, visibleRows: 14 }, true);
     }
 
     private userPlayers(): Player[] {
@@ -32,12 +37,50 @@ export class RosterScreen implements Screen {
             .sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes));
     }
 
+    private openActions(player: Player): void {
+        const state = this.ctx.session?.state;
+        if (!state) {
+            return;
+        }
+        const listed = state.market.listings.some((l) => l.playerId === player.id);
+        const items = [
+            ...(canNegotiate(state, player, marketConfig) ? [{ id: 'renew', label: t('roster.actionRenew') }] : []),
+            ...(listed
+                ? [{ id: 'unlist', label: t('roster.actionUnlist') }]
+                : [{ id: 'list', label: t('roster.actionList') }]),
+            { id: 'close', label: t('common.back') },
+        ];
+        this.ctx.screens.push(
+            new ActionDialog(this.ctx, playerName(player), items, (action) => {
+                if (action === 'renew') {
+                    this.ctx.screens.push(
+                        new NegotiationScreen(this.ctx, player.id, 'renew', (accepted) => {
+                            this.message = accepted ? t('nego.accepted') : null;
+                        }),
+                    );
+                } else if (action === 'list') {
+                    listPlayer(state, player.id, null, marketConfig);
+                    this.message = t('roster.listedMsg', { player: playerName(player) });
+                } else if (action === 'unlist') {
+                    unlistPlayer(state, player.id);
+                    this.message = null;
+                }
+            }),
+        );
+    }
+
     update(input: UiInputFrame): void {
         if (input.cancel) {
             this.ctx.screens.pop();
             return;
         }
-        this.table.update(input, this.ctx.grid);
+        const activated = this.table.update(input, this.ctx.grid);
+        if (activated !== null) {
+            const player = this.userPlayers()[activated];
+            if (player) {
+                this.openActions(player);
+            }
+        }
     }
 
     render(): void {
@@ -45,47 +88,64 @@ export class RosterScreen implements Screen {
         if (!session) {
             return;
         }
+        const state = session.state;
         const players = this.userPlayers();
-        const starters = new Set(Object.values(session.state.teams[session.state.userTeamId]?.tactics.starters ?? {}));
+        const starters = new Set(Object.values(state.teams[state.userTeamId]?.tactics.starters ?? {}));
         this.table.setData(
             [
                 { header: t('col.name'), width: 20 },
                 { header: t('col.pos'), width: 3 },
                 { header: t('col.age'), width: 3, align: 'right' },
-                { header: t('col.height'), width: 3, align: 'right' },
                 { header: t('col.ovr'), width: 3, align: 'right' },
+                { header: t('col.pot'), width: 3, align: 'right' },
+                { header: t('col.salary'), width: 7, align: 'right' },
+                { header: t('col.years'), width: 3, align: 'right' },
                 { header: t('col.s2'), width: 3, align: 'right' },
                 { header: t('col.s3'), width: 3, align: 'right' },
                 { header: t('col.pas'), width: 3, align: 'right' },
-                { header: t('col.drb'), width: 3, align: 'right' },
                 { header: t('col.def'), width: 3, align: 'right' },
                 { header: t('col.reb'), width: 3, align: 'right' },
-                { header: t('col.spd'), width: 3, align: 'right' },
-                { header: t('col.iq'), width: 3, align: 'right' },
+                { header: t('col.status'), width: 12 },
             ],
-            players.map((p) => ({
-                cells: [
-                    playerName(p),
-                    p.position,
-                    String(p.age),
-                    String(p.heightCm),
-                    String(overallRating(p.attributes)),
-                    String(p.attributes.shooting2),
-                    String(p.attributes.shooting3),
-                    String(p.attributes.passing),
-                    String(p.attributes.dribbling),
-                    String(p.attributes.defense),
-                    String(p.attributes.rebounding),
-                    String(p.attributes.speed),
-                    String(p.attributes.iq),
-                ],
-                ...(starters.has(p.id) ? { color: ROLE.accent } : {}),
-            })),
+            players.map((p) => {
+                const listed = state.market.listings.some((l) => l.playerId === p.id);
+                const expiring = (p.contract?.yearsLeft ?? 0) <= 1;
+                const status = p.injury
+                    ? t('training.injured', { rounds: p.injury.roundsOut })
+                    : listed
+                      ? t('market.listed')
+                      : starters.has(p.id)
+                        ? t('roster.starter')
+                        : '';
+                return {
+                    cells: [
+                        playerName(p),
+                        p.position,
+                        String(p.age),
+                        String(overallRating(p.attributes)),
+                        String(p.potential),
+                        p.contract ? formatMoney(p.contract.salary) : '-',
+                        p.contract ? String(p.contract.yearsLeft) : '-',
+                        String(p.attributes.shooting2),
+                        String(p.attributes.shooting3),
+                        String(p.attributes.passing),
+                        String(p.attributes.defense),
+                        String(p.attributes.rebounding),
+                        status,
+                    ],
+                    ...(p.injury ? { color: ROLE.danger } : expiring ? { color: ROLE.warning } : starters.has(p.id) ? { color: ROLE.accent } : {}),
+                };
+            }),
         );
-        drawChrome(this.ctx, `${t('roster.title')} - ${teamName(session.state.userTeamId)}`, [
+        drawChrome(this.ctx, `${t('roster.title')} - ${teamName(state.userTeamId)}`, [
             t('hint.navigate'),
+            t('roster.hintActions'),
             t('hint.back'),
         ]);
+        this.ctx.grid.put(2, 2, ROLE.textDim, t('roster.contractLegend'));
         this.table.render(this.ctx.grid);
+        if (this.message) {
+            this.ctx.grid.put(2, this.ctx.grid.rows - 3, ROLE.success, this.message);
+        }
     }
 }
