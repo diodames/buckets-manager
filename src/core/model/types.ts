@@ -127,7 +127,7 @@ export interface StandingsRow {
 export interface LedgerEntry {
     round: number;
     // i18n key suffix under ledger.<kind>.
-    kind: 'tickets' | 'sponsors' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'transferIn' | 'transferOut';
+    kind: 'tickets' | 'sponsors' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'transferIn' | 'transferOut' | 'buyout';
     amount: number;
 }
 

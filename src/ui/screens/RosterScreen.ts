@@ -1,7 +1,7 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { marketConfig } from '../../config/market';
-import { canNegotiate, listPlayer, unlistPlayer } from '../../core/market';
+import { canNegotiate, contractBuyout, isAcademyPlayer, listPlayer, releasePlayer, returnYouthToAcademy, unlistPlayer } from '../../core/market';
 import type { Player } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
@@ -9,6 +9,7 @@ import { drawChrome } from '../chrome';
 import { formatMoney, playerName, teamName } from '../format';
 import { ROLE } from '../theme';
 import { ActionDialog } from './ActionDialog';
+import { ConfirmDialog } from './ConfirmDialog';
 import { DataTable } from '../widgets/DataTable';
 import { NegotiationScreen } from './NegotiationScreen';
 
@@ -43,11 +44,14 @@ export class RosterScreen implements Screen {
             return;
         }
         const listed = state.market.listings.some((l) => l.playerId === player.id);
+        const buyout = contractBuyout(player, marketConfig);
         const items = [
             ...(canNegotiate(state, player, marketConfig) ? [{ id: 'renew', label: t('roster.actionRenew') }] : []),
             ...(listed
                 ? [{ id: 'unlist', label: t('roster.actionUnlist') }]
                 : [{ id: 'list', label: t('roster.actionList') }]),
+            ...(isAcademyPlayer(player) ? [{ id: 'returnYouth', label: t('roster.actionReturnYouth') }] : []),
+            { id: 'release', label: t('roster.actionRelease', { cost: formatMoney(buyout) }) },
             { id: 'close', label: t('common.back') },
         ];
         this.ctx.screens.push(
@@ -64,6 +68,32 @@ export class RosterScreen implements Screen {
                 } else if (action === 'unlist') {
                     unlistPlayer(state, player.id);
                     this.message = null;
+                } else if (action === 'returnYouth') {
+                    this.ctx.screens.push(
+                        new ConfirmDialog(this.ctx, t('roster.confirmReturnYouth', { player: playerName(player) }), (confirmed) => {
+                            if (confirmed) {
+                                const ok = returnYouthToAcademy(state, player.id, marketConfig);
+                                this.message = ok ? t('roster.returnedMsg', { player: playerName(player) }) : t('market.rosterMin');
+                            }
+                        }),
+                    );
+                } else if (action === 'release') {
+                    this.ctx.screens.push(
+                        new ConfirmDialog(this.ctx, t('roster.confirmRelease', { player: playerName(player), cost: formatMoney(buyout) }), (confirmed) => {
+                            if (!confirmed) {
+                                return;
+                            }
+                            const result = releasePlayer(state, player.id, marketConfig, this.ctx.config.economy);
+                            this.message =
+                                result === 'released'
+                                    ? t('roster.releasedMsg', { player: playerName(player) })
+                                    : result === 'rosterMin'
+                                      ? t('market.rosterMin')
+                                      : result === 'cantAfford'
+                                        ? t('market.cantAfford')
+                                        : null;
+                        }),
+                    );
                 }
             }),
         );

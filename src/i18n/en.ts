@@ -179,6 +179,12 @@ export const en = {
     'moment.clutchTime.result.heroBall': 'You put the game in his hands.',
     'moment.clutchTime.result.teamPlay': 'You trusted the system.',
 
+    'lineup.title': 'STARTING FIVE',
+    'lineup.hint': 'Pick a slot to change who starts there.',
+    'lineup.pickFor': 'Pick the starter for {pos}:',
+    'live.onCourt': 'ON COURT (pts/reb/ast, energy)',
+    'live.benchAuto': 'Tired players sub out automatically.',
+
     'talk.title': 'Dressing-room speech:',
     'talk.calm': 'Calm and composed - "Play our game."',
     'talk.fire': 'Fire them up - "Eat them alive!"',
@@ -306,6 +312,7 @@ export const en = {
     'ledger.bonus': 'Bonus',
     'ledger.transferIn': 'Player sale',
     'ledger.transferOut': 'Player purchase',
+    'ledger.buyout': 'Contract buyout',
 
     'market.title': 'TRANSFER MARKET',
     'market.tab.offers': 'Offers & listings',
@@ -356,6 +363,12 @@ export const en = {
     'roster.actionRenew': 'Offer a new contract',
     'roster.actionList': 'Put on the transfer list',
     'roster.actionUnlist': 'Remove from the transfer list',
+    'roster.actionReturnYouth': 'Send back to the junior team',
+    'roster.actionRelease': 'Terminate contract (buyout {cost} CZK)',
+    'roster.confirmReturnYouth': 'Send {player} back to the juniors? He can be invited again later.',
+    'roster.confirmRelease': 'Terminate {player}\'s contract for a {cost} CZK buyout?',
+    'roster.returnedMsg': '{player} rejoins the junior team.',
+    'roster.releasedMsg': '{player} released - he enters the free-agent pool.',
     'roster.listedMsg': '{player} listed on the market.',
     'roster.hintActions': 'Enter: player actions',
     'roster.contractLegend': 'Yellow = contract expiring. Enter opens player actions.',

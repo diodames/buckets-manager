@@ -13,6 +13,7 @@ import { ROLE } from '../theme';
 import { MenuList } from '../widgets/MenuList';
 import { ClubScreen } from './ClubScreen';
 import { FinancesScreen } from './FinancesScreen';
+import { LineupScreen } from './LineupScreen';
 import { MarketScreen } from './MarketScreen';
 import { MatchLiveScreen } from './MatchLiveScreen';
 import { YouthIntakeScreen } from './YouthIntakeScreen';
@@ -52,6 +53,7 @@ export class DashboardScreen implements Screen {
             },
             { id: 'instant', label: t('dashboard.playInstant'), disabled: seasonOver },
             { id: 'roster', label: t('dashboard.roster') },
+            { id: 'lineup', label: t('lineup.title') },
             { id: 'market', label: t('market.title') },
             {
                 id: 'youth',
@@ -113,6 +115,9 @@ export class DashboardScreen implements Screen {
                 break;
             case 'roster':
                 this.ctx.screens.push(new RosterScreen(this.ctx));
+                break;
+            case 'lineup':
+                this.ctx.screens.push(new LineupScreen(this.ctx));
                 break;
             case 'market':
                 this.ctx.screens.push(new MarketScreen(this.ctx));

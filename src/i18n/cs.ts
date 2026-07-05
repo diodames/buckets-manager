@@ -181,6 +181,12 @@ export const cs: Record<TranslationKey, string> = {
     'moment.clutchTime.result.heroBall': 'Vložil jsi zápas do jeho rukou.',
     'moment.clutchTime.result.teamPlay': 'Věřil jsi systému.',
 
+    'lineup.title': 'ZAKLADNI PETKA',
+    'lineup.hint': 'Vyber pozici a změň, kdo na ní nastupuje.',
+    'lineup.pickFor': 'Vyber hráče pro pozici {pos}:',
+    'live.onCourt': 'NA HRISTI (body/dosk/asist, energie)',
+    'live.benchAuto': 'Unavení hráči střídají automaticky.',
+
     'talk.title': 'Řeč v kabině:',
     'talk.calm': 'Klid a rozvaha - "Hrajeme svoji hru."',
     'talk.fire': 'Vyhecovat - "Sežerte je zaživa!"',
@@ -308,6 +314,7 @@ export const cs: Record<TranslationKey, string> = {
     'ledger.bonus': 'Bonus',
     'ledger.transferIn': 'Prodej hráče',
     'ledger.transferOut': 'Nákup hráče',
+    'ledger.buyout': 'Odstupné za smlouvu',
 
     'market.title': 'PRESTUPOVY TRH',
     'market.tab.offers': 'Nabídky a inzeráty',
@@ -358,6 +365,12 @@ export const cs: Record<TranslationKey, string> = {
     'roster.actionRenew': 'Nabídnout novou smlouvu',
     'roster.actionList': 'Nabídnout k prodeji',
     'roster.actionUnlist': 'Stáhnout z prodeje',
+    'roster.actionReturnYouth': 'Vrátit do juniorského týmu',
+    'roster.actionRelease': 'Rozvázat smlouvu (odstupné {cost} Kč)',
+    'roster.confirmReturnYouth': 'Poslat hráče {player} zpět do juniorky? Později ho lze pozvat znovu.',
+    'roster.confirmRelease': 'Rozvázat smlouvu s hráčem {player} za odstupné {cost} Kč?',
+    'roster.returnedMsg': '{player} se vrací do juniorského týmu.',
+    'roster.releasedMsg': '{player} propuštěn - míří mezi volné hráče.',
     'roster.listedMsg': '{player} nabídnut na trhu.',
     'roster.hintActions': 'Enter: akce hráče',
     'roster.contractLegend': 'Žlutě = končící smlouva. Enter otevře akce hráče.',

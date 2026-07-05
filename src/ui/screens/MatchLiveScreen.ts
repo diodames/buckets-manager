@@ -1,4 +1,4 @@
-import { BT } from 'blit386';
+import { BT, Rect2i } from 'blit386';
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { courtConfig } from '../../config/court';
@@ -45,6 +45,8 @@ export class MatchLiveScreen implements Screen {
     private subOutId: PlayerId | null = null;
     private outcome: MatchOutcome | null = null;
     private roundResult: RoundResult | null = null;
+    // Live box for the on-court panel, folded from consumed events only.
+    private readonly liveStats = new Map<PlayerId, { pts: number; reb: number; ast: number }>();
 
     constructor(ctx: AppContext, fixture: Fixture, engine: MatchEngine) {
         this.ctx = ctx;
@@ -144,6 +146,19 @@ export class MatchLiveScreen implements Screen {
             } else {
                 this.score = [this.score[0], this.score[1] + points];
             }
+        }
+        // Live panel stats.
+        if (event.t === 'shot' && event.made) {
+            this.liveStat(event.playerId).pts += event.points;
+            if (event.assistBy) {
+                this.liveStat(event.assistBy).ast++;
+            }
+        }
+        if (event.t === 'freeThrow' && event.made) {
+            this.liveStat(event.playerId).pts++;
+        }
+        if (event.t === 'rebound') {
+            this.liveStat(event.playerId).reb++;
         }
         if (event.t === 'periodEnd' || event.t === 'gameEnd') {
             this.score = event.score;
@@ -465,6 +480,44 @@ export class MatchLiveScreen implements Screen {
         }
     }
 
+    private liveStat(playerId: PlayerId): { pts: number; reb: number; ast: number } {
+        let entry = this.liveStats.get(playerId);
+        if (!entry) {
+            entry = { pts: 0, reb: 0, ast: 0 };
+            this.liveStats.set(playerId, entry);
+        }
+        return entry;
+    }
+
+    /** Right-hand live panel: the user's five on court, stats, energy bars. */
+    private renderOnCourtPanel(topRow: number): void {
+        const grid = this.ctx.grid;
+        const col = 61;
+        const barWidth = 10;
+        grid.put(col, topRow - 1, ROLE.header, t('live.onCourt'));
+        const five = this.engine.activeFive(this.state.userTeamId);
+        five.forEach((simPlayer, index) => {
+            const row = topRow + index;
+            const player = this.state.players[simPlayer.id];
+            const stats = this.liveStats.get(simPlayer.id) ?? { pts: 0, reb: 0, ast: 0 };
+            const energy = Math.round(this.engine.energyOf(simPlayer.id));
+            const name = player ? shortPlayerName(player) : simPlayer.id;
+            grid.put(col, row, ROLE.text, `${name.slice(0, 14).padEnd(14)} ${String(stats.pts).padStart(2)}/${stats.reb}/${stats.ast}`);
+            // Slim energy gauge (half a cell tall so rows stay separated).
+            const barColor = energy > 60 ? ROLE.success : energy > 30 ? ROLE.warning : ROLE.danger;
+            const origin = grid.px(col + 23, row);
+            const barPx = barWidth * grid.cellW;
+            const filledPx = Math.max(0, Math.min(barPx, Math.round((energy / 100) * barPx)));
+            BT.drawRectFill(new Rect2i(origin.x, origin.y + 4, barPx, 6), ROLE.panel);
+            if (filledPx > 0) {
+                BT.drawRectFill(new Rect2i(origin.x, origin.y + 4, filledPx, 6), barColor);
+            }
+            BT.drawRect(new Rect2i(origin.x - 1, origin.y + 3, barPx + 2, 8), ROLE.border);
+            grid.put(col + 23 + barWidth + 1, row, ROLE.textDim, String(energy).padStart(3));
+        });
+        grid.put(col, topRow + 5, ROLE.textDim, t('live.benchAuto'));
+    }
+
     // --- render ---
 
     render(): void {
@@ -486,11 +539,12 @@ export class MatchLiveScreen implements Screen {
 
         this.court.render();
 
-        // Commentary.
+        // Commentary (left) and the on-court panel (right).
         const commentaryTop = grid.rows - 2 - courtConfig.commentaryLines;
         this.commentary.forEach((line, index) => {
-            grid.put(2, commentaryTop + index, index === this.commentary.length - 1 ? ROLE.text : ROLE.textDim, line);
+            grid.put(2, commentaryTop + index, index === this.commentary.length - 1 ? ROLE.text : ROLE.textDim, line.slice(0, 57));
         });
+        this.renderOnCourtPanel(commentaryTop);
 
         // Bottom hints.
         grid.fillCells(0, grid.rows - 1, grid.cols, 1, ROLE.panel);

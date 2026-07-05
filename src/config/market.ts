@@ -31,6 +31,10 @@ export const marketConfig = Object.freeze({
         freeAgentDemandMult: 1.15,
         // Salary stepper granularity in the UI.
         salaryStep: 50_000,
+        // Terminating a contract costs this share of the remaining salary.
+        buyoutFactor: 0.5,
+        // Locker-room morale hit when a teammate is cut.
+        releaseTeamMorale: 2,
     }),
     transfers: Object.freeze({
         // Transfer value TV = salary * base * ageV * potV * contractV (M6).
@@ -84,6 +88,8 @@ export const marketConfig = Object.freeze({
         // Star presentation (M12): band width in stars by academy level 1..5.
         starBandByLevel: Object.freeze([2.0, 1.5, 1.0, 0.75, 0.5]),
         coachQuotes: 4,
+        // Morale hit when a signed talent is sent back to the junior team.
+        returnMoralePenalty: 5,
     }),
     roster: Object.freeze({
         // Real Kooperativa NBL limits.

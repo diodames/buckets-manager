@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { marketConfig } from '../src/config/market';
 import { advanceRoundInstant, createNewGame } from '../src/core/game';
 import {
-    acceptTransferOffer, bidOnPlayer, canNegotiate, contractDemand, executePurchase, listPlayer,
-    negotiateOffer, runYouthIntake, signYouth, teamNeeds, transferValue,
+    acceptTransferOffer, bidOnPlayer, canNegotiate, contractBuyout, contractDemand, executePurchase,
+    isAcademyPlayer, listPlayer, negotiateOffer, releasePlayer, returnYouthToAcademy, runYouthIntake,
+    signYouth, teamNeeds, transferValue,
 } from '../src/core/market';
 import type { Player } from '../src/core/model/types';
 import { overallRating } from '../src/core/model/types';
@@ -168,6 +169,47 @@ describe('transfers (M6-M9)', () => {
     });
 });
 
+describe('contract termination', () => {
+    it('pays the buyout, books it, and drops the player to free agency', () => {
+        const state = createNewGame(config, 940, 'NYM');
+        const player = bestUserPlayer(state);
+        const buyout = contractBuyout(player, marketConfig);
+        expect(buyout).toBeGreaterThan(0);
+        const budgetBefore = state.club.budget;
+        const rosterBefore = state.teams[state.userTeamId]?.playerIds.length ?? 0;
+
+        expect(releasePlayer(state, player.id, marketConfig, config.economy)).toBe('released');
+        expect(player.teamId).toBeNull();
+        expect(player.contract).toBeNull();
+        expect(state.club.budget).toBe(budgetBefore - buyout);
+        expect(state.club.ledger.at(-1)?.kind).toBe('buyout');
+        expect(state.teams[state.userTeamId]?.playerIds).toHaveLength(rosterBefore - 1);
+        const starters = Object.values(state.teams[state.userTeamId]?.tactics.starters ?? {});
+        expect(starters).not.toContain(player.id);
+    });
+
+    it('refuses to release below the roster minimum or without budget', () => {
+        const state = createNewGame(config, 941, 'NYM');
+        const team = state.teams[state.userTeamId];
+        if (!team) {
+            throw new Error('no team');
+        }
+        // Drain budget: cannot afford any buyout.
+        state.club.budget = 0;
+        const target = bestUserPlayer(state);
+        expect(releasePlayer(state, target.id, marketConfig, config.economy)).toBe('cantAfford');
+
+        // Shrink roster to the minimum: releases refused regardless of money.
+        state.club.budget = 100_000_000;
+        while (team.playerIds.length > marketConfig.roster.minPlayers) {
+            const id = team.playerIds[team.playerIds.length - 1] as string;
+            expect(releasePlayer(state, id, marketConfig, config.economy)).toBe('released');
+        }
+        const last = team.playerIds[0] as string;
+        expect(releasePlayer(state, last, marketConfig, config.economy)).toBe('rosterMin');
+    });
+});
+
 describe('team needs (M14)', () => {
     it('reports need for uncovered positions and surplus for stacked ones', () => {
         const state = createNewGame(config, 920, 'NYM');
@@ -203,6 +245,34 @@ describe('youth intake (M11-M13)', () => {
         const lowBand = (lowProspects[0]?.starMax ?? 0) - (lowProspects[0]?.starMin ?? 0);
         const highBand = (highProspects[0]?.starMax ?? 0) - (highProspects[0]?.starMin ?? 0);
         expect(highBand).toBeLessThanOrEqual(lowBand);
+    });
+
+    it('a signed talent can be sent back to the juniors and invited again', () => {
+        const state = createNewGame(config, 933, 'NYM');
+        const prospect = state.market.youthProspects[0];
+        if (!prospect) {
+            throw new Error('no seeded prospects');
+        }
+        expect(signYouth(state, prospect.player.id, marketConfig)).toBe(true);
+        expect(isAcademyPlayer(prospect.player)).toBe(true);
+
+        expect(returnYouthToAcademy(state, prospect.player.id, marketConfig)).toBe(true);
+        expect(prospect.player.teamId).toBeNull();
+        expect(prospect.player.contract).toBeNull();
+        expect(state.teams[state.userTeamId]?.playerIds).not.toContain(prospect.player.id);
+        expect(state.market.youthProspects.some((p) => p.player.id === prospect.player.id)).toBe(true);
+        // Starters never reference the departed player.
+        const starters = Object.values(state.teams[state.userTeamId]?.tactics.starters ?? {});
+        expect(starters).not.toContain(prospect.player.id);
+        // And he can be signed again.
+        expect(signYouth(state, prospect.player.id, marketConfig)).toBe(true);
+    });
+
+    it('regular players cannot be sent to the juniors', () => {
+        const state = createNewGame(config, 934, 'NYM');
+        const veteran = bestUserPlayer(state);
+        expect(returnYouthToAcademy(state, veteran.id, marketConfig)).toBe(false);
+        expect(veteran.teamId).toBe(state.userTeamId);
     });
 
     it('signing a prospect adds him to the roster on a youth deal', () => {

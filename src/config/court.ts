@@ -61,6 +61,38 @@ export const courtConfig = Object.freeze({
     fastBreakStepMult: 2.2,
     ballFlightTicks: 26,
     commentaryLines: 7,
+    // Possession choreography tuning (ui/court.ts state machine).
+    choreo: Object.freeze({
+        // Speed multipliers on playerStepPx: the ball handler dribbles slower
+        // than off-ball cutters and transition sprinters.
+        dribbleSpeedMult: 0.8,
+        cutSpeedMult: 1.3,
+        sprintSpeedMult: 1.6,
+        // Pass flights: pixels per tick, with a clamped tick duration so the
+        // ball always travels faster than any player.
+        passSpeedPx: 6.5,
+        passMinTicks: 5,
+        passMaxTicks: 22,
+        // Ticks a running play script may keep going after the shot event
+        // arrives before it is cut to its final positions.
+        shotGraceTicks: 14,
+        // Minimum on-screen spacing kept between teammates, in pixels.
+        minSeparationPx: 6,
+        // Man defense: fraction of the mark-to-basket line to sag off.
+        manSag: 0.33,
+        manOnBallSag: 0.16,
+        // Press defense: near-glue sag, applied full court.
+        pressSag: 0.07,
+        pressOnBallSag: 0.05,
+        // Zone defense: normalized drift of zone spots toward the ball side.
+        zoneShiftX: 0.08,
+        zoneShiftY: 0.18,
+        // Ticks an off-ball attacker may camp inside the key before being
+        // sent back out to a corner (post-play big excepted).
+        keyCampTicks: 55,
+        // Baseline x of the inbounder after a conceded basket / dead ball.
+        inboundBaselineX: 0.035,
+    }),
 });
 
 export type CourtConfig = typeof courtConfig;

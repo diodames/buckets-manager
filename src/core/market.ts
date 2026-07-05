@@ -6,7 +6,7 @@ import type {
     GameState, NegotiationState, Player, PlayerId, Position, TeamId, YouthProspect,
 } from './model/types';
 import { ATTRIBUTE_KEYS, overallRating, POSITIONS } from './model/types';
-import type { Rng } from './rng';
+import { hashString, type Rng } from './rng';
 
 // ---------- salaries, demand, transfer value ----------
 
@@ -247,7 +247,7 @@ export function negotiateOffer(
 
 // ---------- listings, offers, bids (M7-M10) ----------
 
-function pushLedger(state: GameState, economy: EconomyConfig, kind: 'transferIn' | 'transferOut', amount: number): void {
+function pushLedger(state: GameState, economy: EconomyConfig, kind: 'transferIn' | 'transferOut' | 'buyout', amount: number): void {
     state.club.ledger.push({ round: state.currentRound, kind, amount });
     if (state.club.ledger.length > economy.ledgerCapacity) {
         state.club.ledger.splice(0, state.club.ledger.length - economy.ledgerCapacity);
@@ -567,6 +567,90 @@ export function runYouthIntake(
     }
     void economy;
     return prospects;
+}
+
+/** Players brought up from the club's own academy carry the YTH id prefix. */
+export function isAcademyPlayer(player: Player): boolean {
+    return player.id.startsWith('YTH-');
+}
+
+/**
+ * Sends a signed academy talent back to the junior team: he leaves the
+ * roster and contract and reappears among the prospects (invitable again).
+ */
+export function returnYouthToAcademy(state: GameState, playerId: PlayerId, market: MarketConfig): boolean {
+    const player = state.players[playerId];
+    const userTeam = state.teams[state.userTeamId];
+    if (!player || !userTeam || player.teamId !== state.userTeamId || !isAcademyPlayer(player)) {
+        return false;
+    }
+    if (userTeam.playerIds.length <= market.roster.minPlayers) {
+        return false;
+    }
+    removeFromTeam(state, player);
+    player.contract = null;
+    player.morale = Math.max(0, player.morale - market.youth.returnMoralePenalty);
+    unlistPlayer(state, playerId);
+
+    // Rebuild the scout presentation from the current academy level.
+    const y = market.youth;
+    const band = y.starBandByLevel[state.club.facilities.academy - 1] ?? 2;
+    const trueStars = 1 + ((player.potential - 40) / 59) * 4;
+    state.market.youthProspects.push({
+        player,
+        starMin: Math.max(1, Math.round((trueStars - band / 2) * 2) / 2),
+        starMax: Math.min(5, Math.round((trueStars + band / 2) * 2) / 2),
+        quoteIndex: hashString(player.id) % y.coachQuotes,
+        decideByRound: state.currentRound,
+    });
+    return true;
+}
+
+/** Buyout cost for terminating a contract early. */
+export function contractBuyout(player: Player, market: MarketConfig): number {
+    const contract = player.contract;
+    if (!contract) {
+        return 0;
+    }
+    return Math.round((contract.salary * contract.yearsLeft * market.contracts.buyoutFactor) / 10_000) * 10_000;
+}
+
+/**
+ * Terminates a player's contract: pays the buyout, drops him to the
+ * free-agent pool, and dents the locker-room morale.
+ */
+export function releasePlayer(
+    state: GameState,
+    playerId: PlayerId,
+    market: MarketConfig,
+    economy: EconomyConfig,
+): 'released' | 'rosterMin' | 'cantAfford' | 'invalid' {
+    const player = state.players[playerId];
+    const userTeam = state.teams[state.userTeamId];
+    if (!player || !userTeam || player.teamId !== state.userTeamId) {
+        return 'invalid';
+    }
+    if (userTeam.playerIds.length <= market.roster.minPlayers) {
+        return 'rosterMin';
+    }
+    const buyout = contractBuyout(player, market);
+    if (buyout > state.club.budget) {
+        return 'cantAfford';
+    }
+    removeFromTeam(state, player);
+    unlistPlayer(state, playerId);
+    player.contract = null;
+    player.morale = Math.max(0, player.morale - 15);
+    if (buyout > 0) {
+        pushLedger(state, economy, 'buyout', -buyout);
+    }
+    for (const id of userTeam.playerIds) {
+        const mate = state.players[id];
+        if (mate) {
+            mate.morale = Math.max(0, mate.morale - market.contracts.releaseTeamMorale);
+        }
+    }
+    return 'released';
 }
 
 export function signYouth(state: GameState, prospectPlayerId: PlayerId, market: MarketConfig): boolean {

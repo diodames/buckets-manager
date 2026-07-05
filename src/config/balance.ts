@@ -105,9 +105,9 @@ export const balanceConfig = Object.freeze({
         benchRegenPerSecond: 0.05,
         // Auto-substitution threshold: active player below this energy is
         // swapped for the freshest bench player when possible.
-        autoSubThreshold: 35,
+        autoSubThreshold: 42,
         // Minimum energy advantage the bench player must have to sub in.
-        autoSubMinGain: 20,
+        autoSubMinGain: 15,
         // Pre-match: accumulated fatigue reduces starting energy.
         fatigueToEnergy: 0.6,
     }),
