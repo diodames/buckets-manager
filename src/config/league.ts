@@ -71,7 +71,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'PCE', abbr: 'PCE', name: 'BK KVIS Pardubice', shortName: 'Pardubice', city: 'Pardubice',
-            primary: hex('#C8102E'), secondary: hex('#1D1D1B'), arenaCapacity: 1400, tier: 4,
+            primary: hex('#C8102E'), secondary: hex('#FFFFFF'), arenaCapacity: 1400, tier: 4,
             roster: [
                 p('Robert', 'Bonham', 'PG', 4, null, 2002, 'USA'),
                 p('Martin', 'Nábělek', 'PG', 3, 178, 1998, 'CZE'),
@@ -220,7 +220,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'USK', abbr: 'USK', name: 'USK Praha', shortName: 'USK Praha', city: 'Praha',
-            primary: hex('#0D4F9E'), secondary: hex('#FFD200'), arenaCapacity: 1065, tier: 2,
+            primary: hex('#0D4F9E'), secondary: hex('#FFFFFF'), arenaCapacity: 1065, tier: 2,
             roster: [
                 p('David', 'Látal', 'PG', 2, 181, 2005, 'CZE'),
                 p('Matěj', 'Šafařík', 'PG', 3, 188, 2003, 'CZE'),

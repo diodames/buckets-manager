@@ -74,6 +74,42 @@ describe('contracts (M1-M5)', () => {
     });
 });
 
+describe('negotiation hints are truthful', () => {
+    it('offering the hinted amount closes the deal', () => {
+        for (const seed of [904, 905, 906]) {
+            const state = createNewGame(config, seed, 'NYM');
+            state.currentRound = marketConfig.contracts.renewalsOpenFromRound;
+            const player = bestUserPlayer(state);
+            if (player.contract) {
+                player.contract.yearsLeft = 1;
+            }
+            const low = negotiateOffer(state, player.id, { salary: 300_000, years: 2 }, 'renew', marketConfig, config.economy);
+            expect(low.status).toBe('rejected');
+            expect(low.hintSalary).not.toBeNull();
+            const follow = negotiateOffer(state, player.id, { salary: low.hintSalary ?? 0, years: 2 }, 'renew', marketConfig, config.economy);
+            expect(follow.status).toBe('accepted');
+        }
+    });
+
+    it('free-agent signing at the hinted amount succeeds', () => {
+        const state = createNewGame(config, 907, 'NYM');
+        const freeAgent = Object.values(state.players).find((p) => p.teamId === null);
+        if (!freeAgent) {
+            throw new Error('no free agents');
+        }
+        // Make roster room.
+        const team = state.teams[state.userTeamId];
+        if (team && team.playerIds.length >= marketConfig.roster.maxPlayers) {
+            team.playerIds.pop();
+        }
+        const low = negotiateOffer(state, freeAgent.id, { salary: 100_000, years: 1 }, 'freeAgent', marketConfig, config.economy);
+        expect(low.status).toBe('rejected');
+        const follow = negotiateOffer(state, freeAgent.id, { salary: low.hintSalary ?? 0, years: 1 }, 'freeAgent', marketConfig, config.economy);
+        expect(follow.status).toBe('accepted');
+        expect(freeAgent.teamId).toBe(state.userTeamId);
+    });
+});
+
 describe('transfers (M6-M9)', () => {
     it('transfer value favors young high-potential players', () => {
         const state = createNewGame(config, 910, 'NYM');

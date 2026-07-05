@@ -7,6 +7,8 @@ export interface PressQuestion {
     def: PressQuestionDef;
     // Player the question is about (star performer / injured player).
     playerId: PlayerId | null;
+    // Phrasing variant (i18n key `press.<id>.q` or `press.<id>.q2`).
+    variant: 0 | 1;
 }
 
 export interface PressContext {
@@ -16,6 +18,8 @@ export interface PressContext {
     starId: PlayerId | null;
     starPoints: number;
     injuredId: PlayerId | null;
+    // Consecutive results including this match: +N winning, -N losing streak.
+    streak: number;
 }
 
 export function buildPressContext(state: GameState, summary: MatchSummary, homeTeamId: string, injuredId: PlayerId | null): PressContext {
@@ -32,7 +36,26 @@ export function buildPressContext(state: GameState, summary: MatchSummary, homeT
             starId = playerId;
         }
     }
-    return { won: userScore > oppScore, margin: Math.abs(userScore - oppScore), starId, starPoints, injuredId };
+    const won = userScore > oppScore;
+
+    // Streak: walk played user fixtures backwards from the latest.
+    const userResults = state.fixtures
+        .filter((f) => f.result && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId))
+        .sort((a, b) => a.round - b.round)
+        .map((f) => {
+            const home = f.homeTeamId === state.userTeamId;
+            const r = f.result as NonNullable<typeof f.result>;
+            return home ? r.homeScore > r.awayScore : r.awayScore > r.homeScore;
+        });
+    let streak = 0;
+    for (let i = userResults.length - 1; i >= 0; i--) {
+        if (userResults[i] === won) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+    return { won, margin: Math.abs(userScore - oppScore), starId, starPoints, injuredId, streak: won ? streak : -streak };
 }
 
 /** Picks the questions for the post-match conference (deterministic per rng). */
@@ -42,7 +65,7 @@ export function generatePressConference(context: PressContext, config: PressConf
     const add = (id: string, playerId: PlayerId | null = null) => {
         const def = byId.get(id);
         if (def) {
-            eligible.push({ def, playerId });
+            eligible.push({ def, playerId, variant: rng.chance(0.5) ? 1 : 0 });
         }
     };
 
@@ -50,6 +73,11 @@ export function generatePressConference(context: PressContext, config: PressConf
         add(context.margin >= config.blowoutMargin ? 'bigWin' : 'closeWin');
     } else {
         add(context.margin >= config.blowoutMargin ? 'bigLoss' : 'closeLoss');
+    }
+    if (context.streak >= 3) {
+        add('streakWin');
+    } else if (context.streak <= -3) {
+        add('streakLoss');
     }
     if (context.starId && context.starPoints >= config.starPoints) {
         add('starPerformance', context.starId);

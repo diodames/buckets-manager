@@ -29,7 +29,8 @@ export interface TeamSimInput {
 export type MatchDecision =
     | { t: 'timeout'; teamId: TeamId }
     | { t: 'substitution'; teamId: TeamId; out: PlayerId; in: PlayerId }
-    | { t: 'tactics'; teamId: TeamId; pace?: Pace; offenseFocus?: OffenseFocus; defenseScheme?: DefenseScheme };
+    | { t: 'tactics'; teamId: TeamId; pace?: Pace; offenseFocus?: OffenseFocus; defenseScheme?: DefenseScheme }
+    | { t: 'teamTalk'; teamId: TeamId; talkId: string };
 
 // A pending story moment: the engine pauses until resolveMoment is called.
 export interface PendingMoment {
@@ -109,6 +110,7 @@ export class MatchEngine {
     private awayScore = 0;
     private possessionIndex = 0;
     private momentsFired = 0;
+    private readonly firedMomentIds = new Set<string>();
     private lastMomentPossession = -Infinity;
     private pendingMoment: PendingMoment | null = null;
     private buffs: Buff[] = [];
@@ -250,6 +252,14 @@ export class MatchEngine {
                 }
                 if (decision.defenseScheme) {
                     team.input.defenseScheme = decision.defenseScheme;
+                }
+                break;
+            }
+            case 'teamTalk': {
+                const talk = this.moments.teamTalks.find((tt) => tt.id === decision.talkId);
+                if (talk) {
+                    this.buffs.push({ teamId: decision.teamId, multiplier: talk.buffMultiplier, possessionsLeft: talk.buffPossessions });
+                    this.moraleTeam[decision.teamId] = (this.moraleTeam[decision.teamId] ?? 0) + talk.teamMorale;
                 }
                 break;
             }
@@ -460,34 +470,41 @@ export class MatchEngine {
         const team = this.teamById(this.storyTeamId);
         const isHome = team === this.homeState;
         const recent = team.recentShots.slice(-4);
+        const margin = isHome ? this.homeScore - this.awayScore : this.awayScore - this.homeScore;
+        const isLastPeriod = this.period >= this.periodLengths.length;
         const trigger: MomentDef['trigger'] | null =
-            recent.length === 4 && recent.every(Boolean)
-                ? 'hotStreak'
-                : recent.length === 4 && recent.every((s) => !s)
-                  ? 'coldStreak'
-                  : (() => {
-                        const lowEnergyStar = [...team.active.values()].find((p) => (team.energy.get(p.id) ?? 100) < 30);
-                        if (lowEnergyStar) {
-                            return 'injuryScare';
-                        }
-                        const margin = isHome ? this.homeScore - this.awayScore : this.awayScore - this.homeScore;
-                        if (margin < -6 && this.rng.chance(0.15)) {
-                            return 'refereeCall';
-                        }
-                        if (isHome && margin > 6 && this.rng.chance(0.12)) {
-                            return 'crowdSurge';
-                        }
-                        return null;
-                    })();
+            isLastPeriod && this.secondsLeft <= 180 && Math.abs(margin) <= 4
+                ? 'clutch'
+                : this.period >= 3 && margin >= 15
+                  ? 'blowout'
+                  : recent.length === 4 && recent.every(Boolean)
+                    ? 'hotStreak'
+                    : recent.length === 4 && recent.every((s) => !s)
+                      ? 'coldStreak'
+                      : (() => {
+                            const lowEnergyStar = [...team.active.values()].find((p) => (team.energy.get(p.id) ?? 100) < 30);
+                            if (lowEnergyStar) {
+                                return 'injuryScare';
+                            }
+                            if (margin < -6 && this.rng.chance(0.15)) {
+                                return 'refereeCall';
+                            }
+                            if (isHome && margin > 6 && this.rng.chance(0.12)) {
+                                return 'crowdSurge';
+                            }
+                            return null;
+                        })();
         if (!trigger) {
             return null;
         }
         const def = this.moments.defs.find((d) => d.trigger === trigger && (!d.homeOnly || isHome));
-        if (!def || !this.rng.chance(def.chance)) {
+        // Each moment type fires at most once per match.
+        if (!def || this.firedMomentIds.has(def.id) || !this.rng.chance(def.chance)) {
             return null;
         }
+        this.firedMomentIds.add(def.id);
         let playerId: PlayerId | null = null;
-        if (trigger === 'hotStreak' || trigger === 'injuryScare') {
+        if (trigger === 'hotStreak' || trigger === 'injuryScare' || trigger === 'clutch') {
             const candidates = [...team.active.values()];
             const target =
                 trigger === 'injuryScare'

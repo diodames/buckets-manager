@@ -53,6 +53,17 @@ export class MatchLiveScreen implements Screen {
         const originX = Math.floor((ctx.grid.cols * ctx.grid.cellW - courtConfig.pixelWidth) / 2);
         this.court = new CourtRenderer(originX, 64, fixture.homeTeamId);
         this.syncLineups();
+        // Pre-match team talk (dressing-room speech).
+        this.menu = new MenuList(
+            [
+                ...this.ctx.config.moments.teamTalks.map((talk) => ({
+                    id: talk.id,
+                    label: t(`talk.${talk.id}` as Parameters<typeof t>[0]),
+                })),
+                { id: 'none', label: t('talk.none') },
+            ],
+            { col: Math.floor(ctx.grid.cols / 2) - 18, row: Math.floor(ctx.grid.rows / 2) - 1, width: 40 },
+        );
     }
 
     onEnter(): void {
@@ -278,14 +289,21 @@ export class MatchLiveScreen implements Screen {
 
     update(input: UiInputFrame): void {
         switch (this.phase) {
-            case 'pregame':
-                if (input.confirm) {
-                    this.phase = 'playing';
-                }
+            case 'pregame': {
                 if (BT.isKeyPressed('KeyI')) {
                     this.finishInstantly();
+                    break;
+                }
+                const talk = this.menu?.update(input, this.ctx.grid) ?? null;
+                if (talk) {
+                    if (talk !== 'none') {
+                        this.engine.applyDecision({ t: 'teamTalk', teamId: this.state.userTeamId, talkId: talk });
+                    }
+                    this.menu = null;
+                    this.phase = 'playing';
                 }
                 break;
+            }
             case 'playing':
                 this.updatePlaying(input);
                 break;
@@ -480,8 +498,14 @@ export class MatchLiveScreen implements Screen {
 
         // Phase overlays.
         if (this.phase === 'pregame') {
-            grid.putCenter(Math.floor(grid.rows / 2) - 6, ROLE.header, t('live.tipoff', { home: home.name, away: away.name }));
-            grid.putCenter(Math.floor(grid.rows / 2) - 4, ROLE.text, t('live.pressStart'));
+            const boxCol = Math.floor(grid.cols / 2) - 20;
+            const boxRow = Math.floor(grid.rows / 2) - 6;
+            grid.fillCells(boxCol, boxRow, 44, 12, ROLE.panel);
+            grid.frame(boxCol, boxRow, 44, 12, ROLE.border);
+            grid.putCenter(boxRow + 1, ROLE.header, t('live.tipoff', { home: home.shortName, away: away.shortName }));
+            grid.putCenter(boxRow + 3, ROLE.accent, t('talk.title'));
+            this.menu?.render(grid);
+            grid.putCenter(boxRow + 10, ROLE.textDim, t('live.pressStart'));
         }
         if (this.phase === 'paused' || this.phase === 'subOut' || this.phase === 'subIn' || this.phase === 'tactics') {
             const title =

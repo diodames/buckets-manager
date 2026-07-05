@@ -101,27 +101,29 @@ function isStarter(state: GameState, player: Player): boolean {
     return team ? Object.values(team.tactics.starters).includes(player.id) : false;
 }
 
-function acceptanceScore(
-    state: GameState,
-    player: Player,
-    offer: { salary: number; years: number },
-    market: MarketConfig,
-    economy: EconomyConfig,
-): number {
-    const c = market.contracts;
+/** Demand adjusted per negotiation mode (post-transfer terms carry leverage). */
+function demandFor(state: GameState, player: Player, mode: NegotiationState['mode'], market: MarketConfig, economy: EconomyConfig): number {
     const demand = contractDemand(state, player, market, economy);
-    const moneyRatio = Math.max(-1, Math.min(0.5, (offer.salary - demand) / demand));
+    return mode === 'transferTerms' ? Math.round(demand * market.transfers.postTransferDemandMult) : demand;
+}
+
+/** All non-money components of the acceptance score (M3). */
+function baseScore(state: GameState, player: Player, offer: { years: number }, market: MarketConfig): number {
+    const c = market.contracts;
     const minutesShare = isStarter(state, player) ? 0.7 : 0.35;
-    const position = userTablePosition(state);
-    const teamCount = Object.keys(state.teams).length;
     let score = 50;
-    score += c.moneyWeight * moneyRatio;
     score += c.playingTimeWeight * (minutesShare - 0.5) * 2;
     score += (player.morale - 50) / 5;
-    if (position <= 4) {
-        score += c.topTableBonus;
-    } else if (position > teamCount - 4) {
-        score -= c.bottomTablePenalty;
+    // Table position only matters once the season has taken shape.
+    const played = state.fixtures.filter((f) => f.result).length;
+    const teamCount = Object.keys(state.teams).length;
+    if (played >= teamCount) {
+        const position = userTablePosition(state);
+        if (position <= 4) {
+            score += c.topTableBonus;
+        } else if (position > teamCount - 4) {
+            score -= c.bottomTablePenalty;
+        }
     }
     if (offer.years >= 2 && player.age <= 27) {
         score += c.longDealYoungBonus;
@@ -130,6 +132,38 @@ function acceptanceScore(
         score -= c.longDealOldPenalty;
     }
     return score;
+}
+
+function acceptanceScore(
+    state: GameState,
+    player: Player,
+    offer: { salary: number; years: number },
+    demand: number,
+    market: MarketConfig,
+): number {
+    // Money can persuade up to double the fair demand.
+    const moneyRatio = Math.max(-1, Math.min(1, (offer.salary - demand) / demand));
+    return baseScore(state, player, offer, market) + market.contracts.moneyWeight * moneyRatio;
+}
+
+/**
+ * The salary at which the player would accept the given deal length — the
+ * inverse of acceptanceScore. Used for truthful agent hints, so an offer at
+ * the hinted amount really closes the deal.
+ */
+export function requiredSalary(
+    state: GameState,
+    player: Player,
+    years: number,
+    mode: NegotiationState['mode'],
+    market: MarketConfig,
+    economy: EconomyConfig,
+): number {
+    const c = market.contracts;
+    const demand = demandFor(state, player, mode, market, economy);
+    const neededRatio = (c.acceptThreshold - baseScore(state, player, { years }, market)) / c.moneyWeight;
+    const ratio = Math.max(-0.5, Math.min(1, neededRatio));
+    return Math.ceil((demand * (1 + ratio)) / 10_000) * 10_000;
 }
 
 function findNegotiation(state: GameState, playerId: PlayerId): NegotiationState | null {
@@ -174,8 +208,8 @@ export function negotiateOffer(
         negotiation = { playerId, round: 1, hintSalary: null, mode };
         state.market.negotiations.push(negotiation);
     }
-    const demand = contractDemand(state, player, market, economy) * (mode === 'transferTerms' ? market.transfers.postTransferDemandMult : 1);
-    const score = acceptanceScore(state, player, offer, market, economy) - (mode === 'transferTerms' ? 40 * ((demand - contractDemand(state, player, market, economy)) / demand) : 0);
+    const demand = demandFor(state, player, mode, market, economy);
+    const score = acceptanceScore(state, player, offer, demand, market);
 
     if (score >= c.acceptThreshold) {
         const userTeam = state.teams[state.userTeamId];
@@ -201,7 +235,11 @@ export function negotiateOffer(
         return { status: 'finalRejected', hintSalary: null, negotiationRound: c.maxRounds };
     }
 
-    const hint = negotiation.round === 1 ? Math.round(demand / 100_000) * 100_000 : Math.round((demand * c.firmMinimumFactor) / 10_000) * 10_000;
+    // Truthful hints: the amount that actually clears the acceptance bar for
+    // the offered deal length. Round 1 is vague (rounded up), round 2 firm.
+    const required = requiredSalary(state, player, offer.years, mode, market, economy);
+    // Round 1 hints vaguely above the mark; round 2 states the exact minimum.
+    const hint = negotiation.round === 1 ? Math.ceil(required / 100_000) * 100_000 : required;
     negotiation.round++;
     negotiation.hintSalary = hint;
     return { status: 'rejected', hintSalary: hint, negotiationRound: negotiation.round - 1 };
@@ -381,9 +419,9 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
     const round = state.currentRound;
     const tCfg = market.transfers;
 
-    // Expire offers and stale youth decisions.
+    // Expire offers. Youth prospects do NOT expire: promising talents can be
+    // invited to the first team at any point of the season.
     state.market.incomingOffers = state.market.incomingOffers.filter((o) => o.expiresRound >= round);
-    state.market.youthProspects = state.market.youthProspects.filter((p) => p.decideByRound >= round);
 
     if (isMarketOpen(state, market)) {
         // AI offers for listed players.
@@ -477,10 +515,11 @@ export function runYouthIntake(
     economy: EconomyConfig,
     pools: NamePools,
     rng: Rng,
+    options?: { count?: number; markDone?: boolean },
 ): YouthProspect[] {
     const y = market.youth;
     const academyLevel = state.club.facilities.academy;
-    const count = 1 + Math.floor(academyLevel / 2);
+    const count = options?.count ?? 1 + Math.floor(academyLevel / 2);
     const band = y.starBandByLevel[academyLevel - 1] ?? 2;
     const used = new Set<string>(Object.values(state.players).map((p) => `${p.firstName} ${p.lastName}`));
     const prospects: YouthProspect[] = [];
@@ -523,7 +562,9 @@ export function runYouthIntake(
         state.players[player.id] = player;
     }
     state.market.youthProspects.push(...prospects);
-    state.market.youthIntakeDone = true;
+    if (options?.markDone !== false) {
+        state.market.youthIntakeDone = true;
+    }
     void economy;
     return prospects;
 }

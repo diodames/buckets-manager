@@ -145,6 +145,28 @@ describe('press conference', () => {
         }
     });
 
+    it('a 3+ streak adds the streak question and variants stay in range', () => {
+        const base = { won: true, margin: 5, starId: null, starPoints: 0, injuredId: null };
+        const winQs = generatePressConference({ ...base, streak: 3 }, pressConfig, createRng(1));
+        expect(winQs.some((q) => q.def.id === 'streakWin')).toBe(true);
+        const lossQs = generatePressConference({ ...base, won: false, streak: -4 }, pressConfig, createRng(2));
+        expect(lossQs.some((q) => q.def.id === 'streakLoss')).toBe(true);
+        for (const q of [...winQs, ...lossQs]) {
+            expect([0, 1]).toContain(q.variant);
+        }
+    });
+
+    it('every press question has both phrasing variants and all choice texts', async () => {
+        const { en } = await import('../src/i18n/en');
+        for (const def of pressConfig.defs) {
+            expect(en, `press.${def.id}.q`).toHaveProperty(`press.${def.id}.q`);
+            expect(en, `press.${def.id}.q2`).toHaveProperty(`press.${def.id}.q2`);
+            for (const choice of def.choices) {
+                expect(en, `press.${def.id}.${choice.id}`).toHaveProperty(`press.${def.id}.${choice.id}`);
+            }
+        }
+    });
+
     it('press sponsor effects shift active deal relationships', () => {
         const state = createNewGame(config, 301, 'NYM');
         state.club.sponsors.push({ id: 'd1', brandKey: 'banka', tier: 3, perRound: 180_000, seasonsRemaining: 1, relationship: 50 });

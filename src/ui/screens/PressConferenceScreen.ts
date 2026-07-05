@@ -89,7 +89,8 @@ export class PressConferenceScreen implements Screen {
         const state = this.ctx.session?.state;
         const player = question.playerId && state ? state.players[question.playerId] : null;
         grid.put(4, 4, ROLE.accent, t('press.reporter'));
-        grid.put(4, 6, ROLE.textBright, t(`press.${question.def.id}.q` as TranslationKey, { player: player ? shortPlayerName(player) : '' }));
+        const questionKey = question.variant === 1 ? `press.${question.def.id}.q2` : `press.${question.def.id}.q`;
+        grid.put(4, 6, ROLE.textBright, t(questionKey as TranslationKey, { player: player ? shortPlayerName(player) : '' }));
 
         if (this.lastResult) {
             const effects: string[] = [];

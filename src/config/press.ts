@@ -76,6 +76,24 @@ export const pressConfig = Object.freeze({
                 { id: 'blameSchedule', fanSupport: 1, sponsorRelation: -2 },
             ],
         },
+        {
+            id: 'streakWin',
+            context: 'streak',
+            choices: [
+                { id: 'humble', teamMorale: 2, sponsorRelation: 2 },
+                { id: 'title', teamMorale: 3, fanSupport: 4, sponsorRelation: -2 },
+                { id: 'focus', teamMorale: 1, sponsorRelation: 1 },
+            ],
+        },
+        {
+            id: 'streakLoss',
+            context: 'streak',
+            choices: [
+                { id: 'calm', teamMorale: 2, fanSupport: -1 },
+                { id: 'crisis', teamMorale: -4, fanSupport: 2, sponsorRelation: 1 },
+                { id: 'protect', teamMorale: 3, sponsorRelation: -2 },
+            ],
+        },
     ]),
 });
 

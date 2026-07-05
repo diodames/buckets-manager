@@ -53,9 +53,13 @@ export class DashboardScreen implements Screen {
             { id: 'instant', label: t('dashboard.playInstant'), disabled: seasonOver },
             { id: 'roster', label: t('dashboard.roster') },
             { id: 'market', label: t('market.title') },
-            ...(session.state.market.youthProspects.length > 0
-                ? [{ id: 'youth', label: `${t('youth.title')} (${session.state.market.youthProspects.length})` }]
-                : []),
+            {
+                id: 'youth',
+                label:
+                    session.state.market.youthProspects.length > 0
+                        ? `${t('youth.title')} (${session.state.market.youthProspects.length})`
+                        : t('youth.title'),
+            },
             { id: 'training', label: t('training.title') },
             { id: 'club', label: t('club.title') },
             { id: 'finances', label: t('finance.title') },

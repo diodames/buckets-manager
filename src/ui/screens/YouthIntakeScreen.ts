@@ -95,7 +95,6 @@ export class YouthIntakeScreen implements Screen {
             if (selected) {
                 const row = 6 + this.menu.items.length + 1;
                 grid.put(3, row, ROLE.accent, t(`youth.quote.${selected.quoteIndex}` as Parameters<typeof t>[0]));
-                grid.put(3, row + 1, ROLE.textDim, t('youth.decideBy', { round: selected.decideByRound }));
             }
         }
         if (this.message) {

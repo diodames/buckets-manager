@@ -20,18 +20,31 @@ export interface MomentChoiceDef {
 export interface MomentDef {
     id: string;
     // Trigger context evaluated by the engine.
-    trigger: 'hotStreak' | 'coldStreak' | 'injuryScare' | 'refereeCall' | 'crowdSurge';
+    trigger: 'hotStreak' | 'coldStreak' | 'injuryScare' | 'refereeCall' | 'crowdSurge' | 'blowout' | 'clutch';
     // Base chance evaluated once per eligible situation.
     chance: number;
     homeOnly?: boolean;
     choices: MomentChoiceDef[];
 }
 
+export interface TeamTalkDef {
+    id: string;
+    buffMultiplier: number;
+    buffPossessions: number;
+    teamMorale: number;
+}
+
 export const momentsConfig = Object.freeze({
     // At most this many moments per match, and never closer than this many
     // possessions apart.
-    maxPerMatch: 2,
-    minPossessionGap: 25,
+    maxPerMatch: 3,
+    minPossessionGap: 20,
+    // Pre-match team talk styles (dressing-room speech).
+    teamTalks: Object.freeze<TeamTalkDef[]>([
+        { id: 'calm', buffMultiplier: 1.03, buffPossessions: 12, teamMorale: 1 },
+        { id: 'fire', buffMultiplier: 1.08, buffPossessions: 7, teamMorale: 2 },
+        { id: 'demand', buffMultiplier: 1.05, buffPossessions: 10, teamMorale: -2 },
+    ]),
     defs: Object.freeze<MomentDef[]>([
         {
             id: 'hotStreak',
@@ -77,6 +90,24 @@ export const momentsConfig = Object.freeze({
             choices: [
                 { id: 'ride', buffMultiplier: 1.08, buffPossessions: 6, energyBoost: 5 },
                 { id: 'focus', teamMorale: 1, energyBoost: 3 },
+            ],
+        },
+        {
+            id: 'blowoutLead',
+            trigger: 'blowout',
+            chance: 0.5,
+            choices: [
+                { id: 'rest', teamMorale: 2, energyBoost: 8 },
+                { id: 'pressOn', buffMultiplier: 1.05, buffPossessions: 8, teamMorale: -1, injuryRiskMultiplier: 1.3 },
+            ],
+        },
+        {
+            id: 'clutchTime',
+            trigger: 'clutch',
+            chance: 0.65,
+            choices: [
+                { id: 'heroBall', buffMultiplier: 1.1, buffPossessions: 5, playerMorale: 5, injuryRiskMultiplier: 1.2 },
+                { id: 'teamPlay', buffMultiplier: 1.05, buffPossessions: 6, teamMorale: 2 },
             ],
         },
     ]),

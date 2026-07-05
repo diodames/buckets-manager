@@ -47,7 +47,7 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
         players[agent.id] = agent;
     }
     const teamIds = config.league.teams.map((t) => t.id);
-    return {
+    const state: GameState = {
         version: SAVE_FORMAT_VERSION,
         masterSeed: seed,
         userTeamId,
@@ -74,6 +74,14 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
             youthIntakeDone: false,
         },
     };
+    // The academy is populated from day one so promising talents can be
+    // invited to the first team at any time; the main intake wave still
+    // arrives mid-season.
+    runYouthIntake(state, config.market, config.economy, config.names, rng.fork('youth:initial'), {
+        count: 2,
+        markDone: false,
+    });
+    return state;
 }
 
 export function seasonRounds(state: GameState, config: GameConfig): number {
