@@ -1,72 +1,50 @@
-# blit386-scaffold-tmp
+# Buckets Manager
 
-A little pixel game built with [BLIT386](https://www.npmjs.com/package/blit386).
+A retro basketball management sim built with [BLIT386](https://www.npmjs.com/package/blit386) — a pixel-art game engine
+for the browser. Take charge of a Czech NBL club: set your tactics, run training, negotiate contracts, work the transfer
+market, bring juniors up from the youth academy, and chase the playoffs.
 
 ## Run it
 
-You need [Node.js](https://nodejs.org) installed once (download the big **LTS** button). Then, in this folder:
+Requires [Node.js](https://nodejs.org) 22.18 or newer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-A web address like `http://localhost:5173` appears. Open it in your browser to play.
+Open the address Vite prints (usually `http://localhost:5173`) in your browser.
 
-- **Phone or tablet:** tap or drag — the paddle follows your finger.
-- **Computer:** move the mouse to steer the paddle, or use the left and right arrow keys as a fallback.
+## Features
 
-Catch the falling blocks before they reach the bottom.
+- **Season simulation** — full NBL season with standings, schedule, and playoffs.
+- **Live matches** — pauseable match engine with 15+ offensive tactics, defensive formations, energy and injury models,
+  and an on-court panel showing your starting five in action.
+- **Squad management** — lineup editor with auto-substitutions, player stats, contract negotiation and termination.
+- **Transfer market** — potential-driven transfer interest, honest negotiations, real club colors.
+- **Youth academy** — open academy pipeline; juniors return from loan and can be bought out.
+- **Economy & press** — budgets, sponsor income, and post-match press conferences.
+- Czech and English localization, save/load, and a software-renderer fallback (`?backend=software`) for browsers
+  without WebGPU.
 
-## Change the game
+## Commands
 
-Open `src/game.js`. Every line has a comment explaining what it does. Change a number or a color, save the file, and
-your browser updates by itself. A few things to try:
+- `npm run dev` — start the dev server with hot reload.
+- `npm run build` — production build into `dist/`.
+- `npm test` — run the test suite (Vitest).
+- `npm run typecheck` — TypeScript type check.
+- `npm run lint` / `npm run format` — Biome lint and format.
 
-- Make the blocks fall faster: find `ITEM_FALL_SPEED`.
-- Make the paddle wider or narrower: `PADDLE_WIDTH`.
-- Change the colors: the `palette.set(...)` lines in `init`.
+## Deploy
 
-## Helpful commands
-
-- `npm run dev` - start the game (the everyday command).
-- `npx blit run` - the same thing, the friendly way.
-- `npx blit doctor` - check your setup if something seems off.
-- `npx blit upgrade` - update BLIT386 to the latest version.
-
-The `blit` helper is installed inside this project, not on your whole computer, so it needs `npx` in front (it means
-"run the helper that lives in this project"). Typing plain `blit` would say "command not found."
-
-## Peek behind the scenes
-
-While the game runs, you can open the engine overlay - a small panel showing frames per second and which renderer is
-active.
-
-- **Keyboard:** press the key just below Esc, in the very top-left corner of your keyboard. On US keyboards it is
-  printed with `` ` `` and `~`. Classic PC games like Quake used that exact key to open their command console, and
-  BLIT386 keeps the tradition. The engine listens for the key's **position**, not the symbol printed on it - on some
-  keyboard layouts the `~` symbol sits somewhere else entirely, but the overlay key is still the one below Esc.
-- **No keyboard, or can't find the key?** Click or tap the bottom-left corner of the game screen instead. That works
-  everywhere: phones, tablets, the Steam Deck.
-
-## Share your game
-
-When you want to show your game to a friend:
+The production build is served as static assets from Cloudflare Workers (see `wrangler.jsonc`):
 
 ```bash
 npm run build
+npx wrangler deploy
 ```
-
-This packs everything into a `dist/` folder - a plain website, no server needed. Drag that folder onto a free static
-host such as [Netlify Drop](https://app.netlify.com/drop) or [Cloudflare Pages](https://pages.cloudflare.com), and you
-get a link anyone can open.
-
-## When something breaks
-
-It will - that is normal. Open `docs/when-something-breaks.md`. It explains how to read error messages and walks through
-the usual suspects: blank screens, "command not found," forgotten `await`, and more.
 
 ## Learn more
 
-- `AGENTS.md` - a short home base for you or an AI assistant.
-- `docs/` - friendly guides: getting started, the game loop, drawing, input, colors, and fixing problems.
+- `AGENTS.md` — a short home base for AI assistants working on the project.
+- `docs/` — BLIT386 engine guides: getting started, the game loop, drawing, input, colors, and troubleshooting.

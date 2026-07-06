@@ -1,7 +1,7 @@
 // English is the base dictionary: its keys define the TranslationKey type,
 // so a key missing in another locale is a compile error.
 export const en = {
-    'app.title': 'BASKETBALL MANAGER',
+    'app.title': 'BUCKETS MANAGER',
     'app.subtitle': 'A retro hoops management game',
 
     'menu.newGame': 'New Game',

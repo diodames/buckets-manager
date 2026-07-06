@@ -3,7 +3,7 @@ import type { TranslationKey } from './en';
 // Czech dictionary. Diacritics are kept here; rendering folds them to ASCII
 // until the custom bitmap font lands (M2).
 export const cs: Record<TranslationKey, string> = {
-    'app.title': 'BASKETBALOVY MANAZER',
+    'app.title': 'BUCKETS MANAGER',
     'app.subtitle': 'Retro basketbalová manažerská hra',
 
     'menu.newGame': 'Nová hra',

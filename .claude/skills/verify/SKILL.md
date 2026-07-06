@@ -1,9 +1,9 @@
 ---
 name: verify
-description: How to build, launch, and drive the Basketball Manager game (BLIT386/Vite) for end-to-end verification in a browser.
+description: How to build, launch, and drive the Buckets Manager game (BLIT386/Vite) for end-to-end verification in a browser.
 ---
 
-# Verifying Basketball Manager
+# Verifying Buckets Manager
 
 ## Launch
 
