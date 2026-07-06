@@ -1,0 +1,9 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "basketball-manager",
+    "compatibility_date": "2026-06-01",
+    // Static Vite build served directly from Workers assets.
+    "assets": {
+        "directory": "./dist"
+    }
+}
