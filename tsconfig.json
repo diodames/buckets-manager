@@ -13,7 +13,7 @@
         "noUnusedParameters": true,
         "verbatimModuleSyntax": true,
         "skipLibCheck": true,
-        "types": ["node"],
+        "types": ["node", "vite/client"],
         "noEmit": true
     },
     "include": ["src", "tests", "vite.config.js"]

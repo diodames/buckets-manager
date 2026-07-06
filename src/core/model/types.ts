@@ -205,6 +205,28 @@ export interface MarketState {
     youthIntakeDone: boolean;
 }
 
+export interface PlayoffSeries {
+    id: string;
+    // 0-based stage index (0 = quarterfinals with an 8-team format).
+    stage: number;
+    // Bracket position within the stage, preserved across stages.
+    slot: number;
+    // Higher seed; holds home court in odd-numbered games.
+    homeTeamId: TeamId;
+    awayTeamId: TeamId;
+    homeWins: number;
+    awayWins: number;
+    games: Fixture[];
+}
+
+export interface PlayoffState {
+    stage: number;
+    // Original seeding, 1-based by regular-season standing.
+    seeds: Record<TeamId, number>;
+    series: PlayoffSeries[];
+    championTeamId: TeamId | null;
+}
+
 export interface GameState {
     version: number;
     masterSeed: number;
@@ -218,6 +240,8 @@ export interface GameState {
     // The user club's management state (AI clubs keep no books).
     club: ClubState;
     market: MarketState;
+    // Post-season bracket; null until the regular season ends.
+    playoffs: PlayoffState | null;
 }
 
 export function createEmptyBoxLine(): BoxLine {

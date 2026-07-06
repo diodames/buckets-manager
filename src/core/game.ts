@@ -9,6 +9,9 @@ import type { MarketConfig } from '../config/market';
 import { realArenaCapacity, roundEconomyTick, type RoundEconomyResult } from './economy';
 import { generateFreeAgents, generateLeague } from './league/generate';
 import { baseSalary, marketTick, runYouthIntake } from './market';
+import {
+    activeSeries, maybeAdvanceStage, nextSeriesFixture, recordSeriesGame, startPlayoffs, userActiveSeries,
+} from './playoffs';
 import { createSchedule, totalRounds } from './league/schedule';
 import type { Fixture, GameState, MatchSummary, Player, PlayerId, Position, Tactics, TeamId } from './model/types';
 import { overallRating, POSITIONS } from './model/types';
@@ -16,7 +19,7 @@ import { createRng, hashString } from './rng';
 import { MatchEngine, simulateMatch, type MatchOutcome, type TeamSimInput } from './sim/matchEngine';
 import { weeklyTrainingTick } from './training';
 
-export const SAVE_FORMAT_VERSION = 4;
+export const SAVE_FORMAT_VERSION = 5;
 
 export interface GameConfig {
     league: LeagueConfig;
@@ -73,6 +76,7 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
             youthProspects: [],
             youthIntakeDone: false,
         },
+        playoffs: null,
     };
     // The academy is populated from day one so promising talents can be
     // invited to the first team at any time; the main intake wave still
@@ -96,12 +100,16 @@ export function fixturesOfRound(state: GameState, round: number): Fixture[] {
     return state.fixtures.filter((f) => f.round === round);
 }
 
-export function nextUserFixture(state: GameState): Fixture | null {
-    return (
+export function nextUserFixture(state: GameState, config?: GameConfig): Fixture | null {
+    const regular =
         state.fixtures.find(
             (f) => f.result === null && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
-        ) ?? null
-    );
+        ) ?? null;
+    if (regular || !config || !state.playoffs) {
+        return regular;
+    }
+    const series = userActiveSeries(state, config.league);
+    return series ? nextSeriesFixture(series) : null;
 }
 
 /** Deterministic per-fixture seed derived from the master seed. */
@@ -159,11 +167,21 @@ function buildInput(teamId: TeamId, players: Player[], tactics: Tactics): TeamSi
     };
 }
 
-/** Builds the interactive engine for the user's fixture of the current round. */
+/** Builds the interactive engine for the user's next game (league or playoff). */
 export function prepareUserMatch(state: GameState, config: GameConfig): { fixture: Fixture; engine: MatchEngine } {
-    const fixture = fixturesOfRound(state, state.currentRound).find(
-        (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
-    );
+    let fixture: Fixture | undefined;
+    if (isSeasonOver(state, config)) {
+        ensurePlayoffs(state, config);
+        const series = userActiveSeries(state, config.league);
+        if (!series) {
+            throw new Error('prepareUserMatch: no pending playoff game for the user');
+        }
+        fixture = nextSeriesFixture(series);
+    } else {
+        fixture = fixturesOfRound(state, state.currentRound).find(
+            (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
+        );
+    }
     if (!fixture || fixture.result) {
         throw new Error('prepareUserMatch: no pending user fixture this round');
     }
@@ -217,51 +235,17 @@ export interface RoundResult {
     userInjuredId: PlayerId | null;
     // New academy prospects arrived this round.
     youthIntake: boolean;
+    // True when the results are post-season games.
+    isPlayoff: boolean;
 }
 
-/**
- * Completes the current round: books the user match outcome (from the live
- * engine or instant sim), sims all AI fixtures, then runs the weekly economy
- * and training ticks and advances the round counter.
- */
-export function completeRound(
+/** Weekly bookkeeping shared by regular-season and playoff rounds. */
+function finishRoundCommon(
     state: GameState,
     config: GameConfig,
-    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
-): RoundResult {
-    if (isSeasonOver(state, config)) {
-        throw new Error('completeRound: season is over');
-    }
-    const round = state.currentRound;
-    const results: RoundResult['results'] = [];
-    let userInjuredId: PlayerId | null = null;
-
-    if (userMatch) {
-        userMatch.fixture.result = userMatch.outcome.summary;
-        applyOutcomeToPlayers(state, userMatch.outcome);
-        const userTeam = state.teams[state.userTeamId];
-        userInjuredId =
-            Object.keys(userMatch.outcome.injuries).find((id) => userTeam?.playerIds.includes(id)) ?? null;
-        results.push({ fixture: userMatch.fixture, summary: userMatch.outcome.summary });
-    }
-
-    for (const fixture of fixturesOfRound(state, round)) {
-        if (fixture.result) {
-            continue;
-        }
-        const { summary, outcome } = simulateMatch({
-            home: toSimInput(state, fixture.homeTeamId),
-            away: toSimInput(state, fixture.awayTeamId),
-            seed: fixtureSeed(state, fixture.id),
-            balance: config.balance,
-            moments: config.moments,
-        });
-        fixture.result = summary;
-        applyOutcomeToPlayers(state, outcome);
-        results.push({ fixture, summary });
-    }
-
-    // Economy tick from the user's perspective.
+    round: number,
+    results: RoundResult['results'],
+): { economy: RoundEconomyResult | null; youthIntake: boolean } {
     let economy: RoundEconomyResult | null = null;
     const userFixture = results.find(
         (r) => r.fixture.homeTeamId === state.userTeamId || r.fixture.awayTeamId === state.userTeamId,
@@ -305,14 +289,114 @@ export function completeRound(
     }
 
     state.currentRound++;
-    return { round, results, economy, userInjuredId, youthIntake };
+    return { economy, youthIntake };
+}
+
+function bookUserMatch(
+    state: GameState,
+    userMatch: { fixture: Fixture; outcome: MatchOutcome },
+    results: RoundResult['results'],
+): PlayerId | null {
+    userMatch.fixture.result = userMatch.outcome.summary;
+    applyOutcomeToPlayers(state, userMatch.outcome);
+    const userTeam = state.teams[state.userTeamId];
+    results.push({ fixture: userMatch.fixture, summary: userMatch.outcome.summary });
+    return Object.keys(userMatch.outcome.injuries).find((id) => userTeam?.playerIds.includes(id)) ?? null;
+}
+
+function simFixture(state: GameState, config: GameConfig, fixture: Fixture, results: RoundResult['results']): void {
+    const { summary, outcome } = simulateMatch({
+        home: toSimInput(state, fixture.homeTeamId),
+        away: toSimInput(state, fixture.awayTeamId),
+        seed: fixtureSeed(state, fixture.id),
+        balance: config.balance,
+        moments: config.moments,
+    });
+    fixture.result = summary;
+    applyOutcomeToPlayers(state, outcome);
+    results.push({ fixture, summary });
+}
+
+/** Starts the bracket lazily once the regular season has finished. */
+export function ensurePlayoffs(state: GameState, config: GameConfig): void {
+    if (isSeasonOver(state, config) && !state.playoffs) {
+        startPlayoffs(state, config.league);
+    }
+}
+
+/** True once the playoff champion is crowned — nothing left to play. */
+export function isCampaignOver(state: GameState, config: GameConfig): boolean {
+    return isSeasonOver(state, config) && state.playoffs?.championTeamId != null;
+}
+
+function completePlayoffRound(
+    state: GameState,
+    config: GameConfig,
+    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
+): RoundResult {
+    ensurePlayoffs(state, config);
+    if (isCampaignOver(state, config)) {
+        throw new Error('completeRound: the season including playoffs is over');
+    }
+    const round = state.currentRound;
+    const results: RoundResult['results'] = [];
+    let userInjuredId: PlayerId | null = null;
+
+    for (const series of activeSeries(state, config.league)) {
+        const isUserSeries = series.homeTeamId === state.userTeamId || series.awayTeamId === state.userTeamId;
+        if (isUserSeries && userMatch) {
+            userInjuredId = bookUserMatch(state, userMatch, results);
+            recordSeriesGame(series, userMatch.fixture);
+        } else {
+            const fixture = nextSeriesFixture(series);
+            simFixture(state, config, fixture, results);
+            recordSeriesGame(series, fixture);
+        }
+    }
+    maybeAdvanceStage(state, config.league);
+
+    const common = finishRoundCommon(state, config, round, results);
+    return { round, results, ...common, userInjuredId, isPlayoff: true };
+}
+
+/**
+ * Completes the current round: books the user match outcome (from the live
+ * engine or instant sim), sims all remaining games (league round or playoff
+ * series), then runs the weekly economy and training ticks.
+ */
+export function completeRound(
+    state: GameState,
+    config: GameConfig,
+    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
+): RoundResult {
+    if (isSeasonOver(state, config)) {
+        return completePlayoffRound(state, config, userMatch);
+    }
+    const round = state.currentRound;
+    const results: RoundResult['results'] = [];
+    let userInjuredId: PlayerId | null = null;
+
+    if (userMatch) {
+        userInjuredId = bookUserMatch(state, userMatch, results);
+    }
+    for (const fixture of fixturesOfRound(state, round)) {
+        if (!fixture.result) {
+            simFixture(state, config, fixture, results);
+        }
+    }
+
+    const common = finishRoundCommon(state, config, round, results);
+    return { round, results, ...common, userInjuredId, isPlayoff: false };
 }
 
 /** Convenience: instant-sim the user match and complete the round in one call. */
 export function advanceRoundInstant(state: GameState, config: GameConfig): RoundResult {
-    const pending = fixturesOfRound(state, state.currentRound).some(
-        (f) => !f.result && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
-    );
+    ensurePlayoffs(state, config);
+    const pending = isSeasonOver(state, config)
+        ? userActiveSeries(state, config.league) !== null
+        : fixturesOfRound(state, state.currentRound).some(
+              (f) => !f.result && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
+          );
     if (!pending) {
         return completeRound(state, config, null);
     }

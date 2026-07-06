@@ -67,6 +67,13 @@ const migrations: Record<number, (old: unknown) => unknown> = {
         file.state.version = 4;
         return { ...file, formatVersion: 4 };
     },
+    // v4 -> v5: post-season bracket state.
+    4: (old) => {
+        const file = old as { formatVersion: number; state: Record<string, unknown> };
+        file.state.playoffs ??= null;
+        file.state.version = 5;
+        return { ...file, formatVersion: 5 };
+    },
 };
 
 export function serializeSave(state: GameState, name: string, savedAtIso: string): string {

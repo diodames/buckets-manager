@@ -49,6 +49,11 @@ export const leagueConfig = Object.freeze({
     playersPerTeam: 12,
     roundRobinLegs: 2,
     startingSeasonYear: 2025,
+    // Post-season: top N seeds, wins needed per stage (QF, SF, Finals).
+    playoffs: Object.freeze({
+        teams: 8,
+        winsNeeded: Object.freeze([2, 2, 3]),
+    }),
     teams: Object.freeze<TeamDef[]>([
         {
             id: 'NYM', abbr: 'NYM', name: 'ERA Basketball Nymburk', shortName: 'Nymburk', city: 'Nymburk',

@@ -424,7 +424,16 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
     state.market.incomingOffers = state.market.incomingOffers.filter((o) => o.expiresRound >= round);
 
     if (isMarketOpen(state, market)) {
-        // AI offers for listed players.
+        // AI offers for listed players: interest scales with how attractive
+        // the player is (overall vs league median, potential headroom, age),
+        // so stars draw bids within a round or two while journeymen may wait.
+        const medianOverall = (() => {
+            const overalls = Object.values(state.players)
+                .filter((p) => p.teamId !== null)
+                .map((p) => overallRating(p.attributes))
+                .sort((a, b) => a - b);
+            return overalls[Math.floor(overalls.length / 2)] ?? 55;
+        })();
         for (const listing of state.market.listings) {
             const player = state.players[listing.playerId];
             if (!player || player.teamId !== state.userTeamId) {
@@ -433,7 +442,12 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             if (state.market.incomingOffers.some((o) => o.playerId === listing.playerId)) {
                 continue;
             }
-            if (!rng.chance(tCfg.offerChancePerRound)) {
+            const overall = overallRating(player.attributes);
+            const quality = (overall - medianOverall) / 20; // ~ -1 .. +1
+            const upside = Math.max(0, player.potential - overall) / 25; // 0 .. ~1
+            const youth = player.age <= 24 ? 0.15 : player.age >= 32 ? -0.2 : 0;
+            const interest = Math.max(0.08, Math.min(0.95, tCfg.offerChancePerRound + quality * 0.35 + upside * 0.3 + youth));
+            if (!rng.chance(interest)) {
                 continue;
             }
             const buyers = Object.keys(state.teams).filter((id) => id !== state.userTeamId);

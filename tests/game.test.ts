@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { validateAllConfigs } from '../src/config';
 import { leagueConfig } from '../src/config/league';
-import { advanceRoundInstant, createNewGame, isSeasonOver, seasonRounds } from '../src/core/game';
+import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver, seasonRounds } from '../src/core/game';
 import { computeStandings } from '../src/core/league/standings';
 import { POSITIONS } from '../src/core/model/types';
 import { testConfig as config } from './helpers';
@@ -99,11 +99,18 @@ describe('full season (instant rounds)', () => {
         expect(Number.isFinite(state.club.budget)).toBe(true);
     });
 
-    it('refuses to advance past the season end', () => {
+    it('continues into the playoffs and refuses to advance past the title', () => {
         const state = createNewGame(config, 3, 'NYM');
         while (!isSeasonOver(state, config)) {
             advanceRoundInstant(state, config);
         }
+        // Post-season: advancing now plays playoff rounds until a champion.
+        let guard = 0;
+        while (!isCampaignOver(state, config) && guard++ < 40) {
+            advanceRoundInstant(state, config);
+        }
+        expect(isCampaignOver(state, config)).toBe(true);
+        expect(state.playoffs?.championTeamId).toBeTruthy();
         expect(() => advanceRoundInstant(state, config)).toThrow();
     });
 });

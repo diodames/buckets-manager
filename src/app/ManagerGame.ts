@@ -1,5 +1,6 @@
 import { BT, Vector2i, type HardwareSettings } from 'blit386';
 import { balanceConfig, displayConfig, leagueConfig, namePools, validateAllConfigs } from '../config';
+import { advanceRoundInstant } from '../core/game';
 import { economyConfig } from '../config/economy';
 import { marketConfig } from '../config/market';
 import { momentsConfig } from '../config/moments';
@@ -77,6 +78,17 @@ export class ManagerGame {
             };
             this.ctx = ctx;
             ctx.screens.push(new MainMenuScreen(ctx));
+            if (import.meta.env.DEV) {
+                // Dev-only console hook for driving the game headlessly.
+                (window as unknown as Record<string, unknown>).__bbm = {
+                    ctx,
+                    simRound: () => {
+                        if (ctx.session) {
+                            ctx.session.lastRound = advanceRoundInstant(ctx.session.state, ctx.config);
+                        }
+                    },
+                };
+            }
             return true;
         } catch (error) {
             // Fail fast but visibly: keep the loop alive to render the error.
