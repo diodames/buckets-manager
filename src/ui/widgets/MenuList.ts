@@ -28,6 +28,10 @@ export class MenuList {
         this.layout = layout;
     }
 
+    setRow(row: number): void {
+        this.layout.row = row;
+    }
+
     private move(direction: -1 | 1): void {
         if (this.items.length === 0) {
             return;

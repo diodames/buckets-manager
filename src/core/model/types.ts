@@ -50,6 +50,8 @@ export interface Player {
     id: PlayerId;
     firstName: string;
     lastName: string;
+    /** ISO 3166-1 alpha-3 (e.g. CZE, USA). */
+    nationality: string;
     age: number;
     heightCm: number;
     position: Position;
@@ -107,12 +109,32 @@ export interface MatchSummary {
     seed: number;
 }
 
+export type CompetitionId = 'nbl' | 'bcl';
+
+export type BclPhase =
+    | 'qualifying'
+    | 'regularSeason'
+    | 'playIn'
+    | 'roundOf16'
+    | 'quarterFinals'
+    | 'finalFour'
+    | 'complete';
+
 export interface Fixture {
     id: string;
     round: number;
     homeTeamId: TeamId;
     awayTeamId: TeamId;
     result: MatchSummary | null;
+    competitionId?: CompetitionId;
+    // Calendar week when this fixture is played (defaults to round for NBL).
+    week?: number;
+}
+
+export interface BclGroup {
+    id: string;
+    teamIds: TeamId[];
+    fixtures: Fixture[];
 }
 
 export interface StandingsRow {
@@ -127,7 +149,7 @@ export interface StandingsRow {
 export interface LedgerEntry {
     round: number;
     // i18n key suffix under ledger.<kind>.
-    kind: 'tickets' | 'sponsors' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'transferIn' | 'transferOut' | 'buyout';
+    kind: 'tickets' | 'sponsors' | 'sponsorSigning' | 'sponsorBonus' | 'sponsorPenalty' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'leaguePrize' | 'transferIn' | 'transferOut' | 'buyout';
     amount: number;
 }
 
@@ -139,6 +161,12 @@ export interface SponsorDeal {
     // Remaining seasons including the current one.
     seasonsRemaining: number;
     relationship: number;
+    // Performance clause: rank targets use regular-season finish; promisedMaxRank 1 = NBL playoff champion.
+    promisedMaxRank: number;
+    // One-time CZK bonus paid at season end when the target is met.
+    bonusAmount: number;
+    // One-time CZK signing fee paid when the deal was accepted (0 for legacy deals).
+    signingBonus: number;
 }
 
 export interface SponsorOffer {
@@ -149,14 +177,31 @@ export interface SponsorOffer {
     seasons: number;
     // Offer expires after this round.
     expiresRound: number;
+    promisedMaxRank: number;
+    bonusAmount: number;
+    // One-time CZK signing fee paid on accept (tier-scaled when generated).
+    signingBonus: number;
+    // Ambition profile id for display (safe | standard | bold).
+    ambitionId: string;
+}
+
+export interface FacilityProject {
+    targetLevel: number;
+    startedRound: number;
+    completesRound: number;
 }
 
 export interface ClubState {
     budget: number;
     fanSupport: number;
+    ticketPrice: number;
     facilities: Record<FacilityKey, number>;
+    /** In-progress facility upgrades; benefits ramp until completion. */
+    facilityProjects: Partial<Record<FacilityKey, FacilityProject>>;
     sponsors: SponsorDeal[];
     sponsorOffers: SponsorOffer[];
+    /** When true, next offseason ambition offers are downgraded after a missed target. */
+    sponsorRenewalDowngrade: boolean;
     ledger: LedgerEntry[];
     trainingFocus: TrainingFocus;
 }
@@ -183,7 +228,35 @@ export interface NegotiationState {
     round: number;
     // Revealed information after rejections.
     hintSalary: number | null;
-    mode: 'renew' | 'freeAgent' | 'transferTerms';
+    mode: 'renew' | 'freeAgent' | 'transferTerms' | 'externalRetention';
+    /** Set when mode is externalRetention — links to the foreign club bid. */
+    externalOfferId?: string;
+    /** Agreed transfer fee when mode is transferTerms (personal terms step). */
+    agreedTransferFee?: number;
+}
+
+export type ExternalOfferTier = 'bcl' | 'euroleague';
+
+export type ExternalOfferStatus = 'pending' | 'accepted' | 'rejected' | 'retained' | 'departed';
+
+export interface ExternalOffer {
+    id: string;
+    playerId: PlayerId;
+    tier: ExternalOfferTier;
+    clubName: string;
+    clubCity: string;
+    transferFee: number;
+    salaryOffer: number;
+    contractYears: 2 | 3;
+    breakthroughRatio: number;
+    /** Per-game averages for UI presentation. */
+    seasonPpg: number;
+    seasonGameScore: number;
+    seasonYear: number;
+    expiresRound: number;
+    status: ExternalOfferStatus;
+    /** After rejecting a Euroleague bid, player may still leave at the deadline. */
+    mayForceDeparture?: boolean;
 }
 
 export interface YouthProspect {
@@ -193,6 +266,13 @@ export interface YouthProspect {
     starMax: number;
     quoteIndex: number;
     decideByRound: number;
+    // Completed seasons spent unsigned in the academy (increments each offseason).
+    academySeasons: number;
+}
+
+export interface FixedYouthArrival {
+    playerId: PlayerId;
+    arriveRound: number;
 }
 
 export interface MarketState {
@@ -202,7 +282,27 @@ export interface MarketState {
     // playerId -> locked until round (failed negotiations, M3).
     negotiationLocks: Record<PlayerId, number>;
     youthProspects: YouthProspect[];
+    /** New academy arrivals (fixed + random intake) added in the current season. */
+    youthArrivalsThisSeason: number;
     youthIntakeDone: boolean;
+    /** Scheduled real academy talents not yet shown in the youth intake list. */
+    pendingFixedYouthArrivals: FixedYouthArrival[];
+    /** Real signings waiting to enter the FA pool (timed releases). */
+    pendingFreeAgents: PendingFreeAgent[];
+    /** Departure events already processed this season. */
+    processedDepartureKeys: string[];
+    /** Real-world signing hints for AI club interest. */
+    signingHints: Record<PlayerId, TeamId>;
+    /** Breakthrough-season bids from BCL / Euroleague clubs. */
+    externalOffers: ExternalOffer[];
+    /** True after an unsolicited bid arrives this season (no market listing). */
+    unsolicitedBidUsed: boolean;
+}
+
+export interface PendingFreeAgent {
+    id: string;
+    player: Player;
+    availableFromRound: number;
 }
 
 export interface PlayoffSeries {
@@ -227,6 +327,83 @@ export interface PlayoffState {
     championTeamId: TeamId | null;
 }
 
+export interface CompetitionState {
+    id: CompetitionId;
+    phase: BclPhase;
+    fixtures: Fixture[];
+    groups: BclGroup[];
+    playoffs: PlayoffState | null;
+    qualifiedTeamIds: TeamId[];
+    championTeamId: TeamId | null;
+    prizePaid: boolean;
+    // User's BCL finish for prize calculation.
+    userFinish: BclUserFinish | null;
+}
+
+export type BclUserFinish =
+    | 'champion'
+    | 'finalist'
+    | 'semifinal'
+    | 'quarterfinal'
+    | 'roundOf16'
+    | 'groupStage'
+    | 'playIn'
+    | 'qualifying';
+
+export type NblPlayoffFinish = 'champion' | 'finalist' | 'semifinal' | 'quarterfinal' | 'playoffs' | 'missed';
+
+export type OffseasonMovementKind = 'retired' | 'leftAbroad' | 'freeAgent';
+
+export type OffseasonMovementReason = 'expired' | 'nonRenewal' | 'youthGraduate';
+
+export interface OffseasonPlayerMovement {
+    kind: OffseasonMovementKind;
+    name: string;
+    age: number;
+    position: Position;
+    formerTeamId: TeamId | null;
+    formerTeamName: string;
+    isUserPlayer: boolean;
+    reason?: OffseasonMovementReason;
+}
+
+export interface OffseasonReviewSummary {
+    nblFinish: NblPlayoffFinish;
+    nblPrize: number;
+    nblLeagueRank: number | null;
+    nblLeaguePrize: number;
+    bclQualified: boolean;
+    bclFinish: BclUserFinish | null;
+    bclPrize: number;
+    sponsorBonus: number;
+    sponsorTargetMet: boolean;
+    sponsorPromisedRank: number | null;
+    sponsorActualRank: number | null;
+    totalIncome: number;
+}
+
+export interface OffseasonSummary {
+    nblFinish: NblPlayoffFinish;
+    nblPrize: number;
+    nblLeagueRank: number | null;
+    nblLeaguePrize: number;
+    bclQualified: boolean;
+    bclFinish: BclUserFinish | null;
+    bclPrize: number;
+    contractsExpired: number;
+    newFreeAgents: number;
+    youthGraduated: number;
+    sponsorExpired: boolean;
+    sponsorBonus: number;
+    sponsorTargetMet: boolean;
+    sponsorPromisedRank: number | null;
+    sponsorActualRank: number | null;
+    breakthroughOffers: number;
+    playersRetired: number;
+    userRetirements: string[];
+    playerMovements: OffseasonPlayerMovement[];
+}
+
 export interface GameState {
     version: number;
     masterSeed: number;
@@ -234,6 +411,8 @@ export interface GameState {
     seasonYear: number;
     // 1-based round the league will play next; rounds+1 means season is over.
     currentRound: number;
+    // Master calendar week (NBL + BCL interleaved).
+    calendarWeek: number;
     teams: Record<TeamId, Team>;
     players: Record<PlayerId, Player>;
     fixtures: Fixture[];
@@ -242,6 +421,18 @@ export interface GameState {
     market: MarketState;
     // Post-season bracket; null until the regular season ends.
     playoffs: PlayoffState | null;
+    // Parallel competitions keyed by id.
+    competitions: Partial<Record<CompetitionId, CompetitionState>>;
+    // Finishing rank from the last completed NBL season (1-based).
+    lastSeasonStandings: Record<TeamId, number>;
+    // Flags to avoid double-paying prizes within a season.
+    nblPrizePaid: boolean;
+    // Last offseason summary for UI display.
+    lastOffseason: OffseasonSummary | null;
+    // Whether user qualified for BCL in the upcoming/current season.
+    bclQualified: boolean;
+    // Czech NBL teams that earned BCL entry from the last completed NBL playoffs.
+    lastBclQualifierIds: TeamId[];
 }
 
 export function createEmptyBoxLine(): BoxLine {

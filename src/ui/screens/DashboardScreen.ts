@@ -1,28 +1,42 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
-import { advanceRoundInstant, ensurePlayoffs, isCampaignOver, isSeasonOver, nextUserFixture, prepareUserMatch } from '../../core/game';
+import { advanceRoundInstant, ensurePlayoffs, isCampaignOver, isSeasonOver, nextUserFixture, prepareUserMatch, type RoundResult } from '../../core/game';
+import { canStartNextSeason, completeOffseasonRollover, prepareOffseasonReview } from '../../core/season';
+import { pendingExternalOffers } from '../../core/breakthrough';
 import { userActiveSeries } from '../../core/playoffs';
 import { buildPressContext, generatePressConference } from '../../core/press';
 import { createRng } from '../../core/rng';
 import { serializeSave } from '../../core/save/save';
+import { projectSeasonCashflow } from '../../core/cashflow';
 import { t } from '../../i18n';
 import { AUTOSAVE_KEY } from '../../services/storage';
-import { drawChrome } from '../chrome';
-import { fixtureLine, teamDef, teamName } from '../format';
+import { drawChrome, financeWarningMessage } from '../chrome';
+import { competitionLabel, fixtureLine, teamDef, teamName } from '../format';
 import { ROLE } from '../theme';
+import { ConfirmDialog } from './ConfirmDialog';
 import { ActionDialog } from './ActionDialog';
 import { MenuList } from '../widgets/MenuList';
+import { BclBracketScreen } from './BclBracketScreen';
+import { BclScheduleScreen } from './BclScheduleScreen';
+import { BclStandingsScreen } from './BclStandingsScreen';
+import { BclValuationsScreen } from './BclValuationsScreen';
+import { BoxScoreScreen } from './BoxScoreScreen';
 import { ClubScreen } from './ClubScreen';
 import { FinancesScreen } from './FinancesScreen';
 import { LineupScreen } from './LineupScreen';
 import { MarketScreen } from './MarketScreen';
 import { MatchLiveScreen } from './MatchLiveScreen';
+import { MainMenuScreen } from './MainMenuScreen';
+import { OffseasonReviewScreen } from './OffseasonReviewScreen';
+import { OffseasonScreen } from './OffseasonScreen';
+import { ExternalOfferScreen } from './ExternalOfferScreen';
 import { PlayoffsScreen } from './PlayoffsScreen';
 import { PressConferenceScreen } from './PressConferenceScreen';
 import { RosterScreen } from './RosterScreen';
 import { SaveLoadScreen } from './SaveLoadScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { SettingsScreen } from './SettingsScreen';
+import { SponsorChoiceScreen } from './SponsorChoiceScreen';
 import { StandingsScreen } from './StandingsScreen';
 import { TrainingScreen } from './TrainingScreen';
 import { YouthIntakeScreen } from './YouthIntakeScreen';
@@ -49,20 +63,23 @@ export class DashboardScreen implements Screen {
         const state = session.state;
         const inPlayoffs = isSeasonOver(state, this.ctx.config);
         const campaignOver = isCampaignOver(state, this.ctx.config);
+        const canContinue = canStartNextSeason(state, this.ctx.config);
         const userPlays = inPlayoffs ? userActiveSeries(state, this.ctx.config.league) !== null : !campaignOver;
 
         const playLabel = campaignOver
-            ? t('dashboard.noMatch')
+            ? canContinue
+                ? t('dashboard.startNextSeason', { year: state.seasonYear + 1 })
+                : t('dashboard.noMatch')
             : inPlayoffs
               ? t('playoff.playLive')
               : t('dashboard.playLive', { round: state.currentRound });
         const simLabel = inPlayoffs ? t('playoff.playInstant') : t('dashboard.playInstant');
         const prospects = state.market.youthProspects.length;
-        const offers = state.market.incomingOffers.length;
+        const offers = state.market.incomingOffers.length + pendingExternalOffers(state).length;
 
         this.menu.items = [
-            { id: 'live', label: playLabel, disabled: campaignOver || !userPlays },
-            { id: 'instant', label: simLabel, disabled: campaignOver },
+            { id: 'live', label: playLabel, disabled: campaignOver && !canContinue || (!campaignOver && !userPlays) },
+            { id: 'instant', label: simLabel, disabled: campaignOver && !canContinue },
             { id: 'team', label: `${t('dashboard.groupTeam')}${prospects > 0 ? ` (${prospects})` : ''}` },
             { id: 'office', label: `${t('dashboard.groupOffice')}${offers > 0 ? ` (${offers})` : ''}` },
             { id: 'league', label: t('dashboard.groupLeague') },
@@ -75,14 +92,62 @@ export class DashboardScreen implements Screen {
         this.ctx.storage.set(AUTOSAVE_KEY, serializeSave(session.state, t('save.autosave'), new Date().toISOString()));
     }
 
+    private startNextSeasonFlow(): void {
+        const session = this.sessionOrThrow;
+        const rng = createRng(session.state.masterSeed).fork(`next-season:${session.state.seasonYear}`);
+        const review = prepareOffseasonReview(session.state, this.ctx.config, rng.fork('review'));
+        session.lastRound = null;
+        this.autosave();
+        this.ctx.screens.push(new OffseasonReviewScreen(this.ctx, review, () => {
+            const summary = completeOffseasonRollover(session.state, this.ctx.config, rng.fork('rollover'));
+            this.autosave();
+            this.ctx.screens.push(new OffseasonScreen(this.ctx, summary, () => {
+                this.afterOffseasonSummary();
+            }));
+        }));
+    }
+
+    private afterOffseasonSummary(): void {
+        const state = this.sessionOrThrow.state;
+        const pending = pendingExternalOffers(state);
+        if (pending.length > 0) {
+            this.ctx.screens.push(new ExternalOfferScreen(this.ctx, () => {
+                this.afterExternalOffers();
+            }));
+        } else {
+            this.afterExternalOffers();
+        }
+    }
+
+    private afterExternalOffers(): void {
+        const state = this.sessionOrThrow.state;
+        if (state.club.sponsors.length === 0 && state.club.sponsorOffers.length > 0) {
+            this.ctx.screens.push(
+                new SponsorChoiceScreen(this.ctx, () => {
+                    this.rebuildMenu();
+                }),
+            );
+        } else {
+            this.rebuildMenu();
+        }
+    }
+
     private startLiveMatch(): void {
         const session = this.sessionOrThrow;
+        if (canStartNextSeason(session.state, this.ctx.config) && isCampaignOver(session.state, this.ctx.config)) {
+            this.startNextSeasonFlow();
+            return;
+        }
         const { fixture, engine } = prepareUserMatch(session.state, this.ctx.config);
         this.ctx.screens.push(new MatchLiveScreen(this.ctx, fixture, engine));
     }
 
     private playInstant(): void {
         const session = this.sessionOrThrow;
+        if (canStartNextSeason(session.state, this.ctx.config) && isCampaignOver(session.state, this.ctx.config)) {
+            this.startNextSeasonFlow();
+            return;
+        }
         const result = advanceRoundInstant(session.state, this.ctx.config);
         session.lastRound = result;
         this.autosave();
@@ -91,13 +156,110 @@ export class DashboardScreen implements Screen {
             (r) => r.fixture.homeTeamId === session.state.userTeamId || r.fixture.awayTeamId === session.state.userTeamId,
         );
         if (userFixture) {
-            const context = buildPressContext(session.state, userFixture.summary, userFixture.fixture.homeTeamId, result.userInjuredId);
-            const rng = createRng(session.state.masterSeed).fork(`press:${userFixture.fixture.id}`);
-            const questions = generatePressConference(context, this.ctx.config.press, rng);
-            if (questions.length > 0) {
-                this.ctx.screens.push(new PressConferenceScreen(this.ctx, questions));
-            }
+            this.ctx.screens.push(
+                new BoxScoreScreen(this.ctx, userFixture.fixture, userFixture.summary, () => {
+                    const context = buildPressContext(
+                        session.state,
+                        userFixture.summary,
+                        userFixture.fixture.homeTeamId,
+                        result.userInjuredId,
+                    );
+                    const rng = createRng(session.state.masterSeed).fork(`press:${userFixture.fixture.id}`);
+                    const questions = generatePressConference(context, this.ctx.config.press, rng);
+                    if (questions.length > 0) {
+                        this.ctx.screens.push(new PressConferenceScreen(this.ctx, questions));
+                    }
+                }),
+            );
         }
+    }
+
+    private static readonly NBL_RESULTS_COL = 3;
+    private static readonly BCL_RESULTS_COL = 40;
+    private static readonly BCL_RESULTS_COL2 = 58;
+
+    private renderFixtureResult(
+        grid: AppContext['grid'],
+        col: number,
+        row: number,
+        fixture: RoundResult['results'][number]['fixture'],
+        userTeamId: string,
+    ): void {
+        const isUserMatch = fixture.homeTeamId === userTeamId || fixture.awayTeamId === userTeamId;
+        grid.put(col, row, isUserMatch ? ROLE.accent : ROLE.text, fixtureLine(fixture));
+    }
+
+    /** Last-round scoreboard; splits NBL and BCL into two columns when both played. */
+    private renderLastRoundResults(
+        grid: AppContext['grid'],
+        startRow: number,
+        lastRound: RoundResult,
+        userTeamId: string,
+    ): number {
+        const infoCol = DashboardScreen.BCL_RESULTS_COL;
+        let row = startRow;
+
+        if (lastRound.isPlayoff) {
+            grid.put(infoCol, row, ROLE.header, t('dashboard.lastPlayoffResults'));
+            row++;
+            for (const { fixture } of lastRound.results) {
+                this.renderFixtureResult(grid, infoCol + 1, row, fixture, userTeamId);
+                row++;
+            }
+            return row;
+        }
+
+        const nblResults = lastRound.results.filter((r) => !r.fixture.competitionId || r.fixture.competitionId === 'nbl');
+        const bclResults = lastRound.results.filter((r) => r.fixture.competitionId === 'bcl');
+        const header = `${t('dashboard.lastResults')} (${t('common.round', { round: lastRound.round })})`;
+
+        if (nblResults.length > 0 && bclResults.length > 0) {
+            // NBL on the left below the menu; BCL on the right (two columns when busy).
+            const resultsRow = Math.max(10, row);
+            grid.put(DashboardScreen.NBL_RESULTS_COL, resultsRow, ROLE.header, header);
+            grid.put(DashboardScreen.NBL_RESULTS_COL, resultsRow + 1, ROLE.textDim, competitionLabel('nbl'));
+            grid.put(DashboardScreen.BCL_RESULTS_COL, resultsRow + 1, ROLE.textDim, t('bcl.title'));
+
+            let nblRow = resultsRow + 2;
+            for (const { fixture } of nblResults) {
+                this.renderFixtureResult(grid, DashboardScreen.NBL_RESULTS_COL, nblRow, fixture, userTeamId);
+                nblRow++;
+            }
+
+            const bclMid = Math.ceil(bclResults.length / 2);
+            const bclLeft = bclResults.slice(0, bclMid);
+            const bclRight = bclResults.slice(bclMid);
+            let bclRow = resultsRow + 2;
+            for (const { fixture } of bclLeft) {
+                this.renderFixtureResult(grid, DashboardScreen.BCL_RESULTS_COL, bclRow, fixture, userTeamId);
+                bclRow++;
+            }
+            let bclRow2 = resultsRow + 2;
+            for (const { fixture } of bclRight) {
+                this.renderFixtureResult(grid, DashboardScreen.BCL_RESULTS_COL2, bclRow2, fixture, userTeamId);
+                bclRow2++;
+            }
+            return Math.max(nblRow, bclRow, bclRow2);
+        }
+
+        grid.put(infoCol, row, ROLE.header, header);
+        row++;
+        for (const { fixture } of lastRound.results) {
+            this.renderFixtureResult(grid, infoCol + 1, row, fixture, userTeamId);
+            row++;
+        }
+        return row;
+    }
+
+    private exitGame(): void {
+        this.ctx.screens.push(
+            new ConfirmDialog(this.ctx, t('dashboard.confirmExit'), (confirmed) => {
+                if (confirmed) {
+                    this.ctx.session = null;
+                    this.ctx.screens.reset(new MainMenuScreen(this.ctx));
+                }
+            }),
+        );
     }
 
     private openGroup(id: string): void {
@@ -123,6 +285,10 @@ export class DashboardScreen implements Screen {
                         id: 'market',
                         label: state.market.incomingOffers.length > 0 ? `${t('market.title')} (${state.market.incomingOffers.length})` : t('market.title'),
                     },
+                    ...(pendingExternalOffers(state).length > 0 ? [{
+                        id: 'external',
+                        label: `${t('external.title')} (${pendingExternalOffers(state).length})`,
+                    }] : []),
                     { id: 'club', label: t('club.title') },
                     { id: 'finances', label: t('finance.title') },
                 ],
@@ -133,6 +299,12 @@ export class DashboardScreen implements Screen {
                     { id: 'schedule', label: t('dashboard.schedule') },
                     { id: 'standings', label: t('dashboard.standings') },
                     ...(state.playoffs ? [{ id: 'playoffs', label: t('playoff.title') }] : []),
+                    { id: 'bcl-valuations', label: t('bcl.valuations') },
+                    ...(state.competitions.bcl ? [
+                        { id: 'bcl-schedule', label: t('bcl.schedule') },
+                        { id: 'bcl-standings', label: t('bcl.standings') },
+                        { id: 'bcl-bracket', label: t('bcl.bracket') },
+                    ] : []),
                 ],
             },
             system: {
@@ -141,6 +313,7 @@ export class DashboardScreen implements Screen {
                     { id: 'save', label: t('dashboard.save') },
                     { id: 'load', label: t('dashboard.load') },
                     { id: 'settings', label: t('dashboard.settings') },
+                    { id: 'exit', label: t('dashboard.exit') },
                 ],
             },
         };
@@ -151,7 +324,11 @@ export class DashboardScreen implements Screen {
         this.ctx.screens.push(
             new ActionDialog(this.ctx, group.title, [...group.items, { id: 'close', label: t('common.back') }], (action) => {
                 if (action && action !== 'close') {
-                    this.openScreen(action);
+                    if (action === 'exit') {
+                        this.exitGame();
+                    } else {
+                        this.openScreen(action);
+                    }
                 }
             }),
         );
@@ -174,6 +351,11 @@ export class DashboardScreen implements Screen {
             case 'market':
                 this.ctx.screens.push(new MarketScreen(this.ctx));
                 break;
+            case 'external':
+                this.ctx.screens.push(new ExternalOfferScreen(this.ctx, () => {
+                    this.rebuildMenu();
+                }));
+                break;
             case 'club':
                 this.ctx.screens.push(new ClubScreen(this.ctx));
                 break;
@@ -188,6 +370,18 @@ export class DashboardScreen implements Screen {
                 break;
             case 'playoffs':
                 this.ctx.screens.push(new PlayoffsScreen(this.ctx));
+                break;
+            case 'bcl-valuations':
+                this.ctx.screens.push(new BclValuationsScreen(this.ctx));
+                break;
+            case 'bcl-schedule':
+                this.ctx.screens.push(new BclScheduleScreen(this.ctx));
+                break;
+            case 'bcl-standings':
+                this.ctx.screens.push(new BclStandingsScreen(this.ctx));
+                break;
+            case 'bcl-bracket':
+                this.ctx.screens.push(new BclBracketScreen(this.ctx));
                 break;
             case 'save':
                 this.ctx.screens.push(new SaveLoadScreen(this.ctx, 'save'));
@@ -242,7 +436,12 @@ export class DashboardScreen implements Screen {
         if (campaignOver && state.playoffs?.championTeamId) {
             grid.put(infoCol, row, ROLE.header, t('dashboard.seasonOver'));
             grid.put(infoCol, row + 1, ROLE.gold, t('playoff.champion', { team: teamName(state.playoffs.championTeamId) }));
-            row += 3;
+            if (canStartNextSeason(state, this.ctx.config)) {
+                grid.put(infoCol, row + 2, ROLE.accent, t('dashboard.startNextSeason', { year: state.seasonYear + 1 }));
+                row += 4;
+            } else {
+                row += 3;
+            }
         } else if (inPlayoffs) {
             grid.put(infoCol, row, ROLE.header, t(`playoff.stage.${state.playoffs?.stage ?? 0}` as Parameters<typeof t>[0]));
             const series = userActiveSeries(state, this.ctx.config.league);
@@ -259,32 +458,41 @@ export class DashboardScreen implements Screen {
             }
             row += 4;
         } else {
-            const next = nextUserFixture(state);
+            const next = nextUserFixture(state, this.ctx.config);
             if (next) {
                 const isHome = next.homeTeamId === state.userTeamId;
-                grid.put(infoCol, row, ROLE.header, t('dashboard.nextMatch'));
-                grid.put(infoCol, row + 1, ROLE.text, `${t('common.round', { round: next.round })}: ${teamName(next.homeTeamId)} - ${teamName(next.awayTeamId)}`);
+                const comp = next.competitionId === 'bcl' ? t('dashboard.bclMatch') : t('dashboard.nblMatch');
+                grid.put(infoCol, row, ROLE.header, comp);
+                grid.put(infoCol, row + 1, ROLE.text,
+                    `${competitionLabel(next.competitionId)} ${t('common.round', { round: next.week ?? next.round })}: ${teamName(next.homeTeamId)} - ${teamName(next.awayTeamId)}`);
                 grid.put(infoCol, row + 2, isHome ? ROLE.success : ROLE.textDim, isHome ? t('dashboard.homeGame') : t('dashboard.awayGame'));
-                row += 4;
+                if (state.bclQualified) {
+                    grid.put(infoCol, row + 3, ROLE.gold, 'BCL');
+                    row += 5;
+                } else {
+                    row += 4;
+                }
             }
         }
 
         // Market attention: incoming offers waiting in the transfer inbox.
-        if (state.market.incomingOffers.length > 0) {
-            grid.put(infoCol, row, ROLE.gold, t('dashboard.offersWaiting', { n: state.market.incomingOffers.length }));
+        const externalCount = pendingExternalOffers(state).length;
+        if (state.market.incomingOffers.length > 0 || externalCount > 0) {
+            const total = state.market.incomingOffers.length + externalCount;
+            grid.put(infoCol, row, ROLE.gold, t('dashboard.offersWaiting', { n: total }));
+            row += 2;
+        }
+
+        const financeWarning = financeWarningMessage(state, this.ctx);
+        if (financeWarning) {
+            const projection = projectSeasonCashflow(state, this.ctx.config.economy, this.ctx.config.league);
+            grid.put(infoCol, row, projection.warningTier === 'red' ? ROLE.danger : ROLE.warning, financeWarning);
             row += 2;
         }
 
         const lastRound = session.lastRound;
         if (lastRound) {
-            grid.put(infoCol, row, ROLE.header,
-                lastRound.isPlayoff ? t('dashboard.lastPlayoffResults') : `${t('dashboard.lastResults')} (${t('common.round', { round: lastRound.round })})`);
-            row++;
-            for (const { fixture } of lastRound.results) {
-                const isUserMatch = fixture.homeTeamId === state.userTeamId || fixture.awayTeamId === state.userTeamId;
-                grid.put(infoCol + 1, row, isUserMatch ? ROLE.accent : ROLE.text, fixtureLine(fixture));
-                row++;
-            }
+            row = this.renderLastRoundResults(grid, row, lastRound, state.userTeamId);
             if (lastRound.economy) {
                 row++;
                 grid.put(infoCol, row, ROLE.header, t('dashboard.weekEconomy'));

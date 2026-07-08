@@ -229,7 +229,7 @@ export class MarketScreen implements Screen {
                     this.say(t('market.noDeal'), ROLE.textDim);
                 }
                 this.pendingFee = null;
-            }),
+            }, undefined, undefined, fee),
         );
     }
 

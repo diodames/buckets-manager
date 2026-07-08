@@ -1,6 +1,8 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
+import { economyConfig } from '../../config/economy';
 import { fixturesOfRound, seasonRounds } from '../../core/game';
+import { isDerbyMatch } from '../../core/economy';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
 import { teamDef } from '../format';
@@ -54,7 +56,9 @@ export class ScheduleScreen implements Screen {
             const overtime = fixture.result && fixture.result.quarterScores.length > this.ctx.config.balance.match.quarters
                 ? ` ${t('common.ot')}`
                 : '';
-            const line = `${home.abbr.padEnd(4)} ${score.padStart(7)}  ${away.abbr}${overtime}`;
+            const line = `${home.abbr.padEnd(4)} ${score.padStart(7)}  ${away.abbr}${overtime}${
+                isDerbyMatch(fixture.homeTeamId, fixture.awayTeamId, economyConfig) ? ` ${t('schedule.derby')}` : ''
+            }`;
             grid.put(5, row, isUserMatch ? ROLE.accent : ROLE.text, line);
             row++;
         }

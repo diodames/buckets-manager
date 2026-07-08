@@ -1,8 +1,44 @@
+import type { BalanceConfig } from '../config/balance';
 import type { EconomyConfig } from '../config/economy';
+import type { ExternalOffersConfig } from '../config/externalOffers';
+import { externalOffersConfig } from '../config/externalOffers';
+import { leagueConfig } from '../config/league';
 import type { MarketConfig } from '../config/market';
 import type { NamePools } from '../config/names';
+import { seasonMarketForYear } from '../config/seasonSignings';
+import {
+    youthAcademyProspectById,
+    youthAcademyProspectsForTeam,
+    type YouthAcademyProspectDef,
+} from '../config/youthAcademy';
+import { generateFreeAgents } from './league/generate';
+import { totalRounds } from './league/schedule';
+import { effectiveFacilityLevel, interpolateFacilityValue } from './economy';
+import { canAffordContract, financeWarningTier } from './cashflow';
 import { generateName } from './namegen';
+import { advanceSeasonMarket, aiSigningBoost } from './seasonMarket';
+import {
+    completeExternalRetention,
+    externalRetentionScore,
+    findExternalOffer,
+    requiredExternalRetentionSalary,
+    tickExternalOffers,
+} from './breakthrough';
+import {
+    type AiRenewalResult,
+    canClubSignElite,
+    clubBclPrestigeMessageKey,
+    contractDemandPrestigeMult,
+    isCzech,
+    negotiationPrestigeBonus,
+    playerSeasonBreakthrough,
+    runSmartAiContractRenewals,
+    teamTableRank,
+    walkAwayIntent,
+} from './contracts';
+import { stageMovement, type StagedMovement } from './offseasonMovements';
 import type {
+    FixedYouthArrival,
     GameState, NegotiationState, Player, PlayerId, Position, TeamId, YouthProspect,
 } from './model/types';
 import { ATTRIBUTE_KEYS, overallRating, POSITIONS } from './model/types';
@@ -59,7 +95,9 @@ export function transferValue(player: Player, market: MarketConfig, economy: Eco
 }
 
 export function isMarketOpen(state: GameState, market: MarketConfig): boolean {
-    return state.currentRound <= market.transfers.deadlineRound;
+    const seasonEnd = totalRounds(Object.keys(state.teams).length, leagueConfig.roundRobinLegs);
+    const deadline = Math.min(market.transfers.deadlineRound, seasonEnd);
+    return state.currentRound <= deadline;
 }
 
 // ---------- team needs (M14) ----------
@@ -90,7 +128,14 @@ export function teamNeeds(state: GameState, teamId: TeamId, market: MarketConfig
 // ---------- contract negotiation (M3) ----------
 
 export interface NegotiationResult {
-    status: 'accepted' | 'rejected' | 'finalRejected' | 'locked' | 'rosterFull';
+    status:
+        | 'accepted'
+        | 'rejected'
+        | 'finalRejected'
+        | 'locked'
+        | 'rosterFull'
+        | 'wageBudgetExceeded'
+        | 'projectedDeficit';
     // Salary the player hints at / firmly demands after a rejection.
     hintSalary: number | null;
     negotiationRound: number;
@@ -101,17 +146,79 @@ function isStarter(state: GameState, player: Player): boolean {
     return team ? Object.values(team.tactics.starters).includes(player.id) : false;
 }
 
+export interface NegotiationTermsContext {
+    agreedTransferFee?: number;
+}
+
 /** Demand adjusted per negotiation mode (post-transfer terms carry leverage). */
-function demandFor(state: GameState, player: Player, mode: NegotiationState['mode'], market: MarketConfig, economy: EconomyConfig): number {
-    const demand = contractDemand(state, player, market, economy);
-    return mode === 'transferTerms' ? Math.round(demand * market.transfers.postTransferDemandMult) : demand;
+function demandFor(
+    state: GameState,
+    player: Player,
+    mode: NegotiationState['mode'],
+    market: MarketConfig,
+    economy: EconomyConfig,
+    terms: NegotiationTermsContext = {},
+): number {
+    let demand = contractDemand(state, player, market, economy);
+    const signingTeamId = mode === 'freeAgent' || mode === 'renew' || mode === 'transferTerms'
+        ? state.userTeamId
+        : player.teamId;
+    if (signingTeamId) {
+        demand = Math.round(demand * contractDemandPrestigeMult(state, signingTeamId, player, market, externalOffersConfig));
+    }
+    if (mode === 'transferTerms') {
+        demand = Math.round(demand * market.transfers.postTransferDemandMult);
+        const { ratio } = playerSeasonBreakthrough(state, player.id, externalOffersConfig);
+        if (
+            !canClubSignElite(state, state.userTeamId, player, ratio, market, externalOffersConfig)
+            && isElitePlayerForTerms(player, ratio, market)
+        ) {
+            demand = Math.round(demand * market.aiRenewal.eliteTransferTermsMult);
+        }
+        const fee = terms.agreedTransferFee ?? 0;
+        if (fee > 0) {
+            const value = transferValue(player, market, economy);
+            if (fee >= value) {
+                demand = Math.round(demand * market.transfers.transferFeeCommitmentMult);
+            }
+        }
+    }
+    return demand;
+}
+
+/** Salary demand shown in negotiation UI and used in negotiateOffer. */
+export function negotiationDemand(
+    state: GameState,
+    player: Player,
+    mode: NegotiationState['mode'],
+    market: MarketConfig,
+    economy: EconomyConfig,
+    terms: NegotiationTermsContext = {},
+): number {
+    return demandFor(state, player, mode, market, economy, terms);
+}
+
+export { clubBclPrestigeMessageKey };
+
+function isElitePlayerForTerms(player: Player, ratio: number, market: MarketConfig): boolean {
+    return overallRating(player.attributes) >= market.aiRenewal.bclOnlyMinOverall
+        || ratio >= externalOffersConfig.bcl.minRatio;
 }
 
 /** All non-money components of the acceptance score (M3). */
-function baseScore(state: GameState, player: Player, offer: { years: number }, market: MarketConfig): number {
+function baseScore(
+    state: GameState,
+    player: Player,
+    offer: { years: number },
+    market: MarketConfig,
+    mode?: NegotiationState['mode'],
+): number {
     const c = market.contracts;
     const minutesShare = isStarter(state, player) ? 0.7 : 0.35;
     let score = 50;
+    if (mode === 'transferTerms') {
+        score += market.transfers.transferTermsAcceptBonus;
+    }
     score += c.playingTimeWeight * (minutesShare - 0.5) * 2;
     score += (player.morale - 50) / 5;
     // Table position only matters once the season has taken shape.
@@ -131,6 +238,13 @@ function baseScore(state: GameState, player: Player, offer: { years: number }, m
     if (offer.years >= 2 && player.age >= 32) {
         score -= c.longDealOldPenalty;
     }
+    if (player.teamId === state.userTeamId) {
+        const intent = walkAwayIntent(state, player, state.userTeamId, market, externalOffersConfig);
+        if (intent > market.aiRenewal.userRenewalIntentThreshold) {
+            score -= market.aiRenewal.userRenewalIntentPenalty;
+        }
+    }
+    score += negotiationPrestigeBonus(state, state.userTeamId, player, market, externalOffersConfig);
     return score;
 }
 
@@ -140,10 +254,11 @@ function acceptanceScore(
     offer: { salary: number; years: number },
     demand: number,
     market: MarketConfig,
+    mode: NegotiationState['mode'],
 ): number {
     // Money can persuade up to double the fair demand.
     const moneyRatio = Math.max(-1, Math.min(1, (offer.salary - demand) / demand));
-    return baseScore(state, player, offer, market) + market.contracts.moneyWeight * moneyRatio;
+    return baseScore(state, player, offer, market, mode) + market.contracts.moneyWeight * moneyRatio;
 }
 
 /**
@@ -158,10 +273,11 @@ export function requiredSalary(
     mode: NegotiationState['mode'],
     market: MarketConfig,
     economy: EconomyConfig,
+    terms: NegotiationTermsContext = {},
 ): number {
     const c = market.contracts;
-    const demand = demandFor(state, player, mode, market, economy);
-    const neededRatio = (c.acceptThreshold - baseScore(state, player, { years }, market)) / c.moneyWeight;
+    const demand = demandFor(state, player, mode, market, economy, terms);
+    const neededRatio = (c.acceptThreshold - baseScore(state, player, { years }, market, mode)) / c.moneyWeight;
     const ratio = Math.max(-0.5, Math.min(1, neededRatio));
     return Math.ceil((demand * (1 + ratio)) / 10_000) * 10_000;
 }
@@ -170,16 +286,42 @@ function findNegotiation(state: GameState, playerId: PlayerId): NegotiationState
     return state.market.negotiations.find((n) => n.playerId === playerId) ?? null;
 }
 
+export type RenewalBlockReason = 'notExpiring' | 'tooEarly' | 'locked';
+
+export interface RenewalStatus {
+    canRenew: boolean;
+    reason?: RenewalBlockReason;
+    lockedUntilRound?: number;
+}
+
+/** Whether the user can open renewal talks for an own-squad player, and why not. */
+export function renewalStatus(state: GameState, player: Player, market: MarketConfig): RenewalStatus {
+    if ((player.contract?.yearsLeft ?? 0) > 1) {
+        return { canRenew: false, reason: 'notExpiring' };
+    }
+    const lockedUntil = state.market.negotiationLocks[player.id] ?? 0;
+    if (state.currentRound < lockedUntil) {
+        return { canRenew: false, reason: 'locked', lockedUntilRound: lockedUntil };
+    }
+    if (state.currentRound < market.contracts.renewalsOpenFromRound) {
+        return { canRenew: false, reason: 'tooEarly' };
+    }
+    return { canRenew: true };
+}
+
 export function canNegotiate(state: GameState, player: Player, market: MarketConfig): boolean {
     const lockedUntil = state.market.negotiationLocks[player.id] ?? 0;
     if (state.currentRound < lockedUntil) {
         return false;
     }
     if (player.teamId === state.userTeamId) {
-        // Renewals: expiring contracts only, late in the season.
-        return (player.contract?.yearsLeft ?? 0) <= 1 && state.currentRound >= market.contracts.renewalsOpenFromRound;
+        return renewalStatus(state, player, market).canRenew;
     }
-    return player.teamId === null;
+    if (player.teamId === null) {
+        const { ratio } = playerSeasonBreakthrough(state, player.id, externalOffersConfig);
+        return canClubSignElite(state, state.userTeamId, player, ratio, market, externalOffersConfig);
+    }
+    return false;
 }
 
 /**
@@ -193,6 +335,7 @@ export function negotiateOffer(
     mode: NegotiationState['mode'],
     market: MarketConfig,
     economy: EconomyConfig,
+    options?: { externalOffers?: ExternalOffersConfig; agreedTransferFee?: number },
 ): NegotiationResult {
     const c = market.contracts;
     const player = state.players[playerId];
@@ -205,16 +348,85 @@ export function negotiateOffer(
     }
     let negotiation = findNegotiation(state, playerId);
     if (!negotiation) {
-        negotiation = { playerId, round: 1, hintSalary: null, mode };
-        state.market.negotiations.push(negotiation);
+        const created: NegotiationState = {
+            playerId,
+            round: 1,
+            hintSalary: null,
+            mode,
+        };
+        if (options?.agreedTransferFee !== undefined) {
+            created.agreedTransferFee = options.agreedTransferFee;
+        }
+        state.market.negotiations.push(created);
+        negotiation = created;
+    } else if (options?.agreedTransferFee !== undefined && negotiation.agreedTransferFee === undefined) {
+        negotiation.agreedTransferFee = options.agreedTransferFee;
     }
-    const demand = demandFor(state, player, mode, market, economy);
-    const score = acceptanceScore(state, player, offer, demand, market);
+    const terms: NegotiationTermsContext = negotiation.agreedTransferFee !== undefined
+        ? { agreedTransferFee: negotiation.agreedTransferFee }
+        : {};
+    const demand = demandFor(state, player, mode, market, economy, terms);
+
+    if (mode === 'freeAgent') {
+        const { ratio } = playerSeasonBreakthrough(state, player.id, externalOffersConfig);
+        if (!canClubSignElite(state, state.userTeamId, player, ratio, market, externalOffersConfig)) {
+            return { status: 'rejected', hintSalary: null, negotiationRound: negotiation.round };
+        }
+    }
+
+    if (mode === 'externalRetention') {
+        const extCfg = options?.externalOffers;
+        const extOfferId = negotiation.externalOfferId;
+        const extOffer = extOfferId ? findExternalOffer(state, extOfferId) : undefined;
+        if (!extCfg || !extOffer) {
+            return { status: 'rejected', hintSalary: null, negotiationRound: negotiation.round };
+        }
+        const score = externalRetentionScore(state, player, extOffer, offer.salary, offer.years, market, economy, extCfg);
+        if (score >= extCfg.retention.acceptThreshold) {
+            const affordability = canAffordContract(state, economy, leagueConfig, offer.salary, player.id);
+            if (!affordability.ok) {
+                return {
+                    status: affordability.reason === 'wageBudgetExceeded' ? 'wageBudgetExceeded' : 'projectedDeficit',
+                    hintSalary: null,
+                    negotiationRound: negotiation.round,
+                };
+            }
+            if (completeExternalRetention(state, extOffer.id, offer.salary, offer.years, extCfg)) {
+                state.market.negotiations = state.market.negotiations.filter((n) => n.playerId !== playerId);
+                return { status: 'accepted', hintSalary: null, negotiationRound: negotiation.round };
+            }
+            return { status: 'rejected', hintSalary: null, negotiationRound: negotiation.round };
+        }
+        if (negotiation.round >= c.maxRounds) {
+            state.market.negotiations = state.market.negotiations.filter((n) => n.playerId !== playerId);
+            state.market.negotiationLocks[playerId] = state.currentRound + c.lockRounds;
+            player.morale = Math.max(0, player.morale - c.lockMoralePenalty);
+            return { status: 'finalRejected', hintSalary: null, negotiationRound: c.maxRounds };
+        }
+        const required = requiredExternalRetentionSalary(state, player, extOffer, offer.years, market, economy, extCfg);
+        const hint = negotiation.round === 1 ? Math.ceil(required / 100_000) * 100_000 : required;
+        negotiation.round++;
+        negotiation.hintSalary = hint;
+        return { status: 'rejected', hintSalary: hint, negotiationRound: negotiation.round - 1 };
+    }
+
+    const score = acceptanceScore(state, player, offer, demand, market, mode);
 
     if (score >= c.acceptThreshold) {
         const userTeam = state.teams[state.userTeamId];
         if (!userTeam || (mode !== 'renew' && userTeam.playerIds.length >= market.roster.maxPlayers)) {
             return { status: 'rosterFull', hintSalary: null, negotiationRound: negotiation.round };
+        }
+        const replacesPlayerId = mode === 'renew' || mode === 'transferTerms'
+            ? player.id
+            : undefined;
+        const affordability = canAffordContract(state, economy, leagueConfig, offer.salary, replacesPlayerId);
+        if (!affordability.ok) {
+            return {
+                status: affordability.reason === 'wageBudgetExceeded' ? 'wageBudgetExceeded' : 'projectedDeficit',
+                hintSalary: null,
+                negotiationRound: negotiation.round,
+            };
         }
         if (mode === 'freeAgent') {
             player.teamId = state.userTeamId;
@@ -237,7 +449,7 @@ export function negotiateOffer(
 
     // Truthful hints: the amount that actually clears the acceptance bar for
     // the offered deal length. Round 1 is vague (rounded up), round 2 firm.
-    const required = requiredSalary(state, player, offer.years, mode, market, economy);
+    const required = requiredSalary(state, player, offer.years, mode, market, economy, terms);
     // Round 1 hints vaguely above the mark; round 2 states the exact minimum.
     const hint = negotiation.round === 1 ? Math.ceil(required / 100_000) * 100_000 : required;
     negotiation.round++;
@@ -385,7 +597,12 @@ export function bidOnPlayer(state: GameState, playerId: PlayerId, amount: number
         .sort((a, b) => avgOverall(b) - avgOverall(a))
         .indexOf(player.teamId);
     const contender = sellerRank >= 0 && sellerRank < 3;
-    const sellF = surplus ? tCfg.sellFactorSurplus : starter && contender ? tCfg.sellFactorCore : tCfg.sellFactorNormal;
+    let sellF: number = surplus ? tCfg.sellFactorSurplus : starter && contender ? tCfg.sellFactorCore : tCfg.sellFactorNormal;
+    const tableRank = teamTableRank(state, player.teamId);
+    const czechCore = isCzech(player) && starter && tableRank <= 4;
+    if (czechCore) {
+        sellF = Math.max(sellF, tCfg.sellFactorCzechCore);
+    }
     const price = transferValue(player, market, economy) * sellF;
     if (starter && sellF >= tCfg.sellFactorCore && amount < price) {
         return { status: 'notForSale', counterAmount: null };
@@ -415,9 +632,11 @@ export function executePurchase(state: GameState, playerId: PlayerId, fee: numbe
 
 // ---------- market tick (M7, M10, M5-AI, expiry) ----------
 
-export function marketTick(state: GameState, market: MarketConfig, economy: EconomyConfig, rng: Rng): void {
+export function marketTick(state: GameState, market: MarketConfig, economy: EconomyConfig, rng: Rng, externalOffers?: ExternalOffersConfig): void {
     const round = state.currentRound;
     const tCfg = market.transfers;
+
+    advanceSeasonMarket(state, round, seasonMarketForYear(state.seasonYear));
 
     // Expire offers. Youth prospects do NOT expire: promising talents can be
     // invited to the first team at any point of the season.
@@ -470,7 +689,11 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
         }
 
         // Unsolicited bids for the user's best unlisted players (M10).
-        if (rng.chance(tCfg.unsolicitedChancePerRound)) {
+        if (
+            !state.market.unsolicitedBidUsed
+            && !state.market.incomingOffers.some((o) => o.id.startsWith('uns-'))
+            && rng.chance(tCfg.unsolicitedChancePerRound)
+        ) {
             const userTeam = state.teams[state.userTeamId];
             const stars = (userTeam?.playerIds ?? [])
                 .map((id) => state.players[id])
@@ -488,12 +711,14 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
                     expiresRound: round + tCfg.offerTtlRounds,
                     countered: false,
                 });
+                state.market.unsolicitedBidUsed = true;
             }
         }
     }
 
     // AI clubs pick up free agents to fill short rosters (M5/M15-lite).
     if (round % market.ai.evaluateEveryRounds === 0) {
+        const extCfg = externalOffers ?? externalOffersConfig;
         const freeAgents = Object.values(state.players).filter((p) => p.teamId === null && !isYouthProspect(state, p.id));
         for (const teamId of Object.keys(state.teams)) {
             if (teamId === state.userTeamId) {
@@ -505,8 +730,19 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             }
             const needs = teamNeeds(state, teamId, market);
             const needed = needs.filter((n) => n.need > 0).map((n) => n.position);
-            const pool = freeAgents.filter((p) => needed.length === 0 || needed.includes(p.position));
-            const signing = pool.sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes))[0];
+            const pool = freeAgents.filter((p) => {
+                if (needed.length > 0 && !needed.includes(p.position)) {
+                    return false;
+                }
+                const { ratio } = playerSeasonBreakthrough(state, p.id, extCfg);
+                return canClubSignElite(state, teamId, p, ratio, market, extCfg);
+            });
+            const signing = pool.sort(
+                (a, b) =>
+                    overallRating(b.attributes) +
+                    aiSigningBoost(state, b.id, teamId) -
+                    (overallRating(a.attributes) + aiSigningBoost(state, a.id, teamId)),
+            )[0];
             if (signing) {
                 signing.teamId = teamId;
                 signing.contract = { salary: baseSalary(overallRating(signing.attributes), economy), yearsLeft: 1 };
@@ -515,10 +751,153 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             }
         }
     }
+
+    if (externalOffers) {
+        tickExternalOffers(state, economy, externalOffers, market);
+    }
 }
 
 function isYouthProspect(state: GameState, playerId: PlayerId): boolean {
     return state.market.youthProspects.some((p) => p.player.id === playerId);
+}
+
+function remainingYouthSeasonCapacity(state: GameState, market: MarketConfig): number {
+    const arrived = state.market.youthArrivalsThisSeason ?? 0;
+    return Math.max(0, market.youth.maxProspectsPerSeason - arrived);
+}
+
+function recordYouthArrivals(state: GameState, count: number): void {
+    state.market.youthArrivalsThisSeason = (state.market.youthArrivalsThisSeason ?? 0) + count;
+}
+
+function youthProspectPresentation(
+    player: Player,
+    market: MarketConfig,
+    academyLevel: number,
+    decideByRound: number,
+    fixed?: YouthAcademyProspectDef,
+): YouthProspect {
+    const y = market.youth;
+    const band = interpolateFacilityValue(y.starBandByLevel, academyLevel);
+    const trueStars = 1 + ((player.potential - 40) / 59) * 4;
+    return {
+        player,
+        starMin: fixed?.starMin ?? Math.max(1, Math.round((trueStars - band / 2) * 2) / 2),
+        starMax: fixed?.starMax ?? Math.min(5, Math.round((trueStars + band / 2) * 2) / 2),
+        quoteIndex: fixed?.quoteIndex ?? hashString(player.id) % y.coachQuotes,
+        decideByRound,
+        academySeasons: 0,
+    };
+}
+
+function fixedYouthNameKey(firstName: string, lastName: string): string {
+    return `${firstName} ${lastName}`;
+}
+
+function fixedYouthAlreadyPresent(state: GameState, playerId: PlayerId): boolean {
+    const player = state.players[playerId];
+    if (player) {
+        if (player.teamId !== null) {
+            return true;
+        }
+        return state.market.youthProspects.some((p) => p.player.id === playerId);
+    }
+    return state.market.youthProspects.some((p) => p.player.id === playerId);
+}
+
+function addFixedYouthProspect(state: GameState, market: MarketConfig, economy: EconomyConfig, def: YouthAcademyProspectDef): YouthProspect | null {
+    if (fixedYouthAlreadyPresent(state, def.id)) {
+        return null;
+    }
+    if (remainingYouthSeasonCapacity(state, market) <= 0) {
+        return null;
+    }
+    const y = market.youth;
+    const player: Player = {
+        id: def.id,
+        firstName: def.firstName,
+        lastName: def.lastName,
+        nationality: 'CZE',
+        age: Math.max(16, state.seasonYear - def.born),
+        heightCm: def.heightCm,
+        position: def.position,
+        attributes: { ...def.attributes },
+        potential: def.potential,
+        fatigue: 0,
+        morale: 75,
+        injury: null,
+        teamId: null,
+        contract: null,
+    };
+    state.players[player.id] = player;
+    const prospect = youthProspectPresentation(
+        player,
+        market,
+        effectiveFacilityLevel(state, 'academy', economy),
+        state.currentRound + y.decisionRounds,
+        def,
+    );
+    state.market.youthProspects.push(prospect);
+    recordYouthArrivals(state, 1);
+    return prospect;
+}
+
+function unreleasedFixedYouthProspects(state: GameState, teamId: TeamId): YouthAcademyProspectDef[] {
+    return youthAcademyProspectsForTeam(teamId).filter((def) => !fixedYouthAlreadyPresent(state, def.id));
+}
+
+/** Queues the next unreleased real academy talents for this season (paced, not all at once). */
+export function scheduleFixedYouthProspects(
+    state: GameState,
+    teamId: TeamId,
+    rng: Rng,
+    deadlineRound: number,
+    market: MarketConfig,
+): FixedYouthArrival[] {
+    const limit = Math.min(
+        market.youth.fixedProspectsPerSeason,
+        remainingYouthSeasonCapacity(state, market),
+    );
+    const due = unreleasedFixedYouthProspects(state, teamId).slice(0, limit);
+    const arrivals = due.map((def) => ({
+        playerId: def.id,
+        arriveRound: rng.int(1, deadlineRound),
+    }));
+    state.market.pendingFixedYouthArrivals = arrivals;
+    return arrivals;
+}
+
+/** Surfaces scheduled real academy talents whose arrival round has been reached. */
+export function releaseFixedYouthProspects(
+    state: GameState,
+    market: MarketConfig,
+    economy: EconomyConfig,
+    completedRound: number,
+): YouthProspect[] {
+    const deadline = market.youth.fixedAcademyDeadlineRound;
+    const due = state.market.pendingFixedYouthArrivals.filter(
+        (arrival) => arrival.arriveRound <= completedRound || completedRound >= deadline,
+    );
+    const added: YouthProspect[] = [];
+    const releasedIds = new Set<PlayerId>();
+    for (const arrival of due) {
+        if (releasedIds.has(arrival.playerId)) {
+            continue;
+        }
+        const def = youthAcademyProspectById(arrival.playerId);
+        if (!def || def.teamId !== state.userTeamId) {
+            continue;
+        }
+        const prospect = addFixedYouthProspect(state, market, economy, def);
+        if (prospect) {
+            added.push(prospect);
+        }
+        releasedIds.add(arrival.playerId);
+    }
+    state.market.pendingFixedYouthArrivals = state.market.pendingFixedYouthArrivals.filter(
+        (arrival) => !releasedIds.has(arrival.playerId),
+    );
+    return added;
 }
 
 // ---------- youth intake (M11-M13) ----------
@@ -532,10 +911,17 @@ export function runYouthIntake(
     options?: { count?: number; markDone?: boolean },
 ): YouthProspect[] {
     const y = market.youth;
-    const academyLevel = state.club.facilities.academy;
-    const count = options?.count ?? 1 + Math.floor(academyLevel / 2);
-    const band = y.starBandByLevel[academyLevel - 1] ?? 2;
-    const used = new Set<string>(Object.values(state.players).map((p) => `${p.firstName} ${p.lastName}`));
+    const academyLevel = effectiveFacilityLevel(state, 'academy', economy);
+    const requested = options?.count ?? 1 + Math.floor(academyLevel / 2);
+    const count = Math.min(requested, remainingYouthSeasonCapacity(state, market));
+    const band = interpolateFacilityValue(y.starBandByLevel, academyLevel);
+    const reservedNames = new Set(
+        youthAcademyProspectsForTeam(state.userTeamId).map((p) => fixedYouthNameKey(p.firstName, p.lastName)),
+    );
+    const used = new Set<string>([
+        ...Object.values(state.players).map((p) => `${p.firstName} ${p.lastName}`),
+        ...reservedNames,
+    ]);
     const prospects: YouthProspect[] = [];
     for (let i = 0; i < count; i++) {
         const name = generateName(rng, pools, used);
@@ -551,6 +937,7 @@ export function runYouthIntake(
             id: `YTH-${state.seasonYear}-${state.market.youthProspects.length + prospects.length + 1}`,
             firstName: name.firstName,
             lastName: name.lastName,
+            nationality: 'CZE',
             age: rng.int(y.ageMin, y.ageMax),
             heightCm: rng.int(185, 210),
             position,
@@ -572,10 +959,12 @@ export function runYouthIntake(
             starMax,
             quoteIndex: rng.int(0, y.coachQuotes - 1),
             decideByRound: state.currentRound + y.decisionRounds,
+            academySeasons: 0,
         });
         state.players[player.id] = player;
     }
     state.market.youthProspects.push(...prospects);
+    recordYouthArrivals(state, prospects.length);
     if (options?.markDone !== false) {
         state.market.youthIntakeDone = true;
     }
@@ -592,7 +981,7 @@ export function isAcademyPlayer(player: Player): boolean {
  * Sends a signed academy talent back to the junior team: he leaves the
  * roster and contract and reappears among the prospects (invitable again).
  */
-export function returnYouthToAcademy(state: GameState, playerId: PlayerId, market: MarketConfig): boolean {
+export function returnYouthToAcademy(state: GameState, playerId: PlayerId, market: MarketConfig, economy: EconomyConfig): boolean {
     const player = state.players[playerId];
     const userTeam = state.teams[state.userTeamId];
     if (!player || !userTeam || player.teamId !== state.userTeamId || !isAcademyPlayer(player)) {
@@ -607,16 +996,10 @@ export function returnYouthToAcademy(state: GameState, playerId: PlayerId, marke
     unlistPlayer(state, playerId);
 
     // Rebuild the scout presentation from the current academy level.
-    const y = market.youth;
-    const band = y.starBandByLevel[state.club.facilities.academy - 1] ?? 2;
-    const trueStars = 1 + ((player.potential - 40) / 59) * 4;
-    state.market.youthProspects.push({
-        player,
-        starMin: Math.max(1, Math.round((trueStars - band / 2) * 2) / 2),
-        starMax: Math.min(5, Math.round((trueStars + band / 2) * 2) / 2),
-        quoteIndex: hashString(player.id) % y.coachQuotes,
-        decideByRound: state.currentRound,
-    });
+    const fixed = youthAcademyProspectById(player.id);
+    state.market.youthProspects.push(
+        youthProspectPresentation(player, market, effectiveFacilityLevel(state, 'academy', economy), state.currentRound, fixed),
+    );
     return true;
 }
 
@@ -667,20 +1050,96 @@ export function releasePlayer(
     return 'released';
 }
 
-export function signYouth(state: GameState, prospectPlayerId: PlayerId, market: MarketConfig): boolean {
+export function signYouth(
+    state: GameState,
+    prospectPlayerId: PlayerId,
+    market: MarketConfig,
+    economy: EconomyConfig,
+): 'signed' | 'rosterFull' | 'wageBudgetExceeded' | 'projectedDeficit' | 'invalid' {
     const prospect = state.market.youthProspects.find((p) => p.player.id === prospectPlayerId);
     const userTeam = state.teams[state.userTeamId];
-    if (!prospect || !userTeam || userTeam.playerIds.length >= market.roster.maxPlayers) {
-        return false;
+    if (!prospect || !userTeam) {
+        return 'invalid';
+    }
+    if (userTeam.playerIds.length >= market.roster.maxPlayers) {
+        return 'rosterFull';
+    }
+    if (financeWarningTier(state, economy, leagueConfig) === 'red') {
+        return 'projectedDeficit';
     }
     prospect.player.teamId = state.userTeamId;
     prospect.player.contract = { salary: market.youth.salary, yearsLeft: market.youth.years };
     userTeam.playerIds.push(prospect.player.id);
     state.market.youthProspects = state.market.youthProspects.filter((p) => p.player.id !== prospectPlayerId);
-    return true;
+    return 'signed';
 }
 
 export function releaseYouth(state: GameState, prospectPlayerId: PlayerId): void {
     state.market.youthProspects = state.market.youthProspects.filter((p) => p.player.id !== prospectPlayerId);
     delete state.players[prospectPlayerId];
 }
+
+export function releaseExpiredPlayer(state: GameState, player: Player): void {
+    removeFromTeam(state, player);
+    player.contract = null;
+    unlistPlayer(state, player.id);
+}
+
+export interface YouthGraduateResult {
+    count: number;
+    staged: StagedMovement[];
+}
+
+/** Unsigned academy prospects who exceed maxUnsignedSeasons enter the FA pool at rollover. */
+export function graduateUnsignedYouthProspects(state: GameState, maxUnsignedSeasons: number): YouthGraduateResult {
+    const remaining: YouthProspect[] = [];
+    const staged: StagedMovement[] = [];
+    for (const prospect of state.market.youthProspects) {
+        const player = prospect.player;
+        if (player.teamId !== null) {
+            remaining.push(prospect);
+            continue;
+        }
+        prospect.academySeasons++;
+        if (prospect.academySeasons >= maxUnsignedSeasons) {
+            staged.push(stageMovement(state, player, 'freeAgent', 'youthGraduate'));
+            player.contract = null;
+            unlistPlayer(state, player.id);
+            continue;
+        }
+        remaining.push(prospect);
+    }
+    state.market.youthProspects = remaining;
+    return { count: staged.length, staged };
+}
+
+/** Top up the free-agent pool with generated journeymen. */
+export function replenishFreeAgents(
+    state: GameState,
+    targetCount: number,
+    pools: NamePools,
+    balance: BalanceConfig,
+    rng: Rng,
+): number {
+    const current = Object.values(state.players).filter(
+        (p) => p.teamId === null && p.contract === null && !isYouthProspect(state, p.id),
+    ).length;
+    const needed = Math.max(0, targetCount - current);
+    let added = 0;
+    for (let i = 0; i < needed; i++) {
+        const [agent] = generateFreeAgents(rng.fork(`fa:${i}`), 1, pools, balance);
+        if (!agent) {
+            continue;
+        }
+        agent.id = `FA-${state.seasonYear}-${Object.keys(state.players).length + added + 1}`;
+        state.players[agent.id] = agent;
+        added++;
+    }
+    return added;
+}
+
+/** AI clubs auto-renew expiring contracts with importance- and nationality-aware logic. */
+export function runAiContractRenewals(state: GameState, market: MarketConfig, economy: EconomyConfig, rng: Rng): AiRenewalResult {
+    return runSmartAiContractRenewals(state, market, economy, externalOffersConfig, contractDemand, rng);
+}
+

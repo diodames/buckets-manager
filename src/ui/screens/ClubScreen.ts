@@ -1,12 +1,13 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { economyConfig, type FacilityKey } from '../../config/economy';
-import { acceptSponsorOffer, arenaCapacity, facilityUpgradeCost, realArenaCapacity, rejectSponsorOffer, upgradeFacility } from '../../core/economy';
+import { acceptSponsorOffer, arenaCapacity, facilityProjectRoundsLeft, facilityUpgradeCost, realArenaCapacity, rejectSponsorOffer, upgradeFacility } from '../../core/economy';
 import { t, type TranslationKey } from '../../i18n';
 import { drawChrome } from '../chrome';
-import { formatMoney } from '../format';
+import { formatMoney, sponsorTargetLabel } from '../format';
 import { ROLE } from '../theme';
 import { ConfirmDialog } from './ConfirmDialog';
+import { TicketPriceScreen } from './TicketPriceScreen';
 import { MenuList } from '../widgets/MenuList';
 
 const FACILITIES: FacilityKey[] = ['arena', 'training', 'academy'];
@@ -42,25 +43,35 @@ export class ClubScreen implements Screen {
         const items: { id: string; label: string; disabled?: boolean }[] = [];
         for (const key of FACILITIES) {
             const level = state.club.facilities[key];
+            const project = state.club.facilityProjects[key];
             const cost = facilityUpgradeCost(state, key, economyConfig);
             const name = t(`club.facility.${key}` as TranslationKey);
             const extra =
                 key === 'arena'
                     ? ` (${t('club.capacity', { n: arenaCapacity(state, economyConfig, realArenaCapacity(this.ctx.config.league, state.userTeamId)) })})`
                     : '';
-            const label =
-                cost === null
-                    ? `${name}  ${t('club.levelMax', { level })}${extra}`
-                    : `${name}  ${t('club.level', { level })}${extra}  ${t('club.upgrade', { cost: formatMoney(cost) })}`;
+            let label: string;
+            if (project) {
+                const roundsLeft = facilityProjectRoundsLeft(state, key) ?? 0;
+                label = `${name}  ${t('club.level', { level })}${extra}  ${t('club.upgrading', { target: project.targetLevel, rounds: roundsLeft })}`;
+            } else if (cost === null) {
+                label = `${name}  ${t('club.levelMax', { level })}${extra}`;
+            } else {
+                label = `${name}  ${t('club.level', { level })}${extra}  ${t('club.upgrade', { cost: formatMoney(cost) })}`;
+            }
             items.push({ id: `facility:${key}`, label, disabled: cost === null || state.club.budget < cost });
         }
+        items.push({
+            id: 'ticketPrice',
+            label: t('club.ticketPrice', { amount: state.club.ticketPrice }),
+        });
         for (const offer of state.club.sponsorOffers) {
             items.push({
                 id: `offer:${offer.id}`,
-                label: t('club.offer', {
+                label: t('club.offerAmbition', {
                     brand: t(`sponsor.${offer.brandKey}` as TranslationKey),
                     perRound: formatMoney(offer.perRound),
-                    seasons: offer.seasons,
+                    target: sponsorTargetLabel(offer.promisedMaxRank),
                 }),
             });
         }
@@ -83,7 +94,7 @@ export class ClubScreen implements Screen {
             const cost = facilityUpgradeCost(this.state, key, economyConfig);
             if (cost !== null) {
                 this.ctx.screens.push(
-                    new ConfirmDialog(this.ctx, t('club.confirmUpgrade', { cost: formatMoney(cost) }), (confirmed) => {
+                    new ConfirmDialog(this.ctx, t('club.confirmUpgradeTimed', { cost: formatMoney(cost) }), (confirmed) => {
                         if (confirmed) {
                             upgradeFacility(this.state, key, economyConfig);
                         }
@@ -91,6 +102,8 @@ export class ClubScreen implements Screen {
                     }),
                 );
             }
+        } else if (kind === 'ticketPrice') {
+            this.ctx.screens.push(new TicketPriceScreen(this.ctx));
         } else if (kind === 'offer' && id) {
             this.ctx.screens.push(
                 new ConfirmDialog(this.ctx, t('club.confirmSponsor'), (confirmed) => {
@@ -125,12 +138,23 @@ export class ClubScreen implements Screen {
         }
         for (const deal of state.club.sponsors) {
             const relColor = deal.relationship >= 60 ? ROLE.success : deal.relationship >= 35 ? ROLE.warning : ROLE.danger;
-            grid.put(3, row, ROLE.text, t('club.deal', {
+            grid.put(3, row, ROLE.text, t('club.dealSeasons', {
                 brand: t(`sponsor.${deal.brandKey}` as TranslationKey),
                 perRound: formatMoney(deal.perRound),
+                seasons: deal.seasonsRemaining,
             }));
             grid.putRight(grid.cols - 4, row, relColor, t('club.relationship', { n: Math.round(deal.relationship) }));
             row++;
+            if (deal.signingBonus > 0) {
+                grid.put(4, row, ROLE.textDim, t('sponsor.signingReceived', { amount: formatMoney(deal.signingBonus) }));
+                row++;
+            }
+            if (deal.bonusAmount > 0) {
+                grid.put(4, row, ROLE.textDim, t('club.sponsorTarget', { target: sponsorTargetLabel(deal.promisedMaxRank) }));
+                row++;
+                grid.put(4, row, ROLE.textDim, t('sponsor.bonusIfMet', { amount: formatMoney(deal.bonusAmount) }));
+                row++;
+            }
         }
     }
 }

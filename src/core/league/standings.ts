@@ -1,4 +1,20 @@
-import type { Fixture, StandingsRow, TeamId } from '../model/types';
+import { leagueConfig } from '../../config/league';
+import type { Fixture, GameState, StandingsRow, TeamId } from '../model/types';
+
+/** Fixtures that count toward the NBL table (excludes BCL and playoffs). */
+export function nblFixtures(fixtures: readonly Fixture[]): Fixture[] {
+    return fixtures.filter((f) => !f.competitionId || f.competitionId === 'nbl');
+}
+
+/** Configured NBL clubs present in the save. */
+export function nblTeamIds(state: GameState): TeamId[] {
+    return leagueConfig.teams.map((t) => t.id).filter((id) => state.teams[id]);
+}
+
+/** NBL regular-season standings only. */
+export function computeNblStandings(state: GameState): StandingsRow[] {
+    return computeStandings(nblTeamIds(state), nblFixtures(state.fixtures));
+}
 
 /**
  * Standings derived from played fixtures. Sort: wins desc, then point

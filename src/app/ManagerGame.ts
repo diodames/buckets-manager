@@ -1,7 +1,8 @@
 import { BT, Vector2i, type HardwareSettings } from 'blit386';
-import { balanceConfig, displayConfig, leagueConfig, namePools, validateAllConfigs } from '../config';
+import { balanceConfig, bclConfig, displayConfig, leagueConfig, namePools, validateAllConfigs } from '../config';
 import { advanceRoundInstant } from '../core/game';
 import { economyConfig } from '../config/economy';
+import { externalOffersConfig } from '../config/externalOffers';
 import { marketConfig } from '../config/market';
 import { momentsConfig } from '../config/moments';
 import { pressConfig } from '../config/press';
@@ -62,6 +63,7 @@ export class ManagerGame {
                 storage,
                 config: {
                     league: leagueConfig,
+                    bcl: bclConfig,
                     balance: balanceConfig,
                     names: namePools,
                     moments: momentsConfig,
@@ -69,6 +71,7 @@ export class ManagerGame {
                     training: trainingConfig,
                     press: pressConfig,
                     market: marketConfig,
+                    externalOffers: externalOffersConfig,
                 },
                 settings,
                 session: null,

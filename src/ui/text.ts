@@ -71,6 +71,11 @@ export class TextGrid {
         BT.drawRectFill(new Rect2i(col * this.cellW, row * this.cellH, widthCols * this.cellW, heightRows * this.cellH), color);
     }
 
+    /** Fills an exact pixel rectangle (for wiping sprite bleed outside the cell grid). */
+    fillPixels(x: number, y: number, widthPx: number, heightPx: number, color: number): void {
+        BT.drawRectFill(new Rect2i(x, y, widthPx, heightPx), color);
+    }
+
     /** Outlined box in cell coordinates. */
     frame(col: number, row: number, widthCols: number, heightRows: number, color: number): void {
         BT.drawRect(new Rect2i(col * this.cellW, row * this.cellH, widthCols * this.cellW, heightRows * this.cellH), color);

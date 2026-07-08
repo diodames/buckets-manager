@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { validateAllConfigs } from '../src/config';
 import { leagueConfig } from '../src/config/league';
+import { startingBudgetForTeam } from '../src/core/economy';
 import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver, seasonRounds } from '../src/core/game';
-import { computeStandings } from '../src/core/league/standings';
+import { computeNblStandings } from '../src/core/league/standings';
 import { POSITIONS } from '../src/core/model/types';
 import { testConfig as config } from './helpers';
 
@@ -45,10 +46,16 @@ describe('createNewGame (real NBL rosters)', () => {
         expect(avgOverall('NYM')).toBeGreaterThan(avgOverall('HKR'));
     });
 
+    it('tier-5 clubs start with the highest budget', () => {
+        const nym = leagueConfig.teams.find((t) => t.id === 'NYM')!;
+        expect(nym.tier).toBe(5);
+        expect(state.club.budget).toBe(12_000_000);
+    });
+
     it('is deterministic per seed and club state starts clean', () => {
         const again = createNewGame(config, 777, 'NYM');
         expect(again).toEqual(state);
-        expect(state.club.budget).toBe(config.economy.startingBudget);
+        expect(state.club.budget).toBe(startingBudgetForTeam(leagueConfig.teams.find((t) => t.id === 'NYM')!, config.economy));
         expect(state.club.sponsors).toHaveLength(0);
         expect(state.club.facilities).toEqual({ arena: 1, training: 1, academy: 1 });
     });
@@ -68,7 +75,7 @@ describe('full season (instant rounds)', () => {
         expect(rounds).toBe(22);
         expect(state.fixtures.every((f) => f.result !== null)).toBe(true);
 
-        const standings = computeStandings(Object.keys(state.teams), state.fixtures);
+        const standings = computeNblStandings(state);
         let totalWins = 0;
         let totalFor = 0;
         let totalAgainst = 0;

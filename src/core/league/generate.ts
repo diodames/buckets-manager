@@ -1,4 +1,5 @@
 import type { BalanceConfig } from '../../config/balance';
+import type { BclConfig, BclTeamDef } from '../../config/bcl';
 import type { LeagueConfig, RealPlayerDef, TeamDef } from '../../config/league';
 import type { NamePools } from '../../config/names';
 import { generateName } from '../namegen';
@@ -36,7 +37,14 @@ function generateAttributes(rng: Rng, position: Position, mean: number, spread: 
  * deterministically from the player's tier/position (seeded by name), so the
  * same league seed always produces the same ratings.
  */
-function playerFromReal(rng: Rng, id: string, teamId: string, def: RealPlayerDef, seasonYear: number, balance: BalanceConfig): Player {
+export function playerFromDef(
+    rng: Rng,
+    id: string,
+    teamId: string | null,
+    def: RealPlayerDef,
+    seasonYear: number,
+    balance: BalanceConfig,
+): Player {
     const gen = balance.playerGen;
     const personalRng = rng.fork(`real:${def.firstName} ${def.lastName}`);
     const tier = Math.max(1, Math.min(5, Math.round(def.tier)));
@@ -51,17 +59,22 @@ function playerFromReal(rng: Rng, id: string, teamId: string, def: RealPlayerDef
         id,
         firstName: def.firstName,
         lastName: def.lastName,
+        nationality: def.nationality ?? 'CZE',
         age,
         heightCm: def.heightCm ?? personalRng.int(heights.min, heights.max),
         position: def.position,
         attributes,
         potential: clampAttribute(overall + headroom, gen.attributeMin, gen.attributeMax),
         fatigue: 0,
-        morale: 70,
+        morale: teamId === null ? 60 : 70,
         injury: null,
         teamId,
         contract: null,
     };
+}
+
+function playerFromReal(rng: Rng, id: string, teamId: string, def: RealPlayerDef, seasonYear: number, balance: BalanceConfig): Player {
+    return playerFromDef(rng, id, teamId, def, seasonYear, balance);
 }
 
 /** Fictional youth fill-in for rosters shorter than the fill target. */
@@ -83,6 +96,7 @@ function generateYouthPlayer(
         id,
         firstName: name.firstName,
         lastName: name.lastName,
+        nationality: 'CZE',
         age: rng.int(17, 20),
         heightCm: rng.int(heights.min, heights.max),
         position,
@@ -137,6 +151,7 @@ export function generateFreeAgents(rng: Rng, count: number, pools: NamePools, ba
             id: `FA-${i + 1}`,
             firstName: name.firstName,
             lastName: name.lastName,
+            nationality: 'CZE',
             age,
             heightCm: rng.int(heights.min, heights.max),
             position,
@@ -192,4 +207,59 @@ export function generateLeague(rng: Rng, league: LeagueConfig, balance: BalanceC
     });
 
     return { teams, players };
+}
+
+/** Adds BCL-only clubs and players to an existing game state. */
+export function generateBclClubs(
+    state: { teams: Record<string, Team>; players: Record<string, Player> },
+    bcl: BclConfig,
+    balance: BalanceConfig,
+    pools: NamePools,
+    seasonYear: number,
+    rng: Rng,
+): void {
+    const usedNames = new Set(Object.values(state.players).map((p) => `${p.firstName} ${p.lastName}`));
+    let teamIndex = Object.keys(state.teams).length;
+    for (const teamDef of bcl.teams) {
+        if (teamDef.nblTeamId) {
+            continue;
+        }
+        if (state.teams[teamDef.id]) {
+            continue;
+        }
+        const teamRng = rng.fork(`bcl:${teamDef.id}`);
+        const teamPlayers: Player[] = teamDef.roster.map((def, i) =>
+            playerFromReal(teamRng.fork(`p${i}`), `${teamDef.id}-P${i + 1}`, teamDef.id, def, seasonYear, balance),
+        );
+        const toFill = Math.max(0, 12 - teamPlayers.length);
+        const fillPositions = [...missingPositions(teamDef.roster)];
+        for (let i = 0; i < toFill; i++) {
+            const position = fillPositions.shift() ?? teamRng.pick(POSITIONS);
+            teamPlayers.push(
+                generateYouthPlayer(teamRng, `${teamDef.id}-Y${i + 1}`, teamDef.id, position, pools, usedNames, balance),
+            );
+        }
+        for (const player of teamPlayers) {
+            player.contract = { salary: 0, yearsLeft: 99 };
+            state.players[player.id] = player;
+        }
+        const schemes = ['man', 'man', 'zone', 'press'] as const;
+        state.teams[teamDef.id] = {
+            id: teamDef.id,
+            playerIds: teamPlayers.map((pl) => pl.id),
+            tactics: {
+                starters: pickStarters(teamPlayers),
+                pace: 'normal',
+                offenseFocus: 'balanced',
+                defenseScheme: teamRng.pick(schemes),
+            },
+            colorSlotPrimary: 16 + teamIndex * 2,
+            colorSlotSecondary: 16 + teamIndex * 2 + 1,
+        };
+        teamIndex++;
+    }
+}
+
+export function bclTeamDefById(id: string, bcl: BclConfig): BclTeamDef | undefined {
+    return bcl.teams.find((t) => t.id === id || t.nblTeamId === id);
 }
