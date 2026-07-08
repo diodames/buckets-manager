@@ -41,9 +41,9 @@ negotiations; ONE shared valuation formula used everywhere.**
 - **M8. Bidding on AI players (MUST).** Bid on anyone; AI accepts if `bid >= TV * sellF`;
   sellF 0.85 surplus | 1.1 normal | 1.5+ core starters of contenders. One counter round
   each side. Then personal terms via M3 dialog (1 round, demand*1.05).
-- **M9. Transfer window (MUST).** Pre-season + mid-season rounds 8-12, hard deadline after
-  round 12 (of 22). Outside windows: free agents only. Deadline day: 2-3 last-minute AI
-  offers.
+- **M9. Transfer window (MUST).** Pre-season rounds 1-7 and mid-season rounds 8-12
+  for club-to-club deals; hard deadline after round 12 (of 22). Outside windows:
+  free agents only until playoffs. Deadline day: 2-3 last-minute AI offers at round 12.
 - **M10. Unsolicited AI bids (NICE).** Unlisted stars attract 1-2 bids/season at TV*1.2-1.4;
   rejecting a huge bid: player morale -8.
 

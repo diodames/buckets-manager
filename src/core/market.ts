@@ -2,8 +2,10 @@ import type { BalanceConfig } from '../config/balance';
 import type { EconomyConfig } from '../config/economy';
 import type { ExternalOffersConfig } from '../config/externalOffers';
 import { externalOffersConfig } from '../config/externalOffers';
+import { isTransferEmbargoed } from './budgetCrisis';
 import { leagueConfig } from '../config/league';
 import type { MarketConfig } from '../config/market';
+import { marketConfig } from '../config/market';
 import type { NamePools } from '../config/names';
 import { seasonMarketForYear } from '../config/seasonSignings';
 import {
@@ -13,7 +15,7 @@ import {
 } from '../config/youthAcademy';
 import { generateFreeAgents } from './league/generate';
 import { totalRounds } from './league/schedule';
-import { effectiveFacilityLevel, interpolateFacilityValue, aiCanAffordTransferFee, aiCanSignFreeAgent, creditAiBudget, debitAiBudget } from './economy';
+import { effectiveFacilityLevel, interpolateFacilityValue, aiCanAffordTransferFee, aiCanSignFreeAgent, aiIsCashStrapped, creditAiBudget, debitAiBudget } from './economy';
 import { canAffordContract, financeWarningTier } from './cashflow';
 import { generateName } from './namegen';
 import { advanceSeasonMarket, aiSigningBoost } from './seasonMarket';
@@ -37,21 +39,46 @@ import {
     walkAwayIntent,
 } from './contracts';
 import { stageMovement, type StagedMovement } from './offseasonMovements';
+import { wouldExceedForeignCap, refreshTeamStarters } from './roster';
+import { personalityBuyAggression, personalitySellFactor, personalityTargetAge, teamPersonality } from './personality';
 import type {
     FixedYouthArrival,
     GameState, NegotiationState, Player, PlayerId, Position, TeamId, YouthProspect,
 } from './model/types';
 import { ATTRIBUTE_KEYS, overallRating, POSITIONS } from './model/types';
+import { aggregatePlayerSeasonStats, breakthroughRatio } from './playerStats';
 import { hashString, type Rng } from './rng';
 
 // ---------- salaries, demand, transfer value ----------
 
 export function baseSalary(overall: number, economy: EconomyConfig): number {
-    return Math.max(economy.salary.min, Math.round(economy.salary.base + (overall - 50) * economy.salary.perPoint));
+    const s = economy.salary;
+    let amount = s.base;
+    if (overall > 50) {
+        const lowBand = Math.min(overall, 70) - 50;
+        amount += lowBand * s.perPoint;
+    }
+    if (overall > 70) {
+        const midBand = Math.min(overall, 80) - 70;
+        amount += midBand * s.perPointMid;
+    }
+    if (overall > 80) {
+        amount += (overall - 80) * s.perPointElite;
+    }
+    return Math.max(s.min, Math.round(amount));
 }
 
 function isYouthContract(player: Player, market: MarketConfig): boolean {
     return player.id.startsWith('YTH-') && player.age <= market.youth.ageMax + 1;
+}
+
+function czechSalaryMult(player: Player, market: MarketConfig): number {
+    return isCzech(player) ? market.contracts.czechMarketSalaryMult : 1;
+}
+
+/** Implied monthly pay for a season salary (real NBL contracts are ~9 months). */
+export function seasonMonthlySalary(seasonSalary: number): number {
+    return Math.round(seasonSalary / 9);
 }
 
 /** Current fair salary for a player under economy rules (youth deals use the youth rate). */
@@ -59,17 +86,7 @@ export function marketSalaryForPlayer(player: Player, economy: EconomyConfig, ma
     if (isYouthContract(player, market)) {
         return market.youth.salary;
     }
-    return baseSalary(overallRating(player.attributes), economy);
-}
-
-/** Salary used for transfer value and wage math; never below the current market rate. */
-export function effectiveContractSalary(player: Player, economy: EconomyConfig, market: MarketConfig): number {
-    const marketRate = marketSalaryForPlayer(player, economy, market);
-    const stored = player.contract?.salary;
-    if (stored === undefined || stored === 0) {
-        return marketRate;
-    }
-    return Math.max(stored, marketRate);
+    return Math.round(baseSalary(overallRating(player.attributes), economy) * czechSalaryMult(player, market));
 }
 
 /** Rewrites every stored contract to the current salary scale (preserves yearsLeft). */
@@ -84,6 +101,83 @@ export function resyncRosterContracts(state: GameState, economy: EconomyConfig, 
         }
         player.contract.salary = marketSalaryForPlayer(player, economy, market);
     }
+}
+
+function leagueMedianOverall(state: GameState): number {
+    const overalls = Object.values(state.players)
+        .filter((p) => p.teamId !== null)
+        .map((p) => overallRating(p.attributes))
+        .sort((a, b) => a - b);
+    return overalls[Math.floor(overalls.length / 2)] ?? 55;
+}
+
+function positionScarcityMult(state: GameState, player: Player, market: MarketConfig, teamId: TeamId | null): number {
+    const c = market.contracts;
+    const overall = overallRating(player.attributes);
+    const median = leagueMedianOverall(state);
+    let mult = 1;
+    if (
+        (c.scarcePositions as readonly string[]).includes(player.position)
+        && overall >= median + c.scarceOverallOffset
+    ) {
+        mult *= c.scarcePositionBonus;
+    }
+    if (teamId) {
+        const roster = (state.teams[teamId]?.playerIds ?? [])
+            .map((id) => state.players[id])
+            .filter((p): p is Player => p !== undefined);
+        const similarAtPos = roster.filter(
+            (p) => p.position === player.position && overallRating(p.attributes) >= overall - 3,
+        ).length;
+        if (similarAtPos >= 4) {
+            mult *= c.surplusPositionDiscount;
+        }
+    }
+    return mult;
+}
+
+function formDemandFactor(state: GameState, player: Player, market: MarketConfig): number {
+    const c = market.contracts;
+    const stats = aggregatePlayerSeasonStats(state, player.id);
+    if (stats.games < externalOffersConfig.minGames) {
+        return 1;
+    }
+    const overall = overallRating(player.attributes);
+    const ratio = breakthroughRatio(stats.gameScore, overall, externalOffersConfig);
+    if (ratio >= c.formRatioHot) {
+        return c.formFactorMax;
+    }
+    if (ratio <= c.formRatioCold) {
+        return c.formFactorMin;
+    }
+    return 1;
+}
+
+function freeAgentDemandMult(round: number, market: MarketConfig): number {
+    return market.contracts.freeAgentDemandByRound.find((row) => round <= row.maxRound)?.mult ?? 1.15;
+}
+
+function contractValueFactor(player: Player, market: MarketConfig, state?: GameState): number {
+    const cv = market.transfers.contractValue;
+    const yearsLeft = player.contract?.yearsLeft ?? 1;
+    if (yearsLeft >= 2) {
+        return cv.multi;
+    }
+    if (state) {
+        const seasonEnd = totalRounds(Object.keys(state.teams).length, leagueConfig.roundRobinLegs);
+        const roundsLeft = seasonEnd - state.currentRound + 1;
+        if (yearsLeft <= 1 && roundsLeft < market.transfers.expiringSoonRounds) {
+            return cv.expiringSoon;
+        }
+    }
+    return cv.finalYear;
+}
+
+/** Agent fee due on signing or renewal (M4). */
+export function agentFeeAmount(player: Player, firstYearSalary: number, market: MarketConfig): number {
+    const c = market.contracts;
+    const pct = overallRating(player.attributes) >= c.agentFeeEliteOverall ? c.agentFeeElitePct : c.agentFeePct;
+    return Math.round((firstYearSalary * pct) / 10_000) * 10_000;
 }
 
 function factorByAge(table: readonly { maxAge: number; factor: number }[], age: number): number {
@@ -105,35 +199,93 @@ function userTablePosition(state: GameState): number {
 }
 
 /** M2: what the player considers a fair salary. */
-export function contractDemand(_state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
+export function contractDemand(state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
     const c = market.contracts;
-    const marketSalary = baseSalary(overallRating(player.attributes), economy);
+    const marketSalary = marketSalaryForPlayer(player, economy, market);
     const ageF = factorByAge(c.ageFactor, player.age);
     // Unhappy players want danger money; happy ones give a discount.
     const happinessF =
         player.morale >= 80 ? c.happinessMin : player.morale <= 30 ? c.happinessMax : c.happinessMin + ((80 - player.morale) / 50) * (c.happinessMax - c.happinessMin);
-    let demand = marketSalary * ageF * happinessF;
+    let demand = marketSalary * ageF * happinessF * formDemandFactor(state, player, market);
+    demand *= positionScarcityMult(state, player, market, player.teamId);
     if (player.teamId === null) {
-        demand *= c.freeAgentDemandMult;
+        demand *= freeAgentDemandMult(state.currentRound, market);
     }
     return Math.round(demand / 10_000) * 10_000;
 }
 
 /** M6: cash value of a player on the transfer market. */
-export function transferValue(player: Player, market: MarketConfig, economy: EconomyConfig): number {
+export function transferValue(
+    player: Player,
+    market: MarketConfig,
+    economy: EconomyConfig,
+    state?: GameState,
+): number {
     const tCfg = market.transfers;
     const overall = overallRating(player.attributes);
-    const salary = effectiveContractSalary(player, economy, market);
+    const salary = marketSalaryForPlayer(player, economy, market);
     const ageV = factorByAge(tCfg.ageValue, player.age);
     const potV = Math.min(tCfg.potentialCap, 1 + (player.potential - overall) / 50);
-    const contractV = (player.contract?.yearsLeft ?? 1) >= 2 ? tCfg.contractValue.multi : tCfg.contractValue.finalYear;
-    return Math.round((salary * tCfg.salaryMult * ageV * potV * contractV) / 50_000) * 50_000;
+    const contractV = contractValueFactor(player, market, state);
+    const scarcity = state ? positionScarcityMult(state, player, market, player.teamId) : 1;
+    return Math.round((salary * tCfg.salaryMult * ageV * potV * contractV * scarcity) / 50_000) * 50_000;
+}
+
+/** Seller premium multiplier for bidding on an AI club's player (M8). */
+export function transferSellFactor(state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
+    const tCfg = market.transfers;
+    const sellerId = player.teamId!;
+    const needs = teamNeeds(state, sellerId, market);
+    const positionNeed = needs.find((n) => n.position === player.position);
+    const surplus = (positionNeed?.surplus ?? 0) > 0;
+    const starter = isStarter(state, player);
+    const avgOverall = (teamId: TeamId): number => {
+        const roster = (state.teams[teamId]?.playerIds ?? [])
+            .map((id) => state.players[id])
+            .filter((p): p is Player => p !== undefined);
+        return roster.reduce((s, p) => s + overallRating(p.attributes), 0) / Math.max(1, roster.length);
+    };
+    const sellerRank = Object.keys(state.teams)
+        .sort((a, b) => avgOverall(b) - avgOverall(a))
+        .indexOf(sellerId);
+    const contender = sellerRank >= 0 && sellerRank < 3;
+    let sellF: number = surplus ? tCfg.sellFactorSurplus : starter && contender ? tCfg.sellFactorCore : tCfg.sellFactorNormal;
+    const tableRank = teamTableRank(state, sellerId);
+    const czechCore = isCzech(player) && starter && tableRank <= 4;
+    if (czechCore) {
+        sellF = Math.max(sellF, tCfg.sellFactorCzechCore);
+    }
+    if (sellerId !== state.userTeamId && aiIsCashStrapped(state, sellerId, economy, leagueConfig, market.ai.forcedSellPayrollWeeks)) {
+        sellF = Math.min(sellF, tCfg.forcedSellFactor);
+    }
+    return sellF;
+}
+
+export function transferAskingPrice(state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
+    return Math.round((transferValue(player, market, economy, state) * transferSellFactor(state, player, market, economy)) / 50_000) * 50_000;
+}
+
+/** True once the NBL playoff bracket has started. */
+export function isNblPlayoffsStarted(state: GameState): boolean {
+    return state.playoffs !== null;
+}
+
+/** Full transfer market (club-to-club bids and listings) during preseason and mid-season windows. */
+export function isFullTransferMarketOpen(state: GameState, market: MarketConfig): boolean {
+    if (isNblPlayoffsStarted(state)) {
+        return false;
+    }
+    const round = state.currentRound;
+    return round >= market.transfers.preseasonWindowRound && round <= market.transfers.midWindowEndRound;
+}
+
+/** Free-agent signings stay open until NBL playoffs begin. */
+export function isFreeAgentMarketOpen(state: GameState): boolean {
+    return !isNblPlayoffsStarted(state);
 }
 
 export function isMarketOpen(state: GameState, market: MarketConfig): boolean {
-    const seasonEnd = totalRounds(Object.keys(state.teams).length, leagueConfig.roundRobinLegs);
-    const deadline = Math.min(market.transfers.deadlineRound, seasonEnd);
-    return state.currentRound <= deadline;
+    return isFullTransferMarketOpen(state, market);
 }
 
 // ---------- team needs (M14) ----------
@@ -170,6 +322,7 @@ export interface NegotiationResult {
         | 'finalRejected'
         | 'locked'
         | 'rosterFull'
+        | 'foreignCapFull'
         | 'wageBudgetExceeded'
         | 'projectedDeficit';
     // Salary the player hints at / firmly demands after a rejection.
@@ -213,7 +366,7 @@ function demandFor(
         }
         const fee = terms.agreedTransferFee ?? 0;
         if (fee > 0) {
-            const value = transferValue(player, market, economy);
+            const value = transferValue(player, market, economy, state);
             if (fee >= value) {
                 demand = Math.round(demand * market.transfers.transferFeeCommitmentMult);
             }
@@ -455,6 +608,9 @@ export function negotiateOffer(
         if (!userTeam || (mode !== 'renew' && userTeam.playerIds.length >= market.roster.maxPlayers)) {
             return { status: 'rosterFull', hintSalary: null, negotiationRound: negotiation.round };
         }
+        if (mode !== 'renew' && userTeam && wouldExceedForeignCap(state, state.userTeamId, player)) {
+            return { status: 'foreignCapFull', hintSalary: null, negotiationRound: negotiation.round };
+        }
         const replacesPlayerId = mode === 'renew' || mode === 'transferTerms'
             ? player.id
             : undefined;
@@ -466,6 +622,10 @@ export function negotiateOffer(
                 negotiationRound: negotiation.round,
             };
         }
+        const agentFee = agentFeeAmount(player, offer.salary, market);
+        if (state.club.budget < agentFee) {
+            return { status: 'projectedDeficit', hintSalary: null, negotiationRound: negotiation.round };
+        }
         if (mode === 'freeAgent') {
             player.teamId = state.userTeamId;
             userTeam.playerIds.push(player.id);
@@ -474,6 +634,7 @@ export function negotiateOffer(
         // player once the fee is actually paid.
         player.contract = { salary: offer.salary, yearsLeft: offer.years };
         player.morale = Math.min(100, player.morale + 5);
+        pushLedger(state, economy, 'agentFee', -agentFee);
         state.market.negotiations = state.market.negotiations.filter((n) => n.playerId !== playerId);
         return { status: 'accepted', hintSalary: null, negotiationRound: negotiation.round };
     }
@@ -497,7 +658,7 @@ export function negotiateOffer(
 
 // ---------- listings, offers, bids (M7-M10) ----------
 
-function pushLedger(state: GameState, economy: EconomyConfig, kind: 'transferIn' | 'transferOut' | 'buyout', amount: number): void {
+function pushLedger(state: GameState, economy: EconomyConfig, kind: 'transferIn' | 'transferOut' | 'buyout' | 'agentFee', amount: number): void {
     state.club.ledger.push({ round: state.currentRound, kind, amount });
     if (state.club.ledger.length > economy.ledgerCapacity) {
         state.club.ledger.splice(0, state.club.ledger.length - economy.ledgerCapacity);
@@ -531,12 +692,21 @@ function removeFromTeam(state: GameState, player: Player): void {
 }
 
 export function listPlayer(state: GameState, playerId: PlayerId, askingPrice: number | null, market: MarketConfig): boolean {
+    if (isTransferEmbargoed(state)) {
+        return false;
+    }
+    if (!isFullTransferMarketOpen(state, market)) {
+        return false;
+    }
     const player = state.players[playerId];
     if (!player || player.teamId !== state.userTeamId || state.market.listings.some((l) => l.playerId === playerId)) {
         return false;
     }
     state.market.listings.push({ playerId, askingPrice, listedRound: state.currentRound });
     player.morale = Math.max(0, player.morale - market.transfers.listingMoralePenalty);
+    if (isStarter(state, player)) {
+        queuePressHook(state, 'soldCaptain', playerId);
+    }
     return true;
 }
 
@@ -556,7 +726,7 @@ export function acceptTransferOffer(state: GameState, offerId: string, economy: 
     if ((userTeam?.playerIds.length ?? 0) <= 10) {
         return false; // roster minimum (NBL rule)
     }
-    if (!aiCanAffordTransferFee(state, offer.fromTeamId, offer.amount)) {
+    if (!aiCanAffordTransferFee(state, offer.fromTeamId, offer.amount, marketConfig.ai.maxTransferSpendPct)) {
         return false;
     }
     removeFromTeam(state, player);
@@ -576,8 +746,9 @@ export function rejectTransferOffer(state: GameState, offerId: string, market: M
     if (offer) {
         const player = state.players[offer.playerId];
         // Turning down a big unsolicited bid stings the player (M10).
-        if (player && offer.amount >= transferValue(player, market, economy) * market.transfers.unsolicitedFactorMin) {
+        if (player && offer.amount >= transferValue(player, market, economy, state) * market.transfers.unsolicitedFactorMin) {
             player.morale = Math.max(0, player.morale - market.transfers.rejectedBigBidMorale);
+            queuePressHook(state, 'rejectedBid', player.id);
         }
     }
     state.market.incomingOffers = state.market.incomingOffers.filter((o) => o.id !== offerId);
@@ -597,7 +768,7 @@ export function counterTransferOffer(
         return 'invalid';
     }
     offer.countered = true;
-    const ceiling = transferValue(player, market, economy) * market.transfers.aiCounterCeiling;
+    const ceiling = transferValue(player, market, economy, state) * market.transfers.aiCounterCeiling;
     if (counterAmount <= ceiling) {
         offer.amount = counterAmount;
         return 'accepted';
@@ -617,6 +788,9 @@ export function bidOnPlayer(state: GameState, playerId: PlayerId, amount: number
     if (!player || player.teamId === null || player.teamId === state.userTeamId) {
         return { status: 'rejected', counterAmount: null };
     }
+    if (isTransferEmbargoed(state)) {
+        return { status: 'marketClosed', counterAmount: null };
+    }
     if (!isMarketOpen(state, market)) {
         return { status: 'marketClosed', counterAmount: null };
     }
@@ -624,28 +798,9 @@ export function bidOnPlayer(state: GameState, playerId: PlayerId, amount: number
         return { status: 'cantAfford', counterAmount: null };
     }
     const tCfg = market.transfers;
-    const needs = teamNeeds(state, player.teamId, market);
-    const positionNeed = needs.find((n) => n.position === player.position);
-    const surplus = (positionNeed?.surplus ?? 0) > 0;
+    const sellF = transferSellFactor(state, player, market, economy);
     const starter = isStarter(state, player);
-    // Sellers guard starters when their squad ranks among the league's best.
-    const avgOverall = (teamId: TeamId): number => {
-        const roster = (state.teams[teamId]?.playerIds ?? [])
-            .map((id) => state.players[id])
-            .filter((p): p is Player => p !== undefined);
-        return roster.reduce((s, p) => s + overallRating(p.attributes), 0) / Math.max(1, roster.length);
-    };
-    const sellerRank = Object.keys(state.teams)
-        .sort((a, b) => avgOverall(b) - avgOverall(a))
-        .indexOf(player.teamId);
-    const contender = sellerRank >= 0 && sellerRank < 3;
-    let sellF: number = surplus ? tCfg.sellFactorSurplus : starter && contender ? tCfg.sellFactorCore : tCfg.sellFactorNormal;
-    const tableRank = teamTableRank(state, player.teamId);
-    const czechCore = isCzech(player) && starter && tableRank <= 4;
-    if (czechCore) {
-        sellF = Math.max(sellF, tCfg.sellFactorCzechCore);
-    }
-    const price = transferValue(player, market, economy) * sellF;
+    const price = transferValue(player, market, economy, state) * sellF;
     if (starter && sellF >= tCfg.sellFactorCore && amount < price) {
         return { status: 'notForSale', counterAmount: null };
     }
@@ -664,6 +819,12 @@ export function executePurchase(state: GameState, playerId: PlayerId, fee: numbe
     const userTeam = state.teams[state.userTeamId];
     const sellerId = player?.teamId ?? null;
     if (!player || !userTeam || fee > state.club.budget || userTeam.playerIds.length >= market.roster.maxPlayers) {
+        return false;
+    }
+    if (wouldExceedForeignCap(state, state.userTeamId, player)) {
+        return false;
+    }
+    if (sellerId && sellerId !== state.userTeamId && (isTransferEmbargoed(state) || !isMarketOpen(state, market))) {
         return false;
     }
     removeFromTeam(state, player);
@@ -689,16 +850,12 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
     state.market.incomingOffers = state.market.incomingOffers.filter((o) => o.expiresRound >= round);
 
     if (isMarketOpen(state, market)) {
+        const deadlineBurst = round === tCfg.midWindowEndRound;
+        const burstRemaining = deadlineBurst ? tCfg.deadlineOfferBurstCount : 1;
         // AI offers for listed players: interest scales with how attractive
         // the player is (overall vs league median, potential headroom, age),
         // so stars draw bids within a round or two while journeymen may wait.
-        const medianOverall = (() => {
-            const overalls = Object.values(state.players)
-                .filter((p) => p.teamId !== null)
-                .map((p) => overallRating(p.attributes))
-                .sort((a, b) => a - b);
-            return overalls[Math.floor(overalls.length / 2)] ?? 55;
-        })();
+        const medianOverall = leagueMedianOverall(state);
         for (const listing of state.market.listings) {
             const player = state.players[listing.playerId];
             if (!player || player.teamId !== state.userTeamId) {
@@ -711,31 +868,42 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             const quality = (overall - medianOverall) / 20; // ~ -1 .. +1
             const upside = Math.max(0, player.potential - overall) / 25; // 0 .. ~1
             const youth = player.age <= 24 ? 0.15 : player.age >= 32 ? -0.2 : 0;
-            const interest = Math.max(0.08, Math.min(0.95, tCfg.offerChancePerRound + quality * 0.35 + upside * 0.3 + youth));
-            if (!rng.chance(interest)) {
-                continue;
-            }
-            const factor = tCfg.offerFactorMin + rng.next() * (tCfg.offerFactorMax - tCfg.offerFactorMin);
-            const baseAmount = Math.round((transferValue(player, market, economy) * factor) / 50_000) * 50_000;
-            const buyers = Object.keys(state.teams).filter((id) => id !== state.userTeamId);
-            const affordableBuyers = buyers.filter((id) => aiCanAffordTransferFee(state, id, baseAmount));
-            if (affordableBuyers.length === 0) {
-                continue;
-            }
-            const buyer = rng.pick(affordableBuyers);
-            const needs = teamNeeds(state, buyer, market);
-            const needF = (needs.find((n) => n.position === player.position)?.need ?? 0) > 0 ? tCfg.needFactorMax : 1;
-            const amount = Math.round((transferValue(player, market, economy) * factor * needF) / 50_000) * 50_000;
-            const floor = listing.askingPrice !== null ? listing.askingPrice * 0.8 : 0;
-            if (amount >= floor) {
-                state.market.incomingOffers.push({
-                    id: `off-${round}-${rng.int(0, 99_999)}`,
-                    playerId: player.id,
-                    fromTeamId: buyer,
-                    amount: Math.max(amount, Math.min(listing.askingPrice ?? amount, amount * 1.05)),
-                    expiresRound: round + tCfg.offerTtlRounds,
-                    countered: false,
-                });
+            const interest = Math.max(
+                0.08,
+                Math.min(0.95, (deadlineBurst ? 0.9 : tCfg.offerChancePerRound) + quality * 0.35 + upside * 0.3 + youth),
+            );
+            for (let burst = 0; burst < burstRemaining; burst++) {
+                if (!deadlineBurst && burst > 0) {
+                    break;
+                }
+                if (!rng.chance(interest)) {
+                    continue;
+                }
+                const factor = tCfg.offerFactorMin + rng.next() * (tCfg.offerFactorMax - tCfg.offerFactorMin);
+                const baseAmount = Math.round((transferValue(player, market, economy, state) * factor) / 50_000) * 50_000;
+                const buyers = Object.keys(state.teams).filter((id) => id !== state.userTeamId);
+                const affordableBuyers = buyers.filter(
+                    (id) => aiCanAffordTransferFee(state, id, baseAmount, market.ai.maxTransferSpendPct),
+                );
+                if (affordableBuyers.length === 0) {
+                    continue;
+                }
+                const buyer = rng.pick(affordableBuyers);
+                const needs = teamNeeds(state, buyer, market);
+                const needF = (needs.find((n) => n.position === player.position)?.need ?? 0) > 0 ? tCfg.needFactorMax : 1;
+                const amount = Math.round((transferValue(player, market, economy, state) * factor * needF) / 50_000) * 50_000;
+                const floor = listing.askingPrice !== null ? listing.askingPrice * 0.8 : 0;
+                if (amount >= floor) {
+                    state.market.incomingOffers.push({
+                        id: `off-${round}-${burst}-${rng.int(0, 99_999)}`,
+                        playerId: player.id,
+                        fromTeamId: buyer,
+                        amount: Math.max(amount, Math.min(listing.askingPrice ?? amount, amount * 1.05)),
+                        expiresRound: round + tCfg.offerTtlRounds,
+                        countered: false,
+                    });
+                    break;
+                }
             }
         }
 
@@ -754,9 +922,9 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             if (stars.length > 0) {
                 const target = rng.pick(stars);
                 const factor = tCfg.unsolicitedFactorMin + rng.next() * (tCfg.unsolicitedFactorMax - tCfg.unsolicitedFactorMin);
-                const amount = Math.round((transferValue(target, market, economy) * factor) / 50_000) * 50_000;
+                const amount = Math.round((transferValue(target, market, economy, state) * factor) / 50_000) * 50_000;
                 const affordableBuyers = Object.keys(state.teams).filter(
-                    (id) => id !== state.userTeamId && aiCanAffordTransferFee(state, id, amount),
+                    (id) => id !== state.userTeamId && aiCanAffordTransferFee(state, id, amount, market.ai.maxTransferSpendPct),
                 );
                 if (affordableBuyers.length > 0) {
                     state.market.incomingOffers.push({
@@ -801,7 +969,7 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
                     (overallRating(a.attributes) + aiSigningBoost(state, a.id, teamId)),
             )[0];
             if (signing) {
-                const salary = baseSalary(overallRating(signing.attributes), economy);
+                const salary = marketSalaryForPlayer(signing, economy, market);
                 if (!aiCanSignFreeAgent(state, teamId, salary, economy, leagueConfig)) {
                     continue;
                 }
@@ -809,9 +977,12 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
                 signing.contract = { salary, yearsLeft: 1 };
                 team.playerIds.push(signing.id);
                 freeAgents.splice(freeAgents.indexOf(signing), 1);
+                refreshTeamStarters(state, teamId);
             }
         }
     }
+
+    runAiToAiTransfers(state, market, economy, rng);
 
     if (externalOffers) {
         tickExternalOffers(state, economy, externalOffers, market);
@@ -1116,7 +1287,7 @@ export function signYouth(
     prospectPlayerId: PlayerId,
     market: MarketConfig,
     economy: EconomyConfig,
-): 'signed' | 'rosterFull' | 'wageBudgetExceeded' | 'projectedDeficit' | 'invalid' {
+): 'signed' | 'rosterFull' | 'foreignCapFull' | 'wageBudgetExceeded' | 'projectedDeficit' | 'invalid' {
     const prospect = state.market.youthProspects.find((p) => p.player.id === prospectPlayerId);
     const userTeam = state.teams[state.userTeamId];
     if (!prospect || !userTeam) {
@@ -1124,6 +1295,9 @@ export function signYouth(
     }
     if (userTeam.playerIds.length >= market.roster.maxPlayers) {
         return 'rosterFull';
+    }
+    if (wouldExceedForeignCap(state, state.userTeamId, prospect.player)) {
+        return 'foreignCapFull';
     }
     if (financeWarningTier(state, economy, leagueConfig) === 'red') {
         return 'projectedDeficit';
@@ -1202,5 +1376,122 @@ export function replenishFreeAgents(
 /** AI clubs auto-renew expiring contracts with importance- and nationality-aware logic. */
 export function runAiContractRenewals(state: GameState, market: MarketConfig, economy: EconomyConfig, rng: Rng): AiRenewalResult {
     return runSmartAiContractRenewals(state, market, economy, externalOffersConfig, contractDemand, rng);
+}
+
+/** Queue a transfer-themed press hook for the next user press conference (M20). */
+export function queuePressHook(state: GameState, kind: import('./model/types').TransferPressHookKind, playerId: PlayerId): void {
+    state.market.pendingPressHooks.push({ kind, playerId, round: state.currentRound });
+}
+
+export function toggleWatchlist(state: GameState, playerId: PlayerId): boolean {
+    const list = state.market.watchlist;
+    const idx = list.indexOf(playerId);
+    if (idx >= 0) {
+        list.splice(idx, 1);
+        return false;
+    }
+    list.push(playerId);
+    return true;
+}
+
+export function isWatchlisted(state: GameState, playerId: PlayerId): boolean {
+    return state.market.watchlist.includes(playerId);
+}
+
+/** AI clubs list surplus players and buy from each other (no user involvement). */
+function runAiToAiTransfers(state: GameState, market: MarketConfig, economy: EconomyConfig, rng: Rng): void {
+    if (!isMarketOpen(state, market)) {
+        return;
+    }
+    const nblTeamIds = leagueConfig.teams.map((t) => t.id);
+    for (const sellerId of nblTeamIds) {
+        if (sellerId === state.userTeamId) {
+            continue;
+        }
+        const seller = state.teams[sellerId];
+        if (!seller || seller.playerIds.length <= market.roster.minPlayers + 1) {
+            continue;
+        }
+        const needs = teamNeeds(state, sellerId, market);
+        const surplus = needs.filter((n) => n.surplus > 0);
+        if (surplus.length === 0 || rng.chance(0.35)) {
+            continue;
+        }
+        const pos = rng.pick(surplus).position;
+        const candidates = seller.playerIds
+            .map((id) => state.players[id])
+            .filter((p): p is Player => p !== undefined && p.position === pos && !Object.values(seller.tactics.starters).includes(p.id))
+            .sort((a, b) => overallRating(a.attributes) - overallRating(b.attributes));
+        const listed = candidates[0];
+        if (!listed) {
+            continue;
+        }
+        seller.aiListings = seller.aiListings ?? [];
+        if (!seller.aiListings.includes(listed.id)) {
+            seller.aiListings.push(listed.id);
+        }
+    }
+
+    for (const buyerId of nblTeamIds) {
+        if (buyerId === state.userTeamId) {
+            continue;
+        }
+        const buyer = state.teams[buyerId];
+        if (!buyer) {
+            continue;
+        }
+        const needs = teamNeeds(state, buyerId, market).filter((n) => n.need > 0);
+        if (needs.length === 0) {
+            continue;
+        }
+        const personality = teamPersonality(state, buyerId);
+        const buyAgg = personalityBuyAggression(personality);
+        for (const sellerId of nblTeamIds) {
+            if (sellerId === buyerId || sellerId === state.userTeamId) {
+                continue;
+            }
+            const seller = state.teams[sellerId];
+            const listings = seller?.aiListings ?? [];
+            for (const playerId of listings) {
+                const player = state.players[playerId];
+                if (!player || player.teamId !== sellerId) {
+                    continue;
+                }
+                const need = needs.find((n) => n.position === player.position);
+                if (!need) {
+                    continue;
+                }
+                if (wouldExceedForeignCap(state, buyerId, player)) {
+                    continue;
+                }
+                const tv = transferValue(player, market, economy, state);
+                const fee = Math.round((tv * 0.85 * buyAgg * personalityTargetAge(player, personality)) / 50_000) * 50_000;
+                const sellF = personalitySellFactor(teamPersonality(state, sellerId));
+                if (fee < tv * sellF * 0.9) {
+                    continue;
+                }
+                if (!aiCanAffordTransferFee(state, buyerId, fee, market.ai.maxTransferSpendPct)) {
+                    continue;
+                }
+                if (buyer.playerIds.length >= market.roster.maxPlayers) {
+                    continue;
+                }
+                if (!rng.chance(0.25 * buyAgg)) {
+                    continue;
+                }
+                removeFromTeam(state, player);
+                player.teamId = buyerId;
+                buyer.playerIds.push(player.id);
+                debitAiBudget(state, buyerId, fee);
+                creditAiBudget(state, sellerId, fee);
+                if (seller) {
+                    seller.aiListings = (seller.aiListings ?? []).filter((id) => id !== playerId);
+                }
+                refreshTeamStarters(state, buyerId);
+                refreshTeamStarters(state, sellerId);
+                break;
+            }
+        }
+    }
 }
 

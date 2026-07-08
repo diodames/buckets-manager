@@ -1,6 +1,8 @@
-import type { EconomyConfig } from '../config/economy';
 import type { TrainingConfig, TrainingFocus } from '../config/training';
+import type { EconomyConfig } from '../config/economy';
+import type { LeagueConfig } from '../config/league';
 import { trainingDevMultiplier } from './economy';
+import { aiTrainingDevMultiplier } from './aiFacilities';
 import type { GameState, Player } from './model/types';
 import { ATTRIBUTE_KEYS } from './model/types';
 import type { Rng } from './rng';
@@ -10,12 +12,20 @@ import type { Rng } from './rng';
  * club uses its chosen focus and benefits from its training facility; AI
  * clubs train 'balanced' at facility level 1.
  */
-export function weeklyTrainingTick(state: GameState, config: { training: TrainingConfig; economy: EconomyConfig }, rng: Rng): void {
+export function weeklyTrainingTick(state: GameState, config: { training: TrainingConfig; economy: EconomyConfig; league?: LeagueConfig }, rng: Rng): void {
     const training = config.training;
     for (const player of Object.values(state.players)) {
         const isUserPlayer = player.teamId === state.userTeamId;
         const focus: TrainingFocus = isUserPlayer ? state.club.trainingFocus : 'balanced';
-        const devMult = isUserPlayer ? trainingDevMultiplier(state, config.economy) : 1;
+        let devMult = 1;
+        if (isUserPlayer) {
+            devMult = trainingDevMultiplier(state, config.economy);
+        } else if (player.teamId) {
+            const finance = state.nblFinances[player.teamId];
+            if (finance) {
+                devMult = aiTrainingDevMultiplier(finance, config.economy);
+            }
+        }
 
         recoverFatigue(player, focus, training);
         tickInjury(player);

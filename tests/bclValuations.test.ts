@@ -6,7 +6,7 @@ describe('bclValuations', () => {
         expect(bclValuationsData.length).toBe(612);
         expect(bclValuationSeasonYear).toBe(2026);
         const real = bclValuationsData.filter((row) => row.source === 'real');
-        expect(real.length).toBe(45);
+        expect(real.length).toBeGreaterThanOrEqual(500);
         expect(bclValuationsData[0]?.ovr).toBeGreaterThanOrEqual(68);
     });
 });

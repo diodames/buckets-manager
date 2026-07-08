@@ -14,6 +14,7 @@ import { padLeft, padRight } from '../text';
 import { DataTable } from '../widgets/DataTable';
 import { DashboardScreen } from './DashboardScreen';
 import { SponsorChoiceScreen } from './SponsorChoiceScreen';
+import { drawTeamCrest } from '../crests';
 
 const TEAM_TABLE_COL = 2;
 const TEAM_TABLE_ROW = 4;
@@ -92,27 +93,6 @@ export class TeamSelectScreen implements Screen {
         return this.ctx.config.economy.facilities.arenaCapacityByLevel[0] ?? 1500;
     }
 
-    /** Overpaint the old logo band so crest pixels cannot bleed into ID cells. */
-    private wipeLegacyCrestBand(): void {
-        const grid = this.ctx.grid;
-        const tableRow = this.table.layoutRow;
-        const scroll = this.table.scrollOffset;
-        const visible = this.table.layoutVisibleRows;
-        const rowCount = this.ctx.config.league.teams.length;
-        const wipePx = grid.cellW * (TEAM_TABLE_COL + LEGACY_CREST_COLS);
-
-        grid.fillCells(0, tableRow, TEAM_TABLE_COL + LEGACY_CREST_COLS, 1, ROLE.panel);
-
-        const end = Math.min(rowCount, scroll + visible);
-        for (let i = scroll; i < end; i++) {
-            const screenRow = tableRow + 1 + (i - scroll);
-            const isSelected = i === this.table.selected;
-            const color = isSelected ? ROLE.highlight : ROLE.bg;
-            const origin = grid.px(0, screenRow);
-            grid.fillPixels(origin.x, origin.y, wipePx, grid.cellH, color);
-        }
-    }
-
     private renderDetail(selected: number): void {
         const grid = this.ctx.grid;
         const teamDef = this.ctx.config.league.teams[selected];
@@ -164,7 +144,7 @@ export class TeamSelectScreen implements Screen {
         if (activated !== null) {
             const teamDef = this.ctx.config.league.teams[activated];
             if (teamDef) {
-                const state = createNewGame(this.ctx.config, this.seed, teamDef.id);
+                const state = createNewGame(this.ctx.config, this.seed, teamDef.id, 'hard');
                 generateAmbitionSponsorOffers(state, this.ctx.config.economy, createRng(this.seed).fork('sponsors-initial'));
                 this.ctx.session = { state, lastRound: null };
                 this.ctx.screens.reset(
@@ -189,10 +169,14 @@ export class TeamSelectScreen implements Screen {
         );
         drawChrome(this.ctx, t('teamSelect.title'), [t('hint.navigate'), t('hint.select'), t('hint.back')]);
         const grid = this.ctx.grid;
-        grid.fillCells(0, 2, TEAM_TABLE_COL + LEGACY_CREST_COLS, 1, ROLE.bg);
         grid.put(TEAM_TABLE_COL, 2, ROLE.textDim, t('teamSelect.hint'));
+        grid.fillCells(0, TEAM_TABLE_ROW, LEGACY_CREST_COLS, 1 + this.table.layoutVisibleRows, ROLE.bg);
         this.table.render(grid);
-        this.wipeLegacyCrestBand();
+        const selectedTeam = this.ctx.config.league.teams[this.table.selected];
+        if (selectedTeam) {
+            const crestRow = TEAM_TABLE_ROW + 1 + (this.table.selected - this.table.scrollOffset);
+            drawTeamCrest(grid, selectedTeam.id, TEAM_TABLE_COL - LEGACY_CREST_COLS, crestRow);
+        }
         this.renderDetail(this.table.selected);
     }
 }

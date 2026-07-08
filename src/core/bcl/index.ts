@@ -7,6 +7,7 @@ import type {
 import type { Rng } from '../rng';
 import { activeSeries, maybeAdvanceStage, nextSeriesFixture, recordSeriesGame, seriesDecided, seriesWinner } from '../playoffs';
 import type { LeagueConfig } from '../../config/league';
+import { leagueConfig } from '../../config/league';
 import { resolveTeamCountry } from '../teams';
 
 const CZECH_NBL_IDS = ['NYM', 'PCE', 'BRN', 'UST', 'OPA', 'PIS', 'DEC', 'OST', 'OLO', 'USK', 'SLA', 'HKR'];
@@ -506,6 +507,40 @@ export function bclCompetition(state: GameState): CompetitionState | null {
     return state.competitions.bcl ?? null;
 }
 
+/** Resolve group fixture rows to the canonical objects in comp.fixtures (by id). */
+export function resolveGroupFixtures(comp: CompetitionState, group: BclGroup): Fixture[] {
+    const byId = new Map(comp.fixtures.map((f) => [f.id, f]));
+    return group.fixtures.map((f) => byId.get(f.id) ?? f);
+}
+
+/** Re-link group.fixtures to comp.fixtures after JSON save/load duplicates objects. */
+export function relinkCompetitionGroups(comp: CompetitionState): void {
+    const byId = new Map(comp.fixtures.map((f) => [f.id, f]));
+    const relink = (groups: BclGroup[]) => {
+        for (const group of groups) {
+            group.fixtures = group.fixtures.map((f) => byId.get(f.id) ?? f);
+        }
+    };
+    relink(comp.groups);
+    if (comp.archivedGroups) {
+        relink(comp.archivedGroups);
+    }
+}
+
+function bclKnockoutWins(stage: number, bcl: BclConfig): number {
+    return bcl.knockoutWinsNeeded[stage] ?? 2;
+}
+
+export function bclKnockoutLeague(bcl: BclConfig): LeagueConfig {
+    return {
+        ...leagueConfig,
+        playoffs: {
+            ...leagueConfig.playoffs,
+            winsNeeded: [...bcl.knockoutWinsNeeded] as [number, number, number],
+        },
+    };
+}
+
 export function pendingBclFixtures(state: GameState, week: number): Fixture[] {
     const bcl = bclCompetition(state);
     if (!bcl) {
@@ -522,12 +557,36 @@ export function allPendingFixturesForWeek(state: GameState, week: number): Fixtu
     return [...bcl, ...nbl];
 }
 
-export function isBclGroupStageComplete(bcl: CompetitionState): boolean {
-    return bcl.phase === 'regularSeason' && bcl.fixtures.every((f) => f.result !== null);
+export function isBclRegularSeasonComplete(comp: CompetitionState): boolean {
+    if (comp.phase !== 'regularSeason') {
+        return false;
+    }
+    const rsFixtures = comp.fixtures.filter((f) => comp.groups.some((g) => g.fixtures.some((gf) => gf.id === f.id)));
+    return rsFixtures.length > 0 && rsFixtures.every((f) => f.result !== null);
 }
 
-function groupStandings(group: BclGroup): ReturnType<typeof computeStandings> {
-    return computeStandings(group.teamIds, group.fixtures);
+export function isBclR16Complete(comp: CompetitionState, bcl: BclConfig): boolean {
+    if (comp.phase !== 'roundOf16') {
+        return false;
+    }
+    const r16WeekStart = bcl.groupWeeks[6] ?? 14;
+    const r16Fixtures = comp.fixtures.filter((f) => (f.week ?? 0) >= r16WeekStart);
+    return r16Fixtures.length > 0 && r16Fixtures.every((f) => f.result !== null);
+}
+
+/** @deprecated Use isBclRegularSeasonComplete. */
+export function isBclGroupStageComplete(bcl: CompetitionState): boolean {
+    return isBclRegularSeasonComplete(bcl);
+}
+
+function groupStandings(comp: CompetitionState, group: BclGroup): ReturnType<typeof computeStandings> {
+    return computeStandings(group.teamIds, resolveGroupFixtures(comp, group));
+}
+
+function r16GroupStandings(comp: CompetitionState, group: BclGroup, bcl: BclConfig): ReturnType<typeof computeStandings> {
+    const r16WeekStart = bcl.groupWeeks[6] ?? 14;
+    const resolved = resolveGroupFixtures(comp, group).filter((f) => (f.week ?? 0) >= r16WeekStart);
+    return computeStandings(group.teamIds, resolved.length > 0 ? resolved : resolveGroupFixtures(comp, group));
 }
 
 /** Advance from group stage to play-ins and round of 16. */
@@ -539,7 +598,7 @@ export function advanceBclFromGroups(state: GameState, bcl: BclConfig, rng: Rng)
     const groupWinners: TeamId[] = [];
     const groupThirds: TeamId[] = [];
     for (const group of comp.groups) {
-        const standings = groupStandings(group);
+        const standings = groupStandings(comp, group);
         if (standings[0]) {
             groupWinners.push(standings[0].teamId);
         }
@@ -567,16 +626,22 @@ export function advanceBclFromGroups(state: GameState, bcl: BclConfig, rng: Rng)
         teamsPerGroup: bcl.teamsPerGroup,
     });
     const r16Fixtures = createGroupFixtures(r16Groups, bcl.groupWeeks.slice(6));
+    comp.archivedGroups = comp.groups.map((g) => ({
+        id: g.id,
+        teamIds: [...g.teamIds],
+        fixtures: resolveGroupFixtures(comp, g),
+    }));
     comp.fixtures.push(...r16Fixtures);
     comp.groups = r16Groups;
     comp.phase = 'roundOf16';
 }
 
-export function advanceBclKnockout(state: GameState, league: LeagueConfig): void {
+export function advanceBclKnockout(state: GameState, bcl: BclConfig): void {
     const comp = state.competitions.bcl;
     if (!comp?.playoffs) {
         return;
     }
+    const league = bclKnockoutLeague(bcl);
     maybeAdvanceStage({ playoffs: comp.playoffs } as GameState, league);
     if (comp.playoffs.championTeamId) {
         comp.championTeamId = comp.playoffs.championTeamId;
@@ -623,14 +688,12 @@ export function maybeStartBclKnockout(state: GameState, bcl: BclConfig, _league:
     if (!comp || comp.phase !== 'roundOf16' || comp.playoffs) {
         return;
     }
-    const r16Fixtures = comp.fixtures.filter((f) => f.week !== undefined && (f.week ?? 0) >= (bcl.groupWeeks[6] ?? 14));
-    if (!r16Fixtures.every((f) => f.result !== null)) {
+    if (!isBclR16Complete(comp, bcl)) {
         return;
     }
     const qualifiers: TeamId[] = [];
     for (const group of comp.groups) {
-        const r16GroupFixtures = group.fixtures.filter((f) => r16Fixtures.includes(f));
-        const standings = computeStandings(group.teamIds, r16GroupFixtures.length > 0 ? r16GroupFixtures : group.fixtures);
+        const standings = r16GroupStandings(comp, group, bcl);
         if (standings[0]) {
             qualifiers.push(standings[0].teamId);
         }
@@ -746,35 +809,26 @@ export function completeBclQualifyingRound(state: GameState, bcl: BclConfig, lea
     maybeAdvanceBclFromQualifying(state, bcl, league, rng);
 }
 
-export function activeBclSeries(state: GameState, league: LeagueConfig) {
+export function activeBclSeries(state: GameState, bcl: BclConfig) {
     const comp = state.competitions.bcl;
     if (!comp?.playoffs) {
         return [];
     }
-    return activeSeries({ playoffs: comp.playoffs } as GameState, league);
+    return activeSeries({ playoffs: comp.playoffs } as GameState, bclKnockoutLeague(bcl));
 }
 
-export function userBclSeries(state: GameState, league: LeagueConfig) {
+export function userBclSeries(state: GameState, bcl: BclConfig) {
     const comp = state.competitions.bcl;
     if (!comp?.playoffs) {
         return null;
     }
-    return activeBclSeries(state, league).find(
+    return activeBclSeries(state, bcl).find(
         (s) => s.homeTeamId === state.userTeamId || s.awayTeamId === state.userTeamId,
     ) ?? null;
 }
 
-export function completeBclKnockoutRound(state: GameState, league: LeagueConfig): void {
-    const comp = state.competitions.bcl;
-    if (!comp?.playoffs) {
-        return;
-    }
-    maybeAdvanceStage({ playoffs: comp.playoffs } as GameState, league);
-    if (comp.playoffs.championTeamId) {
-        comp.championTeamId = comp.playoffs.championTeamId;
-        comp.phase = 'complete';
-        comp.userFinish = resolveUserBclFinish(state, comp);
-    }
+export function completeBclKnockoutRound(state: GameState, bcl: BclConfig): void {
+    advanceBclKnockout(state, bcl);
 }
 
 export function recordBclSeriesGame(state: GameState, fixture: Fixture): void {
@@ -783,15 +837,16 @@ export function recordBclSeriesGame(state: GameState, fixture: Fixture): void {
         return;
     }
     for (const series of comp.playoffs.series) {
-        if (series.homeTeamId === fixture.homeTeamId || series.awayTeamId === fixture.homeTeamId) {
+        const teams = new Set([series.homeTeamId, series.awayTeamId]);
+        if (teams.has(fixture.homeTeamId) && teams.has(fixture.awayTeamId)) {
             recordSeriesGame(series, fixture);
             break;
         }
     }
 }
 
-export function nextBclSeriesFixture(state: GameState, league: LeagueConfig): Fixture | null {
-    const series = userBclSeries(state, league);
+export function nextBclSeriesFixture(state: GameState, bcl: BclConfig): Fixture | null {
+    const series = userBclSeries(state, bcl);
     if (!series) {
         return null;
     }
@@ -799,6 +854,14 @@ export function nextBclSeriesFixture(state: GameState, league: LeagueConfig): Fi
     fixture.competitionId = 'bcl';
     fixture.week = state.calendarWeek;
     return fixture;
+}
+
+export function hasPendingBclKnockout(state: GameState, bcl: BclConfig): boolean {
+    const comp = state.competitions.bcl;
+    if (!comp?.playoffs || comp.phase === 'complete') {
+        return false;
+    }
+    return activeBclSeries(state, bcl).length > 0;
 }
 
 export function checkBclPhaseAdvancement(state: GameState, bcl: BclConfig, league: LeagueConfig, rng: Rng): void {
@@ -810,7 +873,7 @@ export function checkBclPhaseAdvancement(state: GameState, bcl: BclConfig, leagu
         maybeAdvanceBclFromQualifying(state, bcl, league, rng);
         return;
     }
-    if (comp.phase === 'regularSeason' && isBclGroupStageComplete(comp)) {
+    if (comp.phase === 'regularSeason' && isBclRegularSeasonComplete(comp)) {
         advanceBclFromGroups(state, bcl, rng);
     }
     if (comp.phase === 'roundOf16') {
@@ -818,4 +881,4 @@ export function checkBclPhaseAdvancement(state: GameState, bcl: BclConfig, leagu
     }
 }
 
-export { seriesDecided, seriesWinner, nextSeriesFixture };
+export { seriesDecided, seriesWinner, nextSeriesFixture, bclKnockoutWins };

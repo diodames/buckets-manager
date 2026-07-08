@@ -1,7 +1,8 @@
 import { BT, Rect2i, Vector2i } from 'blit386';
 
-// The engine system font is ASCII-only (32..126); Czech text is folded to
-// ASCII at draw time until the custom bitmap font lands (M2).
+// The engine system font is ASCII-only (32..126). Czech and European names are
+// folded to closest ASCII via FOLD_MAP until a custom bitmap font lands (M2).
+// normalize('NFD') strips combining marks where the source uses precomposed Unicode.
 const FOLD_MAP: Record<string, string> = {
     á: 'a', č: 'c', ď: 'd', é: 'e', ě: 'e', í: 'i', ň: 'n', ó: 'o', ř: 'r', š: 's',
     ť: 't', ú: 'u', ů: 'u', ý: 'y', ž: 'z',
@@ -15,8 +16,12 @@ const FOLD_MAP: Record<string, string> = {
 };
 
 export function foldAscii(text: string): string {
+    const normalized = text.normalize('NFD');
     let out = '';
-    for (const ch of text) {
+    for (const ch of normalized) {
+        if (ch.charCodeAt(0) >= 0x0300 && ch.charCodeAt(0) <= 0x036f) {
+            continue;
+        }
         out += FOLD_MAP[ch] ?? (ch.charCodeAt(0) > 126 ? '?' : ch);
     }
     return out;

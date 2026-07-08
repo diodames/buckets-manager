@@ -59,7 +59,12 @@ export function buildPressContext(state: GameState, summary: MatchSummary, homeT
 }
 
 /** Picks the questions for the post-match conference (deterministic per rng). */
-export function generatePressConference(context: PressContext, config: PressConfig, rng: Rng): PressQuestion[] {
+export function generatePressConference(
+    context: PressContext,
+    config: PressConfig,
+    rng: Rng,
+    state?: GameState,
+): PressQuestion[] {
     const eligible: PressQuestion[] = [];
     const byId = new Map(config.defs.map((d) => [d.id, d]));
     const add = (id: string, playerId: PlayerId | null = null) => {
@@ -68,6 +73,15 @@ export function generatePressConference(context: PressContext, config: PressConf
             eligible.push({ def, playerId, variant: rng.chance(0.5) ? 1 : 0 });
         }
     };
+
+    // Transfer hooks from recent market events (M20).
+    if (state && state.market.pendingPressHooks.length > 0) {
+        const hook = state.market.pendingPressHooks.shift();
+        if (hook) {
+            const qId = hook.kind === 'soldCaptain' ? 'soldCaptain' : hook.kind === 'rejectedBid' ? 'rejectedBid' : 'deadlineSigning';
+            add(qId, hook.playerId);
+        }
+    }
 
     if (context.won) {
         add(context.margin >= config.blowoutMargin ? 'bigWin' : 'closeWin');

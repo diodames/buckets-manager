@@ -128,11 +128,11 @@ describe('economy', () => {
     });
 
     it('default ticket price yields realistic home gate for NYM', () => {
-        const state = createNewGame(config, 105, 'NYM');
+        const state = createNewGame(config, 105, 'NYM', 'normal');
         const capacity = arenaCapacity(state, economyConfig, 1500);
         const gate = computeGateReceipts(state.club.fanSupport, state.club.ticketPrice, capacity, economyConfig);
-        expect(gate.ticketIncome).toBeGreaterThan(105_000);
-        expect(gate.ticketIncome).toBeLessThan(165_000);
+        expect(gate.ticketIncome).toBeGreaterThan(115_000);
+        expect(gate.ticketIncome).toBeLessThan(175_000);
         const rng = createRng(2);
         const home = roundEconomyTick(state, { playedHome: true, won: true, margin: 5, realArenaCapacity: 1500, totalRounds: 22 }, economyConfig, leagueConfig, rng);
         expect(home.ticketIncome).toBe(gate.ticketIncome);
@@ -203,7 +203,7 @@ describe('economy', () => {
         state.club.fanSupport = economyConfig.fanSupport.max;
         const highFanBoost = homeCourtAdvantage(state, 'NYM', economyConfig, leagueConfig, base);
         expect(highFanBoost).toBeGreaterThan(defaultBoost);
-        expect(highFanBoost).toBeLessThanOrEqual(base);
+        expect(highFanBoost).toBeLessThanOrEqual(base * (economyConfig.tickets.homeAdvantageAttendanceScale ?? 1));
     });
 
     it('AI home games keep full base home advantage', () => {

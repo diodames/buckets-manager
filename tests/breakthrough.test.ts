@@ -88,8 +88,8 @@ describe('financial formulas', () => {
         const state = createNewGame(testConfig, 8, 'NYM');
         const player = Object.values(state.players).find((p) => p.teamId === 'NYM')!;
         const ratio = 1.45;
-        const bclFee = computeTransferFee(player, 'bcl', ratio, testConfig.market, testConfig.economy, externalOffersConfig);
-        const euroFee = computeTransferFee(player, 'euroleague', ratio, testConfig.market, testConfig.economy, externalOffersConfig);
+        const bclFee = computeTransferFee(state, player, 'bcl', ratio, testConfig.market, testConfig.economy, externalOffersConfig);
+        const euroFee = computeTransferFee(state, player, 'euroleague', ratio, testConfig.market, testConfig.economy, externalOffersConfig);
         expect(euroFee).toBeGreaterThan(bclFee);
         expect(bclFee % externalOffersConfig.fee.roundTo).toBe(0);
     });

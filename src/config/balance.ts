@@ -11,7 +11,7 @@ export const balanceConfig = Object.freeze({
         possessionMaxSeconds: 22,
         paceFactor: Object.freeze({ slow: 1.15, normal: 1.0, fast: 0.85 }),
         // Flat make-probability bonus for the home team's shots.
-        homeAdvantage: 0.02,
+        homeAdvantage: 0.03,
     }),
     shots: Object.freeze({
         // Base make probability per shot kind for an average matchup.
@@ -99,6 +99,9 @@ export const balanceConfig = Object.freeze({
         // In-match energy: 100 = fresh. Effective skill multiplier spans
         // [minSkillMult, 1.0] as energy falls from 100 to 0.
         minSkillMult: 0.72,
+        // Morale 0..100 maps to [moraleSkillMin, 1.0] on effective skill.
+        moraleSkillMin: 0.88,
+        moraleSkillMax: 1.08,
         // Energy drained per second on court, scaled by pace factor.
         drainPerSecond: 0.028,
         // Energy regained per second on the bench.

@@ -1,3 +1,4 @@
+import { BT } from 'blit386';
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import {
@@ -61,12 +62,18 @@ export class ScoutingScreen implements Screen {
                     const ovr = report.revealed
                         ? String(displayedOverall(state, player))
                         : `${report.overallMin}-${report.overallMax}`;
+                    const tierTag =
+                        report.tier === 'rumour'
+                            ? t('scouting.tierRumour')
+                            : report.tier === 'quick'
+                              ? t('scouting.tierQuick')
+                              : t('scouting.tierDeep');
                     const rumor = report.linkedTeamId
                         ? `  ${t('scouting.linked', { team: teamDef(report.linkedTeamId).abbr })}`
                         : '';
                     return {
                         id,
-                        label: `${playerName(player).padEnd(20)} ${player.position}  ${ovr}  ${stars(report.starMin)}-${stars(report.starMax)}${rumor}`,
+                        label: `${tierTag} ${playerName(player).padEnd(20)} ${player.position}  ${ovr}  ${stars(report.starMin)}-${stars(report.starMax)}${rumor}`,
                     };
                 }),
                 { id: '__continue__', label: t('scouting.continue') },
@@ -75,8 +82,63 @@ export class ScoutingScreen implements Screen {
         );
     }
 
+    private requestScoutReport(playerId: string): void {
+        const state = this.state;
+        const player = state.players[playerId];
+        const report = state.market.scoutedFreeAgents[playerId];
+        if (!player || !report) {
+            return;
+        }
+        if (report.tier === 'rumour') {
+            if (requestQuickReport(state, playerId, this.ctx.config.economy)) {
+                this.message = t('scouting.quickDone', { player: playerName(player) });
+            } else {
+                this.message = t('scouting.noBudget');
+            }
+        } else if (report.tier === 'quick') {
+            if (requestDeepReport(state, playerId, this.ctx.config.economy)) {
+                this.message = t('scouting.deepDone', { player: playerName(player) });
+            } else {
+                this.message = t('scouting.noBudget');
+            }
+        } else {
+            this.message = t('scouting.alreadyDeep');
+        }
+        this.rebuild();
+    }
+
+    private tryNegotiate(playerId: string): void {
+        const state = this.state;
+        const player = state.players[playerId];
+        if (!player) {
+            return;
+        }
+        if (!canNegotiateScoutedFreeAgent(state, playerId)) {
+            this.message = t('scouting.needReport');
+            return;
+        }
+        if (!canNegotiate(state, player, this.ctx.config.market)) {
+            this.message = t('nego.locked');
+            return;
+        }
+        this.ctx.screens.push(new NegotiationScreen(this.ctx, playerId, 'freeAgent', () => {
+            this.rebuild();
+        }));
+    }
+
     update(input: UiInputFrame): void {
+        const prevSelected = this.menu.selected;
         const picked = this.menu.update(input, this.ctx.grid);
+        if (this.menu.selected !== prevSelected) {
+            this.message = null;
+        }
+
+        const selectedId = this.menu.items[this.menu.selected]?.id;
+        if (selectedId && selectedId !== '__continue__' && BT.isKeyPressed('Space')) {
+            this.tryNegotiate(selectedId);
+            return;
+        }
+
         if (!picked) {
             return;
         }
@@ -86,48 +148,7 @@ export class ScoutingScreen implements Screen {
             this.onContinue();
             return;
         }
-        const state = this.state;
-        const player = state.players[picked];
-        if (!player) {
-            return;
-        }
-        if (input.cancel && picked !== '__continue__') {
-            const report = state.market.scoutedFreeAgents[picked];
-            if (!report) {
-                return;
-            }
-            if (report.tier === 'rumour') {
-                if (requestQuickReport(state, picked, this.ctx.config.economy)) {
-                    this.message = t('scouting.quickDone', { player: playerName(player) });
-                } else {
-                    this.message = t('scouting.noBudget');
-                }
-            } else if (report.tier === 'quick') {
-                if (requestDeepReport(state, picked, this.ctx.config.economy)) {
-                    this.message = t('scouting.deepDone', { player: playerName(player) });
-                } else {
-                    this.message = t('scouting.noBudget');
-                }
-            } else {
-                this.message = t('scouting.alreadyDeep');
-            }
-            this.rebuild();
-            return;
-        }
-        if (input.confirm) {
-            if (!canNegotiateScoutedFreeAgent(state, picked)) {
-                this.message = t('scouting.needReport');
-                return;
-            }
-            if (!canNegotiate(state, player, this.ctx.config.market)) {
-                this.message = t('nego.locked');
-                return;
-            }
-            this.ctx.screens.push(new NegotiationScreen(this.ctx, picked, 'freeAgent', () => {
-                this.rebuild();
-            }));
-            return;
-        }
+        this.requestScoutReport(picked);
     }
 
     render(): void {
@@ -144,6 +165,7 @@ export class ScoutingScreen implements Screen {
             total: formatMoney(state.market.scoutingBudgetTotal),
         }));
         grid.put(2, 3, ROLE.textDim, t('scouting.intro'));
+        grid.put(2, 4, ROLE.textDim, t('hint.scoutingGate'));
         if (scoutedPlayerIds(state).length === 0) {
             grid.put(2, 6, ROLE.textDim, t('scouting.empty'));
         } else {

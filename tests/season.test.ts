@@ -12,6 +12,7 @@ import { createNewGame } from '../src/core/game';
 import { graduateUnsignedYouthProspects, releaseExpiredPlayer, replenishFreeAgents } from '../src/core/market';
 import { startPlayoffs } from '../src/core/playoffs';
 import { canStartNextSeason, startNextSeason } from '../src/core/season';
+import { canScoutPlayer, scoutedPlayerIds } from '../src/core/scouting';
 import { createRng } from '../src/core/rng';
 import { bclPrizeAmount } from '../src/core/bcl/prizes';
 import { assignNblBclQualifiers, czechBclQualifiers, nblPlayoffBclQualifiers, nblPlayoffBclQualifyingEntrant, nblPlayoffFecQualifiers, startBclSeason } from '../src/core/bcl/index';
@@ -92,6 +93,26 @@ describe('season rollover', () => {
         expect(state.playoffs).toBeNull();
         expect(state.fixtures.every((f) => f.result === null)).toBe(true);
         expect(summary.nblPrize).toBeGreaterThanOrEqual(0);
+    });
+
+    it('seeds scout reports for replenished free agents after rollover', () => {
+        const state = createNewGame(config, 5010, 'NYM');
+        simFullSeason(state);
+        if (!canStartNextSeason(state, config)) {
+            finishPlayoffs(state);
+        }
+        startNextSeason(state, config, createRng(5010));
+        expect(state.market.scoutingComplete).toBe(false);
+        expect(state.currentRound).toBe(1);
+        const freeAgents = Object.values(state.players).filter(
+            (p) => p.teamId === null && p.contract === null && (p.id.startsWith('FA-') || p.id.startsWith('SM-')),
+        );
+        expect(freeAgents.length).toBeGreaterThan(0);
+        for (const player of freeAgents) {
+            expect(state.market.scoutedFreeAgents[player.id]).toBeDefined();
+            expect(canScoutPlayer(state, player.id)).toBe(true);
+        }
+        expect(scoutedPlayerIds(state).length).toBeGreaterThanOrEqual(freeAgents.length);
     });
 
     it('expires contracts and releases players to free agency', () => {
@@ -184,19 +205,19 @@ describe('offseason economy', () => {
     });
 
     it('pays league table prize by regular-season rank', () => {
-        expect(nblLeaguePrizeAmount(1, economyConfig)).toBe(1_200_000);
-        expect(nblLeaguePrizeAmount(2, economyConfig)).toBe(800_000);
-        expect(nblLeaguePrizeAmount(4, economyConfig)).toBe(500_000);
-        expect(nblLeaguePrizeAmount(9, economyConfig)).toBe(300_000);
-        expect(nblLeaguePrizeAmount(11, economyConfig)).toBe(150_000);
-        expect(nblLeaguePrizeAmount(12, economyConfig)).toBe(100_000);
+        expect(nblLeaguePrizeAmount(1, economyConfig)).toBe(1_500_000);
+        expect(nblLeaguePrizeAmount(2, economyConfig)).toBe(1_100_000);
+        expect(nblLeaguePrizeAmount(4, economyConfig)).toBe(650_000);
+        expect(nblLeaguePrizeAmount(9, economyConfig)).toBe(400_000);
+        expect(nblLeaguePrizeAmount(11, economyConfig)).toBe(200_000);
+        expect(nblLeaguePrizeAmount(12, economyConfig)).toBe(130_000);
 
         const state = createNewGame(config, 6004, 'NYM');
         state.lastSeasonStandings[state.userTeamId] = 4;
         const league = payNblLeaguePrize(state, economyConfig);
         expect(league.rank).toBe(4);
-        expect(league.amount).toBe(500_000);
-        expect(state.club.ledger.some((e) => e.kind === 'leaguePrize' && e.amount === 500_000)).toBe(true);
+        expect(league.amount).toBe(650_000);
+        expect(state.club.ledger.some((e) => e.kind === 'leaguePrize' && e.amount === 650_000)).toBe(true);
     });
 
     it('includes league prize in offseason summary', () => {
@@ -213,7 +234,7 @@ describe('offseason economy', () => {
         endSeason(state);
         const summary = startNextSeason(state, config, createRng(103));
         expect(summary.nblLeagueRank).toBe(1);
-        expect(summary.nblLeaguePrize).toBe(1_200_000);
+        expect(summary.nblLeaguePrize).toBe(1_500_000);
     });
 
     it('expires sponsor deals after season rollover', () => {
@@ -354,8 +375,8 @@ describe('BCL', () => {
 
     it('calculates BCL champion prize', () => {
         const amount = bclPrizeAmount('champion', config.bcl);
-        expect(amount).toBeGreaterThan(15_000_000);
-        expect(amount).toBeLessThan(20_000_000);
+        expect(amount).toBeGreaterThan(7_500_000);
+        expect(amount).toBeLessThan(8_500_000);
         expect(bclPrizeAmount('groupStage', config.bcl)).toBe(
             config.bcl.prizes.entry + config.bcl.prizes.groupStage,
         );

@@ -35,6 +35,12 @@ export function formatMoney(amount: number): string {
     return `${Math.round(amount / 1000)}k`;
 }
 
+/** Season salary with implied monthly NBL pay (÷9). */
+export function formatSalaryWithMonthly(seasonSalary: number): string {
+    const monthly = Math.round(seasonSalary / 9);
+    return `${formatMoney(seasonSalary)} (${formatMoney(monthly)}/mo)`;
+}
+
 /** Human-readable sponsor ambition target from promised max NBL rank. */
 export function sponsorTargetLabel(promisedMaxRank: number): string {
     if (promisedMaxRank <= 1) {

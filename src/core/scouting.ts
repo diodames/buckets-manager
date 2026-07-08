@@ -103,6 +103,45 @@ export function scoutingBudgetTotal(state: GameState, economy: EconomyConfig): n
     return Math.max(100_000, base + bonus - discount);
 }
 
+function seedScoutReport(
+    state: GameState,
+    playerId: PlayerId,
+    rng: Rng,
+): FreeAgentScoutReport | null {
+    const player = state.players[playerId];
+    if (!player) {
+        return null;
+    }
+    const def = scoutDefForPlayer(state, playerId);
+    const band = buildScoutBand(player, def, rng);
+    return {
+        playerId,
+        ...band,
+        revealed: false,
+        tier: 'rumour',
+        ...(state.market.signingHints[playerId]
+            ? { linkedTeamId: state.market.signingHints[playerId] }
+            : {}),
+    };
+}
+
+/** Add rumour-tier reports for opening FAs missing from the scout list (repairs in-flight saves). */
+export function ensureScoutReportsForOpeningFreeAgents(state: GameState, _config: GameConfig, rng: Rng): number {
+    let added = 0;
+    for (const playerId of openingFreeAgentIds(state)) {
+        if (state.market.scoutedFreeAgents[playerId]) {
+            continue;
+        }
+        const report = seedScoutReport(state, playerId, rng.fork(`scout-fill:${playerId}`));
+        if (!report) {
+            continue;
+        }
+        state.market.scoutedFreeAgents[playerId] = report;
+        added++;
+    }
+    return added;
+}
+
 /** Seed scout reports for opening free agents at offseason rollover. */
 export function initializeScouting(state: GameState, config: GameConfig, rng: Rng): void {
     state.market.scoutingComplete = false;
@@ -111,22 +150,12 @@ export function initializeScouting(state: GameState, config: GameConfig, rng: Rn
     state.market.scoutingBudget = state.market.scoutingBudgetTotal;
 
     for (const playerId of openingFreeAgentIds(state)) {
-        const player = state.players[playerId];
-        if (!player) {
-            continue;
+        const report = seedScoutReport(state, playerId, rng.fork(`scout-init:${playerId}`));
+        if (report) {
+            state.market.scoutedFreeAgents[playerId] = report;
         }
-        const def = scoutDefForPlayer(state, playerId);
-        const band = buildScoutBand(player, def, rng.fork(`scout-init:${playerId}`));
-        state.market.scoutedFreeAgents[playerId] = {
-            playerId,
-            ...band,
-            revealed: false,
-            tier: 'rumour',
-            ...(state.market.signingHints[playerId]
-                ? { linkedTeamId: state.market.signingHints[playerId] }
-                : {}),
-        };
     }
+    ensureScoutReportsForOpeningFreeAgents(state, config, rng.fork('scout-ensure'));
 }
 
 export function scoutedPlayerIds(state: GameState): PlayerId[] {

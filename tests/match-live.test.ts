@@ -24,7 +24,7 @@ function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
                 if (!p) {
                     throw new Error(`missing player ${id}`);
                 }
-                return { id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue };
+                return { id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue, morale: p.morale };
             }),
             starters: team.tactics.starters,
             pace: team.tactics.pace,

@@ -26,16 +26,16 @@ export class SettingsScreen implements Screen {
             return;
         }
         const action = this.menu.update(input, this.ctx.grid);
-        if (action === 'language' || ((input.left || input.right) && this.menu.selected === 0)) {
+        if (action === 'language' || (this.menu.selected === 0 && (input.left || input.right))) {
             this.toggleLanguage();
         }
     }
 
     render(): void {
         const langName = getLocale() === 'cs' ? t('settings.langCs') : t('settings.langEn');
-        const first = this.menu.items[0];
-        if (first) {
-            first.label = t('settings.language', { lang: langName });
+        const langItem = this.menu.items[0];
+        if (langItem) {
+            langItem.label = t('settings.language', { lang: langName });
         }
         drawChrome(this.ctx, t('settings.title'), [t('hint.navigate'), t('hint.select'), t('hint.back')]);
         this.menu.render(this.ctx.grid);

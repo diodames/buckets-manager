@@ -7,6 +7,7 @@ import { generateLeague } from '../src/core/league/generate';
 import { createRng } from '../src/core/rng';
 import { foldEvents } from '../src/core/sim/boxscore';
 import { MatchEngine, simulateMatch, type TeamSimInput } from '../src/core/sim/matchEngine';
+import { moraleSkillMultiplier } from '../src/core/sim/morale';
 
 function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
     const league = generateLeague(createRng(seed).fork('league'), leagueConfig, balanceConfig, namePools);
@@ -23,7 +24,7 @@ function buildInputs(seed: number): { home: TeamSimInput; away: TeamSimInput } {
                 if (!p) {
                     throw new Error(`missing player ${id}`);
                 }
-                return { id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue };
+                return { id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue, morale: p.morale };
             }),
             starters: team.tactics.starters,
             pace: team.tactics.pace,
@@ -214,6 +215,12 @@ describe('MatchEngine (interactive)', () => {
             }
         }
         expect(sawMoment).toBe(true);
+    });
+
+    it('morale skill multiplier favors high morale', () => {
+        const low = moraleSkillMultiplier(25, balanceConfig);
+        const high = moraleSkillMultiplier(90, balanceConfig);
+        expect(high).toBeGreaterThan(low);
     });
 
     it('timeouts are limited per team', () => {

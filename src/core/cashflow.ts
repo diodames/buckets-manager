@@ -4,6 +4,7 @@ import {
     arenaCapacity,
     computeGateReceipts,
     derbyGateIncomeMult,
+    facilityMaintenancePerRound,
     leagueSharePerRound,
     nblLeaguePrizeAmount,
     nblPlayoffPrizeAmount,
@@ -143,8 +144,7 @@ export function seasonWageBill(state: GameState, economy: EconomyConfig, playerI
 export function weeklyPayroll(state: GameState, economy: EconomyConfig, league: LeagueConfig): WeeklyPayroll {
     const payrollWeeks = payrollWeeksForSeason(state, league);
     const salaries = Math.round(seasonWageBill(state, economy) / payrollWeeks);
-    const levels = Object.values(state.club.facilities).reduce((a, b) => a + b, 0);
-    const maintenance = levels * economy.facilities.maintenancePerLevelPerRound;
+    const maintenance = facilityMaintenancePerRound(state.club.facilities, economy);
     return { salaries, maintenance, total: salaries + maintenance };
 }
 
@@ -261,8 +261,7 @@ export function projectSeasonCashflow(
     );
     const runwayWeeks = state.club.budget / netAwayBurn;
     const seasonWage = seasonWageBill(state, economy);
-    const headroom = Math.max(0, projectedEndBalance - economy.financial.minEndBalance);
-    const maxWageBill = seasonWage + headroom;
+    const maxWageBill = maxAllowedWageBill(state, economy, league);
 
     return {
         weeklyBurn: payroll.total,

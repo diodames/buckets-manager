@@ -7,6 +7,7 @@ import { createSchedule } from './league/schedule';
 import { computeNblStandings } from './league/standings';
 import { fixtureSeed, isCampaignOver, toSimInput, type GameConfig } from './game';
 import { simulateMatch } from './sim/matchEngine';
+import { evaluateBoardObjective, createBoardObjective } from './board';
 import { evaluateBreakthroughOffers, removePlayerAbroad } from './breakthrough';
 import type { GameState, OffseasonReviewSummary, OffseasonSummary, Player, PlayerId } from './model/types';
 import { sortMovements, stageMovement, type StagedMovement } from './offseasonMovements';
@@ -29,6 +30,7 @@ import { evaluateUserContractWalkaways } from './contracts';
 import { evaluateCareerRetirements } from './retirement';
 import { initializeSeasonMarket } from './seasonMarket';
 import { initializeScouting } from './scouting';
+import { computeSeasonAwards } from './awards';
 import type { Rng } from './rng';
 
 const FA_TARGET = 18;
@@ -76,6 +78,8 @@ export function prepareOffseasonReview(state: GameState, config: GameConfig, _rn
 
     const totalIncome = nblPrize + nblLeague.amount + bclPrize + fecPrize + sponsorSeasonEnd.bonusPaid;
 
+    state.lastSeasonAwards = computeSeasonAwards(state);
+
     return {
         nblFinish,
         nblPrize,
@@ -104,6 +108,17 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     const nblFinish = userNblPlayoffFinish(state);
     const bclFinishBeforeReset = (state.competitions.bcl?.userFinish ?? null) as import('./model/types').BclUserFinish | null;
     const fecFinishBeforeReset = (state.competitions.fec?.userFinish ?? null) as import('./model/types').FecUserFinish | null;
+
+    evaluateBoardObjective(state, config.league, config.economy);
+
+    const scoringAward = state.lastSeasonAwards?.awards.find((a) => a.kind === 'scoring');
+    state.careerHistory.push({
+        seasonYear: state.seasonYear,
+        nblFinish,
+        nblLeagueRank: state.lastSeasonStandings[state.userTeamId] ?? null,
+        awards: state.lastSeasonAwards,
+        topScorerName: scoringAward?.playerName ?? null,
+    });
 
     const breakthroughOffers = evaluateBreakthroughOffers(state, config, rng.fork('breakthrough'));
     const aiRenewals = runAiContractRenewals(state, config.market, config.economy, rng.fork('ai-renew'));
@@ -158,6 +173,8 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     state.market.scoutedFreeAgents = {};
     state.market.scoutingBudget = 0;
     state.market.scoutingBudgetTotal = 0;
+    state.market.watchlist = [];
+    state.market.pendingPressHooks = [];
 
     scheduleFixedYouthProspects(
         state,
@@ -168,8 +185,6 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     );
 
     initializeSeasonMarket(state, config, rng.fork('season-market'));
-    initializeScouting(state, config, rng.fork('scouting'));
-
     const newFreeAgents = replenishFreeAgents(
         state,
         FA_TARGET,
@@ -177,6 +192,7 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
         config.balance,
         rng.fork('fa-replenish'),
     );
+    initializeScouting(state, config, rng.fork('scouting'));
 
     const nblTeamIds = config.league.teams.map((t) => t.id);
     state.fixtures = createSchedule(nblTeamIds, config.league.roundRobinLegs);
@@ -192,6 +208,8 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     state.seasonYear++;
 
     generateAmbitionSponsorOffers(state, config.economy, rng.fork('sponsors'));
+    state.boardObjective = createBoardObjective(state, config.league);
+    state.club.transferEmbargo = false;
     generateBclClubs(state, config.bcl, config.balance, config.names, state.seasonYear, rng.fork('bcl-gen'));
     startBclSeason(state, config.bcl, config.league, rng.fork('bcl-start'));
     if (state.competitions.bcl?.phase === 'qualifying'

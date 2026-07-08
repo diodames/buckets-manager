@@ -45,8 +45,8 @@ describe('generateAmbitionSponsorOffers', () => {
         const state = createNewGame(config, 506, 'HKR');
         generateAmbitionSponsorOffers(state, economyConfig, createRng(506).fork('sponsors'));
         const safe = state.club.sponsorOffers.find((o) => o.ambitionId === 'safe');
-        expect(safe?.signingBonus).toBe(scaledSponsorSigningBonus(850_000, 1, economyConfig));
-        expect(safe?.signingBonus).toBeLessThan(850_000);
+        expect(safe?.signingBonus).toBe(scaledSponsorSigningBonus(450_000, 1, economyConfig));
+        expect(safe?.signingBonus).toBeLessThan(450_000);
     });
 });
 

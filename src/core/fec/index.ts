@@ -347,7 +347,8 @@ export function recordFecSeriesGame(state: GameState, fixture: Fixture): void {
         return;
     }
     for (const series of comp.playoffs.series) {
-        if (series.homeTeamId === fixture.homeTeamId || series.awayTeamId === fixture.homeTeamId) {
+        const teams = new Set([series.homeTeamId, series.awayTeamId]);
+        if (teams.has(fixture.homeTeamId) && teams.has(fixture.awayTeamId)) {
             recordSeriesGame(series, fixture);
             break;
         }

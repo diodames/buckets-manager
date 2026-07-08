@@ -46,6 +46,18 @@ export class MenuList {
         this.selected = next;
     }
 
+    get layoutRow(): number {
+        return this.layout.row;
+    }
+
+    get layoutCol(): number {
+        return this.layout.col;
+    }
+
+    get layoutWidth(): number {
+        return this.layout.width;
+    }
+
     /** Returns the activated item id, or null. */
     update(input: UiInputFrame, grid: TextGrid): string | null {
         if (input.up) {
@@ -76,10 +88,10 @@ export class MenuList {
         return null;
     }
 
-    render(grid: TextGrid): void {
+    render(grid: TextGrid, showSelection = true): void {
         this.items.forEach((item, index) => {
             const row = this.layout.row + index;
-            const isSelected = index === this.selected;
+            const isSelected = showSelection && index === this.selected;
             if (isSelected) {
                 grid.fillCells(this.layout.col, row, this.layout.width, 1, ROLE.highlight);
             }

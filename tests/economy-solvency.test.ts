@@ -49,14 +49,14 @@ function payMidTablePrizes(state: ReturnType<typeof createNewGame>, rank: number
 
 describe('economy solvency', () => {
     it('mid-table tier-3 club stays solvent after one season', () => {
-        const state = createNewGame(config, 8801, 'DEC');
+        const state = createNewGame(config, 8801, 'DEC', 'hard');
         const start = state.club.budget;
         equipStandardSponsor(state);
         simulateRegularSeason(state);
         payMidTablePrizes(state, 6);
         const profit = state.club.budget - start;
-        expect(profit).toBeGreaterThanOrEqual(-5_500_000);
-        expect(profit).toBeLessThanOrEqual(2_000_000);
+        expect(profit).toBeGreaterThanOrEqual(-2_800_000);
+        expect(profit).toBeLessThanOrEqual(1_000_000);
     });
 
     it('tier-5 NYM stays solvent with a strong roster', () => {
@@ -71,16 +71,17 @@ describe('economy solvency', () => {
         state.playoffs!.championTeamId = 'NYM';
     state.playoffs!.thirdPlaceTeamId = 'PCE';
         payNblPlayoffPrize(state, economyConfig);
-        expect(state.club.budget - start).toBeGreaterThanOrEqual(-4_000_000);
+        expect(state.club.budget - start).toBeGreaterThanOrEqual(-500_000);
+        expect(state.club.budget - start).toBeLessThanOrEqual(2_000_000);
     });
 
     it('tier-1 HKR avoids deep bankruptcy over one season', () => {
-        const state = createNewGame(config, 8803, 'HKR');
+        const state = createNewGame(config, 8803, 'HKR', 'hard');
         const start = state.club.budget;
         equipStandardSponsor(state);
         simulateRegularSeason(state);
         payMidTablePrizes(state, 10);
-        expect(state.club.budget).toBeGreaterThan(start - 4_000_000);
+        expect(state.club.budget).toBeGreaterThan(start - 2_100_000);
     });
 
     it('AI NBL clubs keep finite budgets after a full regular season', () => {
@@ -98,7 +99,7 @@ describe('economy solvency', () => {
     });
 
     it('league and playoff prize tables remain meaningful', () => {
-        expect(nblLeaguePrizeAmount(6, economyConfig)).toBe(500_000);
-        expect(nblPlayoffPrizeAmount('playoffs', economyConfig)).toBe(50_000);
+        expect(nblLeaguePrizeAmount(6, economyConfig)).toBe(650_000);
+        expect(nblPlayoffPrizeAmount('playoffs', economyConfig)).toBe(65_000);
     });
 });

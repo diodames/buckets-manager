@@ -2,6 +2,8 @@ import type { BclConfig } from '../config/bcl';
 import type { EconomyConfig, FacilityKey } from '../config/economy';
 import type { FecConfig } from '../config/fec';
 import { leagueConfig } from '../config/league';
+import { difficultyModifiers, resolveDifficulty } from './difficulty';
+import { computeNblStandings } from './league/standings';
 import type { LeagueConfig, TeamDef } from '../config/league';
 import type { BclPhase, CompetitionState, FecPhase, Fixture, GameState, LedgerEntry, NblPlayoffFinish, SponsorDeal, SponsorOffer, TeamFinance, TeamId } from './model/types';
 import { ATTRIBUTE_KEYS } from './model/types';
@@ -11,6 +13,25 @@ import type { Rng } from './rng';
 export function startingBudgetForTeam(teamDef: TeamDef, economy: EconomyConfig): number {
     const tier = Math.max(1, Math.min(5, Math.round(teamDef.tier)));
     return economy.startingBudgetByTier[tier - 1] ?? economy.startingBudget;
+}
+
+/** Per-round upkeep for facility levels (arena + training + academy). */
+export function facilityMaintenancePerRound(
+    facilities: { arena: number; training: number; academy: number },
+    economy: EconomyConfig,
+): number {
+    const table = economy.facilities.maintenancePerLevelPerRound;
+    let total = 0;
+    for (const level of Object.values(facilities)) {
+        total += table[level] ?? table[table.length - 1] ?? 10_000;
+    }
+    return total;
+}
+
+/** Default AI upkeep assuming level-1 facilities. */
+export function aiFacilityMaintenancePerRound(economy: EconomyConfig): number {
+    const levelOne = economy.facilities.maintenancePerLevelPerRound[1] ?? 10_000;
+    return levelOne * 3;
 }
 
 /** User club tier (1..5) for economy scaling. */
@@ -24,10 +45,23 @@ export function teamTier(teamId: TeamId, league: LeagueConfig): number {
     return Math.max(1, Math.min(5, Math.round(def?.tier ?? 3)));
 }
 
-/** Weekly NBL league-share payment for a club tier. */
-export function leagueSharePerRound(teamId: TeamId, economy: EconomyConfig, league: LeagueConfig): number {
+/** Weekly NBL league-share payment for a club tier; top-4 clubs earn a bonus. */
+export function leagueSharePerRound(
+    teamId: TeamId,
+    economy: EconomyConfig,
+    league: LeagueConfig,
+    state?: GameState,
+): number {
     const tier = teamTier(teamId, league);
-    return economy.leagueSharePerRoundByTier[tier - 1] ?? 0;
+    let share = economy.leagueSharePerRoundByTier[tier - 1] ?? 0;
+    if (state && (economy.leagueShareTop4Bonus ?? 0) > 0) {
+        const standings = computeNblStandings(state);
+        const rank = standings.findIndex((row) => row.teamId === teamId) + 1;
+        if (rank > 0 && rank <= 4) {
+            share = Math.round(share * (1 + economy.leagueShareTop4Bonus));
+        }
+    }
+    return share;
 }
 
 /** Initialize AI NBL club finances (excludes user team). */
@@ -42,6 +76,8 @@ export function createNblFinances(league: LeagueConfig, economy: EconomyConfig, 
             budget: startingBudgetForTeam(teamDef, economy),
             fanSupport: economy.fanSupport.start,
             sponsorTier: tier,
+            facilities: { arena: 1, training: 1, academy: 1 },
+            roundsSinceFacilityUpgrade: 0,
         };
     }
     return finances;
@@ -90,7 +126,14 @@ export function playerSalary(state: GameState, playerId: string, economy: Econom
         return player.contract.salary;
     }
     const overall = ATTRIBUTE_KEYS.reduce((s, k) => s + player.attributes[k], 0) / ATTRIBUTE_KEYS.length;
-    return Math.max(economy.salary.min, Math.round(economy.salary.base + (overall - 50) * economy.salary.perPoint));
+    const ovr = Math.round(overall);
+    let perPoint: number = economy.salary.perPoint;
+    if (ovr > 80) {
+        perPoint = economy.salary.perPointElite;
+    } else if (ovr > 70) {
+        perPoint = economy.salary.perPointMid;
+    }
+    return Math.max(economy.salary.min, Math.round(economy.salary.base + (ovr - 50) * perPoint));
 }
 
 export function arenaCapacity(state: GameState, economy: EconomyConfig, realCapacity: number | null): number {
@@ -241,7 +284,8 @@ export function homeCourtAdvantageFromAttendance(
     const normalized = range > 0 ? (attendanceRate - t.minAttendance) / range : 1;
     const clamped = Math.max(0, Math.min(1, normalized));
     const mult = t.homeAdvantageMinMult + (1 - t.homeAdvantageMinMult) * clamped;
-    return baseAdvantage * mult;
+    const scale = economy.tickets.homeAdvantageAttendanceScale ?? 1;
+    return baseAdvantage * mult * scale;
 }
 
 /** Home shooting boost for a fixture; scales with user attendance when user is home. */
@@ -363,6 +407,8 @@ export function roundEconomyTick(
             ? derbyGateIncomeMult(state.userTeamId, input.opponentTeamId, economy)
             : 1;
         ticketIncome = Math.round(gate.ticketIncome * derbyMult);
+        const incomeMult = difficultyModifiers(resolveDifficulty(state.difficulty)).userIncomeMult;
+        ticketIncome = Math.round(ticketIncome * incomeMult);
         pushLedger(state, economy, { round: state.currentRound, kind: 'tickets', amount: ticketIncome });
 
         // Subtle fan drift from pricing relative to fair price.
@@ -384,12 +430,14 @@ export function roundEconomyTick(
         const mult = s.relationMinMult + (s.relationMaxMult - s.relationMinMult) * (deal.relationship / 100);
         sponsorIncome += Math.round(deal.perRound * mult);
     }
+    const incomeMult = difficultyModifiers(resolveDifficulty(state.difficulty)).userIncomeMult;
+    sponsorIncome = Math.round(sponsorIncome * incomeMult);
     if (sponsorIncome > 0) {
         pushLedger(state, economy, { round: state.currentRound, kind: 'sponsors', amount: sponsorIncome });
     }
     club.sponsors = club.sponsors.filter((deal) => deal.relationship >= s.terminateBelow);
 
-    const leagueShare = leagueSharePerRound(state.userTeamId, economy, league);
+    const leagueShare = Math.round(leagueSharePerRound(state.userTeamId, economy, league, state) * incomeMult);
     if (leagueShare > 0) {
         pushLedger(state, economy, { round: state.currentRound, kind: 'leagueShare', amount: leagueShare });
     }
@@ -402,8 +450,7 @@ export function roundEconomyTick(
     if (salaries > 0) {
         pushLedger(state, economy, { round: state.currentRound, kind: 'salaries', amount: -salaries });
     }
-    const levels = Object.values(club.facilities).reduce((a, b) => a + b, 0);
-    const maintenance = levels * economy.facilities.maintenancePerLevelPerRound;
+    const maintenance = facilityMaintenancePerRound(club.facilities, economy);
     pushLedger(state, economy, { round: state.currentRound, kind: 'maintenance', amount: -maintenance });
 
     // New sponsor offers for free slots.
@@ -553,7 +600,7 @@ export function aiRoundEconomyTick(
     const salaries = team
         ? Math.round(team.playerIds.reduce((sum, id) => sum + playerSalary(state, id, economy), 0) / input.totalRounds)
         : 0;
-    const maintenance = 3 * economy.facilities.maintenancePerLevelPerRound;
+    const maintenance = aiFacilityMaintenancePerRound(economy);
 
     finance.budget += ticketIncome + sponsorPerRound + leagueShare - salaries - maintenance;
 }
@@ -574,12 +621,31 @@ export function debitAiBudget(state: GameState, teamId: TeamId, amount: number):
     return true;
 }
 
-export function aiCanAffordTransferFee(state: GameState, teamId: TeamId, amount: number): boolean {
+export function aiCanAffordTransferFee(state: GameState, teamId: TeamId, amount: number, maxSpendPct = 1): boolean {
     const finance = state.nblFinances[teamId];
     if (!finance) {
         return true;
     }
-    return finance.budget >= amount;
+    const maxSpend = Math.round(finance.budget * maxSpendPct);
+    return finance.budget >= amount && amount <= maxSpend;
+}
+
+/** AI club is under cash pressure and may sell at a discount (M15). */
+export function aiIsCashStrapped(
+    state: GameState,
+    teamId: TeamId,
+    economy: EconomyConfig,
+    league: LeagueConfig,
+    runwayWeeks: number,
+): boolean {
+    const finance = state.nblFinances[teamId];
+    if (!finance) {
+        return false;
+    }
+    const payrollWeeks = Math.max(22, league.teams.length - 1);
+    const weeklySalaries = Math.round(teamSeasonWageBill(state, teamId, economy) / payrollWeeks);
+    const weeklyBurn = weeklySalaries + aiFacilityMaintenancePerRound(economy);
+    return finance.budget < weeklyBurn * runwayWeeks;
 }
 
 /** Rough wage cap for AI free-agent signings (M15-lite). */
@@ -592,8 +658,10 @@ export function aiMaxWageBill(state: GameState, teamId: TeamId, economy: Economy
     const starting = teamDef ? startingBudgetForTeam(teamDef, economy) : economy.startingBudget;
     const sponsor = economy.sponsors.perRoundByTier[finance.sponsorTier - 1] ?? 0;
     const share = leagueSharePerRound(teamId, economy, league);
+    const tier = teamTier(teamId, league);
+    const gate = economy.aiGateEstimatePerRoundByTier[tier - 1] ?? 45_000;
     const payrollWeeks = Math.max(22, league.teams.length - 1);
-    const projectedIncome = payrollWeeks * (sponsor + share + 45_000) + 500_000;
+    const projectedIncome = payrollWeeks * (sponsor + share + gate) + 500_000;
     return (starting + projectedIncome) * economy.financial.wageBudgetPct;
 }
 

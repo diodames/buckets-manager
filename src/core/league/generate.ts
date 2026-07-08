@@ -4,9 +4,11 @@ import type { FecConfig } from '../../config/fec';
 import type { LeagueConfig, RealPlayerDef, TeamDef } from '../../config/league';
 import type { NamePools } from '../../config/names';
 import { generateName } from '../namegen';
-import type { Attributes, Player, Position, Tactics, Team } from '../model/types';
+import type { Attributes, Player, Position, Team } from '../model/types';
 import { ATTRIBUTE_KEYS, overallRating, POSITIONS } from '../model/types';
 import { hashString, type Rng } from '../rng';
+import { pickStarters } from '../roster';
+import { personalityForTeam } from '../personality';
 
 export interface GeneratedLeague {
     teams: Record<string, Team>;
@@ -111,26 +113,6 @@ function generateYouthPlayer(
     };
 }
 
-function pickStarters(players: readonly Player[]): Tactics['starters'] {
-    const starters = {} as Tactics['starters'];
-    const taken = new Set<string>();
-    for (const position of POSITIONS) {
-        const best = players
-            .filter((p) => !taken.has(p.id))
-            .sort(
-                (a, b) =>
-                    (b.position === position ? 1000 : 0) + overallRating(b.attributes) -
-                    ((a.position === position ? 1000 : 0) + overallRating(a.attributes)),
-            )[0];
-        if (!best) {
-            throw new Error(`pickStarters: cannot fill position ${position}`);
-        }
-        taken.add(best.id);
-        starters[position] = best.id;
-    }
-    return starters;
-}
-
 function missingPositions(roster: readonly RealPlayerDef[]): Position[] {
     const covered = new Set(roster.map((r) => r.position));
     return POSITIONS.filter((pos) => !covered.has(pos));
@@ -204,6 +186,8 @@ export function generateLeague(rng: Rng, league: LeagueConfig, balance: BalanceC
             },
             colorSlotPrimary: 16 + teamIndex * 2,
             colorSlotSecondary: 16 + teamIndex * 2 + 1,
+            aiPersonality: personalityForTeam(teamDef.id),
+            aiListings: [],
         };
     });
 
@@ -256,6 +240,8 @@ export function generateBclClubs(
             },
             colorSlotPrimary: 16 + teamIndex * 2,
             colorSlotSecondary: 16 + teamIndex * 2 + 1,
+            aiPersonality: personalityForTeam(teamDef.id),
+            aiListings: [],
         };
         teamIndex++;
     }
@@ -311,6 +297,8 @@ export function generateFecClubs(
             },
             colorSlotPrimary: 16 + teamIndex * 2,
             colorSlotSecondary: 16 + teamIndex * 2 + 1,
+            aiPersonality: personalityForTeam(teamDef.id),
+            aiListings: [],
         };
         teamIndex++;
     }

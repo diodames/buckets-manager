@@ -10,17 +10,21 @@ import type { TrainingConfig } from '../config/training';
 import type { ExternalOffersConfig } from '../config/externalOffers';
 import type { MarketConfig } from '../config/market';
 import {
-    allPendingFixturesForWeek, checkBclPhaseAdvancement,
-    completeBclKnockoutRound, completeBclQualifyingRound, nextBclQualifyingFixture,
+    allPendingFixturesForWeek, activeBclSeries, checkBclPhaseAdvancement,
+    completeBclKnockoutRound, completeBclQualifyingRound, hasPendingBclKnockout,
+    nextBclQualifyingFixture,
     nextBclSeriesFixture, pendingBclFixtures, recordBclQualifyingGame, recordBclSeriesGame,
     userBclQualifyingSeries, userBclSeries,
 } from './bcl/index';
 import {
-    checkFecPhaseAdvancement, completeFecKnockoutRound, nextFecSeriesFixture,
+    activeFecSeries, checkFecPhaseAdvancement, completeFecKnockoutRound, nextFecSeriesFixture,
     pendingFecFixtures, recordFecSeriesGame, userFecSeries,
 } from './fec/index';
 import { payrollWeeksForSeason } from './cashflow';
 import { homeCourtAdvantage, realArenaCapacity, roundEconomyTick, aiRoundEconomyTick, createNblFinances, europeanEconomyTicks, startingBudgetForTeam, tickFacilityProjects, type RoundEconomyResult } from './economy';
+import { initAiFacilities, tickAiFacilities } from './aiFacilities';
+import { initializeBoardObjective, emptyCareerMilestones } from './board';
+import { tickBudgetCrisis } from './budgetCrisis';
 import { generateLeague } from './league/generate';
 import { baseSalary, marketTick, releaseFixedYouthProspects, runYouthIntake, scheduleFixedYouthProspects } from './market';
 import { initializeSeasonMarket } from './seasonMarket';
@@ -33,8 +37,12 @@ import { overallRating, POSITIONS } from './model/types';
 import { createRng, hashString } from './rng';
 import { MatchEngine, simulateMatch, type MatchOutcome, type TeamSimInput } from './sim/matchEngine';
 import { weeklyTrainingTick } from './training';
+import { initTeamPersonalities } from './personality';
+import { refreshTeamStarters } from './roster';
+import { difficultyModifiers } from './difficulty';
+import type { Attributes, Difficulty } from './model/types';
 
-export const SAVE_FORMAT_VERSION = 27;
+export const SAVE_FORMAT_VERSION = 30;
 
 export interface GameConfig {
     league: LeagueConfig;
@@ -50,7 +58,7 @@ export interface GameConfig {
     externalOffers: ExternalOffersConfig;
 }
 
-export function createNewGame(config: GameConfig, seed: number, userTeamId: TeamId): GameState {
+export function createNewGame(config: GameConfig, seed: number, userTeamId: TeamId, difficulty: Difficulty = 'hard'): GameState {
     const teamDef = config.league.teams.find((t) => t.id === userTeamId);
     if (!teamDef) {
         throw new Error(`createNewGame: unknown team '${userTeamId}'`);
@@ -111,6 +119,8 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
             scoutedFreeAgents: {},
             scoutingBudget: 0,
             scoutingBudgetTotal: 0,
+            watchlist: [],
+            pendingPressHooks: [],
         },
         playoffs: null,
         competitions: {},
@@ -123,8 +133,18 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
         bclQualifyingEntrantId: null,
         fecQualified: false,
         lastFecQualifierIds: [],
+        lastSeasonAwards: null,
+        careerHistory: [],
+        boardObjective: null,
+        careerMilestones: emptyCareerMilestones(),
+        contextualHintsSeen: [],
+        difficulty,
+        tutorialStep: null,
         nblFinances: createNblFinances(config.league, config.economy, userTeamId),
     };
+    initTeamPersonalities(state, userTeamId);
+    initAiFacilities(state, config.league);
+    initializeBoardObjective(state, config.league);
     // Real club academy talents arrive on random rounds through the early season;
     // the generic intake wave still arrives mid-season.
     scheduleFixedYouthProspects(
@@ -190,8 +210,14 @@ function hasPendingEuropeanSimulation(state: GameState, config: GameConfig): boo
     if (bcl?.fixtures.some((f) => f.result === null)) {
         return true;
     }
+    if (hasPendingBclKnockout(state, config.bcl)) {
+        return true;
+    }
     const fec = state.competitions.fec;
     if (fec?.fixtures.some((f) => f.result === null)) {
+        return true;
+    }
+    if (fec?.playoffs && fec.phase !== 'complete' && activeFecSeries(state, config.fec).length > 0) {
         return true;
     }
     return false;
@@ -216,9 +242,9 @@ export function nextUserFixture(state: GameState, config?: GameConfig): Fixture 
                 return qualiFix;
             }
         }
-        const bclSeries = userBclSeries(state, config.league);
+        const bclSeries = userBclSeries(state, config.bcl);
         if (bclSeries) {
-            const bclFix = nextBclSeriesFixture(state, config.league);
+            const bclFix = nextBclSeriesFixture(state, config.bcl);
             if (bclFix) {
                 return bclFix;
             }
@@ -257,6 +283,66 @@ export function nextUserFixture(state: GameState, config?: GameConfig): Fixture 
     return series ? nextSeriesFixture(series) : null;
 }
 
+/** Pending user fixtures in BCL/FEC/NBL priority order (same as nextUserFixture, but all upcoming). */
+export function upcomingUserFixtures(state: GameState, config: GameConfig, limit = 3): Fixture[] {
+    const week = state.calendarWeek;
+    const fixtures: Fixture[] = [];
+    const seen = new Set<string>();
+
+    const add = (fixture: Fixture | null | undefined): void => {
+        if (!fixture || seen.has(fixture.id) || fixtures.length >= limit) {
+            return;
+        }
+        seen.add(fixture.id);
+        fixtures.push(fixture);
+    };
+
+    const bclQuali = userBclQualifyingSeries(state, config.bcl);
+    if (bclQuali) {
+        add(nextBclQualifyingFixture(state, config.bcl));
+    }
+    const bclSeries = userBclSeries(state, config.bcl);
+    if (bclSeries) {
+        add(nextBclSeriesFixture(state, config.bcl));
+    }
+    if (state.bclQualified) {
+        for (const fixture of pendingBclFixtures(state, week)) {
+            if (fixture.homeTeamId === state.userTeamId || fixture.awayTeamId === state.userTeamId) {
+                add(fixture);
+            }
+        }
+    }
+
+    const fecSeries = userFecSeries(state, config.fec);
+    if (fecSeries) {
+        add(nextFecSeriesFixture(state, config.fec));
+    }
+    if (state.fecQualified) {
+        for (const fixture of pendingFecFixtures(state, week)) {
+            if (fixture.homeTeamId === state.userTeamId || fixture.awayTeamId === state.userTeamId) {
+                add(fixture);
+            }
+        }
+    }
+
+    for (const fixture of state.fixtures) {
+        if (
+            fixture.result === null &&
+            (fixture.week ?? fixture.round) >= week &&
+            (fixture.homeTeamId === state.userTeamId || fixture.awayTeamId === state.userTeamId)
+        ) {
+            add(fixture);
+        }
+    }
+
+    if (fixtures.length === 0 && state.playoffs) {
+        const series = userActiveSeries(state, config.league);
+        add(series ? nextSeriesFixture(series) : null);
+    }
+
+    return fixtures;
+}
+
 /** Deterministic per-fixture seed derived from the master seed. */
 export function fixtureSeed(state: GameState, fixtureId: string): number {
     return (state.masterSeed ^ hashString(`fixture:${fixtureId}`)) >>> 0;
@@ -272,6 +358,37 @@ function resolveHomeAdvantage(state: GameState, fixture: Fixture, config: GameCo
     );
 }
 
+function scaleAttributes(attrs: Attributes, mult: number): Attributes {
+    const out = { ...attrs };
+    for (const key of Object.keys(out) as Array<keyof Attributes>) {
+        out[key] = Math.max(1, Math.min(99, Math.round(out[key] * mult)));
+    }
+    return out;
+}
+
+/** Difficulty injury multiplier for the user's players in match sim. */
+export function userInjuryMultiplier(state: GameState): number {
+    return difficultyModifiers(state.difficulty ?? 'hard').userInjuryMult;
+}
+
+/** Apply difficulty scaling to non-user teams entering the match sim. */
+export function applyDifficultyToSimInput(state: GameState, input: TeamSimInput): TeamSimInput {
+    if (input.teamId === state.userTeamId) {
+        return input;
+    }
+    const mult = difficultyModifiers(state.difficulty ?? 'hard').aiSkillMult;
+    if (mult === 1) {
+        return input;
+    }
+    return {
+        ...input,
+        players: input.players.map((p) => ({
+            ...p,
+            attributes: scaleAttributes(p.attributes, mult),
+        })),
+    };
+}
+
 /** Roster snapshot for the sim: healthy players only, injured starters replaced. */
 export function toSimInput(state: GameState, teamId: TeamId): TeamSimInput {
     const team = state.teams[teamId];
@@ -284,9 +401,9 @@ export function toSimInput(state: GameState, teamId: TeamId): TeamSimInput {
     if (available.length < 5) {
         // Emergency: field injured players rather than forfeiting.
         const everyone = team.playerIds.map((id) => state.players[id]).filter((p): p is Player => p !== undefined);
-        return buildInput(team.id, everyone, team.tactics);
+        return applyDifficultyToSimInput(state, buildInput(team.id, everyone, team.tactics));
     }
-    return buildInput(team.id, available, team.tactics);
+    return applyDifficultyToSimInput(state, buildInput(team.id, available, team.tactics));
 }
 
 function buildInput(teamId: TeamId, players: Player[], tactics: Tactics): TeamSimInput {
@@ -314,7 +431,7 @@ function buildInput(teamId: TeamId, players: Player[], tactics: Tactics): TeamSi
     }
     return {
         teamId,
-        players: players.map((p) => ({ id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue })),
+        players: players.map((p) => ({ id: p.id, position: p.position, attributes: p.attributes, fatigue: p.fatigue, morale: p.morale })),
         starters: effectiveStarters,
         pace,
         offenseFocus,
@@ -329,9 +446,9 @@ export function prepareUserMatch(state: GameState, config: GameConfig): { fixtur
     if (bclQuali) {
         fixture = nextBclQualifyingFixture(state, config.bcl) ?? undefined;
     }
-    const bclSeries = userBclSeries(state, config.league);
+    const bclSeries = userBclSeries(state, config.bcl);
     if (!fixture && bclSeries) {
-        fixture = nextBclSeriesFixture(state, config.league) ?? undefined;
+        fixture = nextBclSeriesFixture(state, config.bcl) ?? undefined;
     }
     if (!fixture) {
         const bclPending = pendingBclFixtures(state, state.calendarWeek).find(
@@ -379,9 +496,31 @@ export function prepareUserMatch(state: GameState, config: GameConfig): { fixtur
         balance: config.balance,
         moments: config.moments,
         storyTeamId: state.userTeamId,
+        userTeamId: state.userTeamId,
+        userInjuryMult: userInjuryMultiplier(state),
         homeAdvantage: resolveHomeAdvantage(state, fixture, config),
     });
     return { fixture, engine };
+}
+
+function applyLiveMatchMoraleBonus(state: GameState): void {
+    const team = state.teams[state.userTeamId];
+    for (const playerId of team?.playerIds ?? []) {
+        const player = state.players[playerId];
+        if (player) {
+            player.morale = Math.min(100, player.morale + 2);
+        }
+    }
+}
+
+function applyInstantSimFatiguePenalty(state: GameState): void {
+    const team = state.teams[state.userTeamId];
+    for (const playerId of team?.playerIds ?? []) {
+        const player = state.players[playerId];
+        if (player) {
+            player.fatigue = Math.min(100, player.fatigue + 3);
+        }
+    }
 }
 
 function applyOutcomeToPlayers(state: GameState, outcome: MatchOutcome): void {
@@ -549,10 +688,18 @@ function finishRoundCommon(
 
     tickNblFinancesForRound(state, config, results);
 
-    weeklyTrainingTick(state, { training: config.training, economy: config.economy }, createRng(state.masterSeed).fork(`training:${round}`));
+    weeklyTrainingTick(state, { training: config.training, economy: config.economy, league: config.league }, createRng(state.masterSeed).fork(`training:${round}`));
+
+    tickAiFacilities(state, config.economy, config.league);
+    tickBudgetCrisis(state, config.economy, config.league);
 
     // Transfer market activity and the once-a-season youth intake (M11).
     marketTick(state, config.market, config.economy, createRng(state.masterSeed).fork(`market:${round}`), config.externalOffers);
+    for (const teamId of Object.keys(state.teams)) {
+        if (teamId !== state.userTeamId) {
+            refreshTeamStarters(state, teamId);
+        }
+    }
     releaseFixedYouthProspects(state, config.market, config.economy, round);
     let youthIntake = false;
     if (!state.market.youthIntakeDone && round >= config.market.youth.intakeRound) {
@@ -618,11 +765,14 @@ function simWeekFecFixtures(
 
 function bookUserMatch(
     state: GameState,
-    userMatch: { fixture: Fixture; outcome: MatchOutcome },
+    userMatch: { fixture: Fixture; outcome: MatchOutcome; playedLive?: boolean },
     results: RoundResult['results'],
 ): PlayerId | null {
     userMatch.fixture.result = userMatch.outcome.summary;
     applyOutcomeToPlayers(state, userMatch.outcome);
+    if (userMatch.playedLive) {
+        applyLiveMatchMoraleBonus(state);
+    }
     const userTeam = state.teams[state.userTeamId];
     results.push({ fixture: userMatch.fixture, summary: userMatch.outcome.summary });
     return Object.keys(userMatch.outcome.injuries).find((id) => userTeam?.playerIds.includes(id)) ?? null;
@@ -635,6 +785,8 @@ function simFixture(state: GameState, config: GameConfig, fixture: Fixture, resu
         seed: fixtureSeed(state, fixture.id),
         balance: config.balance,
         moments: config.moments,
+        userTeamId: state.userTeamId,
+        userInjuryMult: userInjuryMultiplier(state),
         homeAdvantage: resolveHomeAdvantage(state, fixture, config),
     });
     fixture.result = summary;
@@ -700,7 +852,7 @@ function hasPendingUserBcl(state: GameState, config: GameConfig): boolean {
     if (!state.bclQualified) {
         return false;
     }
-    if (userBclSeries(state, config.league)) {
+    if (userBclSeries(state, config.bcl)) {
         return true;
     }
     return pendingBclFixtures(state, state.calendarWeek).some(
@@ -723,7 +875,7 @@ function hasPendingUserFec(state: GameState, config: GameConfig): boolean {
 export function completeRound(
     state: GameState,
     config: GameConfig,
-    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
+    userMatch: { fixture: Fixture; outcome: MatchOutcome; playedLive?: boolean } | null,
 ): RoundResult {
     if (isSeasonOver(state, config)
         && isEuropeanCalendarComplete(state, config)
@@ -749,12 +901,24 @@ export function completeRound(
         completeBclQualifyingRound(state, config.bcl, config.league, rng);
         isBcl = true;
     }
-    // BCL knockout series games.
-    const bclSeries = userBclSeries(state, config.league);
-    if (!isBcl && bclSeries && userMatch?.fixture.competitionId === 'bcl') {
-        userInjuredId = bookUserMatch(state, userMatch, results);
-        recordBclSeriesGame(state, userMatch.fixture);
-        completeBclKnockoutRound(state, config.league);
+    // BCL knockout series games — sim all active series each round.
+    const bclKnockoutSeries = activeBclSeries(state, config.bcl);
+    if (bclKnockoutSeries.length > 0) {
+        for (const series of bclKnockoutSeries) {
+            const isUserSeries = series.homeTeamId === state.userTeamId || series.awayTeamId === state.userTeamId;
+            if (isUserSeries && userMatch?.fixture.competitionId === 'bcl') {
+                if (!isBcl) {
+                    userInjuredId = bookUserMatch(state, userMatch, results);
+                    recordBclSeriesGame(state, userMatch.fixture);
+                }
+            } else {
+                const fixture = nextSeriesFixture(series);
+                fixture.competitionId = 'bcl';
+                simFixture(state, config, fixture, results);
+                recordBclSeriesGame(state, fixture);
+            }
+        }
+        completeBclKnockoutRound(state, config.bcl);
         isBcl = true;
     }
 
@@ -810,27 +974,33 @@ export function completeRound(
 export function advanceRoundInstant(state: GameState, config: GameConfig): RoundResult {
     ensurePlayoffs(state, config);
     const bclQuali = userBclQualifyingSeries(state, config.bcl) !== null;
-    const bclKnockout = userBclSeries(state, config.league) !== null;
+    const bclKnockout = userBclSeries(state, config.bcl) !== null;
     const fecKnockout = userFecSeries(state, config.fec) !== null;
+    const userHasMatch = fixturesOfRound(state, state.currentRound).some(
+        (f) => !f.result && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
+    ) ||
+        pendingBclFixtures(state, state.calendarWeek).some(
+            (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
+        ) ||
+        pendingFecFixtures(state, state.calendarWeek).some(
+            (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
+        ) ||
+        bclQuali ||
+        bclKnockout ||
+        fecKnockout;
+    if (isSeasonOver(state, config) && hasPendingEuropeanSimulation(state, config) && !userHasMatch) {
+        return completeRound(state, config, null);
+    }
     const pending = isSeasonOver(state, config) && isEuropeanCalendarComplete(state, config) && !bclQuali && !bclKnockout && !fecKnockout
         ? userActiveSeries(state, config.league) !== null
-        : fixturesOfRound(state, state.currentRound).some(
-              (f) => !f.result && (f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId),
-          ) ||
-          pendingBclFixtures(state, state.calendarWeek).some(
-              (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
-          ) ||
-          pendingFecFixtures(state, state.calendarWeek).some(
-              (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
-          ) ||
-          bclQuali ||
-          bclKnockout ||
-          fecKnockout ||
+        : userHasMatch ||
+          hasPendingBclKnockout(state, config.bcl) ||
           (isSeasonOver(state, config) && hasPendingEuropeanSimulation(state, config));
     if (!pending) {
         return completeRound(state, config, null);
     }
     const { fixture, engine } = prepareUserMatch(state, config);
     const outcome = engine.finish();
+    applyInstantSimFatiguePenalty(state);
     return completeRound(state, config, { fixture, outcome });
 }

@@ -1,17 +1,35 @@
 import type { AppContext, Screen } from '../../app/Screen';
+import type { GameState } from '../../core/model/types';
+import type { Fixture } from '../../core/model/types';
 import type { UiInputFrame } from '../../app/UiInput';
-import { advanceRoundInstant, campaignPhase, ensurePlayoffs, isCampaignOver, isEuropeanCalendarComplete, isSeasonOver, nextUserFixture, prepareUserMatch, type RoundResult } from '../../core/game';
+import { advanceRoundInstant, campaignPhase, ensurePlayoffs, isCampaignOver, isEuropeanCalendarComplete, isSeasonOver, nextUserFixture, prepareUserMatch, upcomingUserFixtures, type RoundResult } from '../../core/game';
+import { pendingBclFixtures, userBclSeries } from '../../core/bcl/index';
+import { pendingFecFixtures, userFecSeries } from '../../core/fec/index';
 import { canStartNextSeason, completeOffseasonRollover, prepareOffseasonReview } from '../../core/season';
 import { pendingExternalOffers } from '../../core/breakthrough';
 import { userActiveSeries } from '../../core/playoffs';
 import { buildPressContext, generatePressConference } from '../../core/press';
+import { buildNewsItems, type NewsItem } from '../../core/news';
 import { createRng } from '../../core/rng';
 import { serializeSave } from '../../core/save/save';
 import { projectSeasonCashflow } from '../../core/cashflow';
-import { t } from '../../i18n';
+import { nextContextualHint } from '../../core/contextualHints';
+import { isFreeAgentMarketOpen, isFullTransferMarketOpen } from '../../core/market';
+import { facilityProjectRoundsLeft } from '../../core/economy';
+import { userExpiringContractPlayers } from '../../core/season';
+import { formatMoney } from '../format';
+import { ContextualHintScreen } from './ContextualHintScreen';
+import { t, type TranslationKey } from '../../i18n';
 import { AUTOSAVE_KEY } from '../../services/storage';
-import { drawChrome, financeWarningMessage } from '../chrome';
+import { drawChrome, drawChromeFooter, financeWarningMessage } from '../chrome';
 import { competitionLabel, fixtureLine, teamDef, teamName } from '../format';
+import {
+    activeResultGroups,
+    groupResultsByCompetition,
+    isUserFixture,
+    resultColumnStarts,
+    truncateResultList,
+} from '../dashboardResults';
 import { ROLE } from '../theme';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ActionDialog } from './ActionDialog';
@@ -40,18 +58,51 @@ import { SaveLoadScreen } from './SaveLoadScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { SponsorChoiceScreen } from './SponsorChoiceScreen';
+import { ensureScoutReportsForOpeningFreeAgents } from '../../core/scouting';
 import { ScoutingScreen } from './ScoutingScreen';
 import { StandingsScreen } from './StandingsScreen';
 import { TrainingScreen } from './TrainingScreen';
 import { YouthIntakeScreen } from './YouthIntakeScreen';
+import { drawTeamCrest } from '../crests';
 
 export class DashboardScreen implements Screen {
     private readonly ctx: AppContext;
     private readonly menu: MenuList;
+    private readonly newsMenu: MenuList;
+    private newsItems: NewsItem[] = [];
+    private newsSelected = false;
 
     constructor(ctx: AppContext) {
         this.ctx = ctx;
         this.menu = new MenuList([], { col: 3, row: 4, width: 32 });
+        this.newsMenu = new MenuList([], { col: 40, row: 5, width: 28 });
+    }
+
+    onEnter(): void {
+        this.rebuildMenu();
+        this.rebuildNews();
+        this.maybeShowScoutingScreen();
+        this.maybeShowContextualHint();
+    }
+
+    private maybeShowContextualHint(): void {
+        const state = this.sessionOrThrow.state;
+        const hint = nextContextualHint(state, this.ctx.config.market, this.ctx.config.economy, this.ctx.config.league);
+        if (!hint) {
+            return;
+        }
+        this.ctx.screens.push(new ContextualHintScreen(this.ctx, hint, () => {
+            this.rebuildMenu();
+        }));
+    }
+
+    private rebuildNews(): void {
+        const state = this.sessionOrThrow.state;
+        this.newsItems = buildNewsItems(state, this.ctx.config.economy, this.ctx.config.league, this.ctx.config.market);
+        this.newsMenu.items = this.newsItems.map((item, i) => ({
+            id: String(i),
+            label: t(item.labelKey as Parameters<typeof t>[0]),
+        }));
     }
 
     private get sessionOrThrow() {
@@ -109,6 +160,21 @@ export class DashboardScreen implements Screen {
         this.ctx.storage.set(AUTOSAVE_KEY, serializeSave(session.state, t('save.autosave'), new Date().toISOString()));
     }
 
+    /** Returns true when the pre-season scouting screen was pushed. */
+    private maybeShowScoutingScreen(): boolean {
+        const session = this.sessionOrThrow;
+        const state = session.state;
+        if (state.market.scoutingComplete || state.currentRound !== 1) {
+            return false;
+        }
+        const rng = createRng(state.masterSeed).fork(`scout-resume:${state.seasonYear}`);
+        ensureScoutReportsForOpeningFreeAgents(state, this.ctx.config, rng);
+        this.ctx.screens.push(new ScoutingScreen(this.ctx, () => {
+            this.afterOffseasonSummary();
+        }));
+        return true;
+    }
+
     private startNextSeasonFlow(): void {
         const session = this.sessionOrThrow;
         const rng = createRng(session.state.masterSeed).fork(`next-season:${session.state.seasonYear}`);
@@ -119,11 +185,7 @@ export class DashboardScreen implements Screen {
             const summary = completeOffseasonRollover(session.state, this.ctx.config, rng.fork('rollover'));
             this.autosave();
             this.ctx.screens.push(new OffseasonScreen(this.ctx, summary, () => {
-                if (!session.state.market.scoutingComplete && session.state.currentRound === 1) {
-                    this.ctx.screens.push(new ScoutingScreen(this.ctx, () => {
-                        this.afterOffseasonSummary();
-                    }));
-                } else {
+                if (!this.maybeShowScoutingScreen()) {
                     this.afterOffseasonSummary();
                 }
             }));
@@ -188,7 +250,7 @@ export class DashboardScreen implements Screen {
                         result.userInjuredId,
                     );
                     const rng = createRng(session.state.masterSeed).fork(`press:${userFixture.fixture.id}`);
-                    const questions = generatePressConference(context, this.ctx.config.press, rng);
+                    const questions = generatePressConference(context, this.ctx.config.press, rng, session.state);
                     if (questions.length > 0) {
                         this.ctx.screens.push(new PressConferenceScreen(this.ctx, questions));
                     }
@@ -198,8 +260,30 @@ export class DashboardScreen implements Screen {
     }
 
     private static readonly NBL_RESULTS_COL = 3;
-    private static readonly BCL_RESULTS_COL = 40;
-    private static readonly BCL_RESULTS_COL2 = 58;
+    private static readonly INFO_COL = 40;
+    private static readonly RESULTS_START_ROW = 10;
+    private static readonly INBOX_HEADER_ROW = 3;
+    private static readonly INBOX_HINT_ROW = 4;
+    private static readonly INBOX_ITEM_ROW = 5;
+
+    private maxContentRow(grid: AppContext['grid']): number {
+        return grid.rows - 2;
+    }
+
+    /** Writes one info-panel line when vertical space remains; returns the next row. */
+    private putInfoLine(
+        grid: AppContext['grid'],
+        col: number,
+        row: number,
+        color: number,
+        text: string,
+    ): number {
+        if (row >= this.maxContentRow(grid)) {
+            return row;
+        }
+        grid.put(col, row, color, text);
+        return row + 1;
+    }
 
     private renderFixtureResult(
         grid: AppContext['grid'],
@@ -207,71 +291,229 @@ export class DashboardScreen implements Screen {
         row: number,
         fixture: RoundResult['results'][number]['fixture'],
         userTeamId: string,
+        prefix?: string,
     ): void {
-        const isUserMatch = fixture.homeTeamId === userTeamId || fixture.awayTeamId === userTeamId;
-        grid.put(col, row, isUserMatch ? ROLE.accent : ROLE.text, fixtureLine(fixture));
+        const isUserMatch = isUserFixture(fixture, userTeamId);
+        const line = prefix ? `${prefix} ${fixtureLine(fixture)}` : fixtureLine(fixture);
+        grid.put(col, row, isUserMatch ? ROLE.accent : ROLE.text, line);
     }
 
-    /** Last-round scoreboard; splits NBL and BCL into two columns when both played. */
+    private renderResultColumn(
+        grid: AppContext['grid'],
+        col: number,
+        startRow: number,
+        label: string,
+        results: RoundResult['results'],
+        userTeamId: string,
+        maxVisible: number,
+        prefixLines = false,
+    ): number {
+        grid.put(col, startRow, ROLE.textDim, label);
+        const { visible, hidden } = truncateResultList(results, maxVisible);
+        let row = startRow + 1;
+        for (const { fixture } of visible) {
+            const prefix = prefixLines ? competitionLabel(fixture.competitionId) : undefined;
+            this.renderFixtureResult(grid, col, row, fixture, userTeamId, prefix);
+            row++;
+        }
+        if (hidden > 0) {
+            grid.put(col, row, ROLE.textDim, t('dashboard.resultsMore', { n: hidden }));
+            row++;
+        }
+        return row;
+    }
+
+    /** Last-round scoreboard on the left; does not advance the right-panel row cursor. */
     private renderLastRoundResults(
         grid: AppContext['grid'],
-        startRow: number,
+        rightPanelRow: number,
         lastRound: RoundResult,
         userTeamId: string,
     ): number {
-        const infoCol = DashboardScreen.BCL_RESULTS_COL;
-        let row = startRow;
+        const infoCol = DashboardScreen.INFO_COL;
+        const maxRow = this.maxContentRow(grid);
 
         if (lastRound.isPlayoff) {
-            grid.put(infoCol, row, ROLE.header, t('dashboard.lastPlayoffResults'));
-            row++;
+            let row = rightPanelRow;
+            row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('dashboard.lastPlayoffResults'));
             for (const { fixture } of lastRound.results) {
+                if (row >= maxRow) {
+                    break;
+                }
                 this.renderFixtureResult(grid, infoCol + 1, row, fixture, userTeamId);
                 row++;
             }
             return row;
         }
 
-        const nblResults = lastRound.results.filter((r) => !r.fixture.competitionId || r.fixture.competitionId === 'nbl');
-        const bclResults = lastRound.results.filter((r) => r.fixture.competitionId === 'bcl');
+        const grouped = groupResultsByCompetition(lastRound.results);
+        const activeGroups = activeResultGroups(grouped);
         const header = `${t('dashboard.lastResults')} (${t('common.round', { round: lastRound.round })})`;
+        const resultsRow = Math.max(DashboardScreen.RESULTS_START_ROW, rightPanelRow);
+        if (resultsRow >= maxRow) {
+            return rightPanelRow;
+        }
+        const maxVisible = Math.max(2, maxRow - resultsRow - 1);
+        const columns = resultColumnStarts(grid.cols, activeGroups);
 
-        if (nblResults.length > 0 && bclResults.length > 0) {
-            // NBL on the left below the menu; BCL on the right (two columns when busy).
-            const resultsRow = Math.max(10, row);
-            grid.put(DashboardScreen.NBL_RESULTS_COL, resultsRow, ROLE.header, header);
-            grid.put(DashboardScreen.NBL_RESULTS_COL, resultsRow + 1, ROLE.textDim, competitionLabel('nbl'));
-            grid.put(DashboardScreen.BCL_RESULTS_COL, resultsRow + 1, ROLE.textDim, t('bcl.title'));
-
-            let nblRow = resultsRow + 2;
-            for (const { fixture } of nblResults) {
-                this.renderFixtureResult(grid, DashboardScreen.NBL_RESULTS_COL, nblRow, fixture, userTeamId);
-                nblRow++;
-            }
-
-            const bclMid = Math.ceil(bclResults.length / 2);
-            const bclLeft = bclResults.slice(0, bclMid);
-            const bclRight = bclResults.slice(bclMid);
-            let bclRow = resultsRow + 2;
-            for (const { fixture } of bclLeft) {
-                this.renderFixtureResult(grid, DashboardScreen.BCL_RESULTS_COL, bclRow, fixture, userTeamId);
-                bclRow++;
-            }
-            let bclRow2 = resultsRow + 2;
-            for (const { fixture } of bclRight) {
-                this.renderFixtureResult(grid, DashboardScreen.BCL_RESULTS_COL2, bclRow2, fixture, userTeamId);
-                bclRow2++;
-            }
-            return Math.max(nblRow, bclRow, bclRow2);
+        grid.put(DashboardScreen.NBL_RESULTS_COL, resultsRow, ROLE.header, header);
+        if (activeGroups.length > 1) {
+            activeGroups.forEach((group, index) => {
+                const col = columns[index] ?? DashboardScreen.NBL_RESULTS_COL;
+                const label = group === 'nbl' ? competitionLabel('nbl') : group === 'bcl' ? t('bcl.title') : t('fec.title');
+                this.renderResultColumn(
+                    grid,
+                    col,
+                    resultsRow + 1,
+                    label,
+                    grouped[group],
+                    userTeamId,
+                    maxVisible,
+                );
+            });
+            return rightPanelRow;
         }
 
-        grid.put(infoCol, row, ROLE.header, header);
-        row++;
-        for (const { fixture } of lastRound.results) {
-            this.renderFixtureResult(grid, infoCol + 1, row, fixture, userTeamId);
+        const label = competitionLabel(lastRound.results[0]?.fixture.competitionId);
+        this.renderResultColumn(
+            grid,
+            DashboardScreen.NBL_RESULTS_COL,
+            resultsRow + 1,
+            label,
+            lastRound.results,
+            userTeamId,
+            maxVisible,
+        );
+        return rightPanelRow;
+    }
+
+    private renderWeekEconomy(
+        grid: AppContext['grid'],
+        infoCol: number,
+        row: number,
+        economy: NonNullable<RoundResult['economy']>,
+    ): number {
+        const maxRow = this.maxContentRow(grid);
+        if (row >= maxRow) {
+            return row;
+        }
+        row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('dashboard.weekEconomy'));
+        const lines: Array<[string, number]> = [
+            [t('ledger.tickets'), economy.ticketIncome],
+            [t('ledger.sponsors'), economy.sponsorIncome],
+            [t('ledger.salaries'), -economy.salaries],
+            [t('ledger.maintenance'), -economy.maintenance],
+        ];
+        for (const [label, amount] of lines) {
+            if (amount === 0 || row >= maxRow) {
+                continue;
+            }
+            grid.put(
+                infoCol + 1,
+                row,
+                amount >= 0 ? ROLE.success : ROLE.danger,
+                `${label}: ${amount >= 0 ? '+' : ''}${Math.round(amount / 1000)}k`,
+            );
             row++;
         }
         return row;
+    }
+
+    private renderUpcomingFixture(
+        grid: AppContext['grid'],
+        col: number,
+        row: number,
+        fixture: Fixture,
+        userTeamId: string,
+    ): number {
+        const isHome = fixture.homeTeamId === userTeamId;
+        grid.put(
+            col,
+            row,
+            ROLE.text,
+            t('dashboard.upcomingLine', {
+                comp: competitionLabel(fixture.competitionId),
+                round: fixture.week ?? fixture.round,
+                home: teamName(fixture.homeTeamId),
+                away: teamName(fixture.awayTeamId),
+                venue: isHome ? t('dashboard.homeGame') : t('dashboard.awayGame'),
+            }),
+        );
+        return row + 1;
+    }
+
+    private europeanCompetitionStatus(
+        comp: 'bcl' | 'fec',
+        phase: string | undefined,
+        userActive: boolean,
+    ): string {
+        if (!phase) {
+            return '';
+        }
+        const phaseKey = `${comp}.phase.${phase}` as TranslationKey;
+        let phaseLabel: string;
+        try {
+            phaseLabel = t(phaseKey);
+        } catch {
+            phaseLabel = phase;
+        }
+        const status = phase === 'complete'
+            ? t('dashboard.europeanComplete')
+            : userActive
+              ? t('dashboard.europeanActive')
+              : t('dashboard.europeanEliminated');
+        return t('dashboard.europeanStatus', {
+            comp: competitionLabel(comp),
+            phase: phaseLabel,
+            status,
+        });
+    }
+
+    private renderEuropeanPhasePanel(
+        grid: AppContext['grid'],
+        col: number,
+        startRow: number,
+        state: NonNullable<AppContext['session']>['state'],
+    ): number {
+        let row = startRow;
+        grid.put(col, row, ROLE.header, t('dashboard.europeanPhase'));
+        row++;
+        grid.put(col, row, ROLE.textDim, t('dashboard.europeanPhaseHint'));
+        row++;
+
+        const bcl = state.competitions.bcl;
+        if (bcl && state.bclQualified) {
+            const userActive = userBclSeries(state, this.ctx.config.bcl) !== null
+                || pendingBclFixtures(state, state.calendarWeek).some(
+                    (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
+                );
+            const line = this.europeanCompetitionStatus('bcl', bcl.phase, userActive);
+            if (line) {
+                grid.put(col, row, ROLE.text, line);
+                row++;
+            }
+        }
+
+        const fec = state.competitions.fec;
+        if (fec && state.fecQualified) {
+            const userActive = userFecSeries(state, this.ctx.config.fec) !== null
+                || pendingFecFixtures(state, state.calendarWeek).some(
+                    (f) => f.homeTeamId === state.userTeamId || f.awayTeamId === state.userTeamId,
+                );
+            const line = this.europeanCompetitionStatus('fec', fec.phase, userActive);
+            if (line) {
+                grid.put(col, row, ROLE.text, line);
+                row++;
+            }
+        }
+
+        const europeanFixtures = upcomingUserFixtures(state, this.ctx.config, 2).filter(
+            (f) => f.competitionId === 'bcl' || f.competitionId === 'fec',
+        );
+        for (const fixture of europeanFixtures) {
+            row = this.renderUpcomingFixture(grid, col, row, fixture, state.userTeamId);
+        }
+        return row + 1;
     }
 
     private exitGame(): void {
@@ -282,6 +524,56 @@ export class DashboardScreen implements Screen {
                     this.ctx.screens.reset(new MainMenuScreen(this.ctx));
                 }
             }),
+        );
+    }
+
+    private openNblGroup(): void {
+        const state = this.sessionOrThrow.state;
+        this.ctx.screens.push(
+            new ActionDialog(
+                this.ctx,
+                t('dashboard.groupNbl'),
+                [
+                    { id: 'schedule', label: t('dashboard.schedule') },
+                    { id: 'standings', label: t('dashboard.standings') },
+                    ...(state.playoffs ? [{ id: 'playoffs', label: t('playoff.title') }] : []),
+                    { id: 'close', label: t('common.back') },
+                ],
+                (action) => {
+                    if (action && action !== 'close') {
+                        this.openScreen(action);
+                    }
+                },
+            ),
+        );
+    }
+
+    private openEuropeGroup(): void {
+        const state = this.sessionOrThrow.state;
+        this.ctx.screens.push(
+            new ActionDialog(
+                this.ctx,
+                t('dashboard.groupEurope'),
+                [
+                    ...(state.competitions.bcl ? [
+                        { id: 'bcl-schedule', label: t('bcl.schedule') },
+                        { id: 'bcl-standings', label: t('bcl.standings') },
+                        { id: 'bcl-bracket', label: t('bcl.bracket') },
+                    ] : []),
+                    ...(state.competitions.fec ? [
+                        { id: 'fec-schedule', label: t('fec.schedule') },
+                        { id: 'fec-standings', label: t('fec.standings') },
+                        { id: 'fec-bracket', label: t('fec.bracket') },
+                    ] : []),
+                    { id: 'bcl-valuations', label: t('bcl.valuations') },
+                    { id: 'close', label: t('common.back') },
+                ],
+                (action) => {
+                    if (action && action !== 'close') {
+                        this.openScreen(action);
+                    }
+                },
+            ),
         );
     }
 
@@ -319,20 +611,8 @@ export class DashboardScreen implements Screen {
             league: {
                 title: t('dashboard.groupLeague'),
                 items: [
-                    { id: 'schedule', label: t('dashboard.schedule') },
-                    { id: 'standings', label: t('dashboard.standings') },
-                    ...(state.playoffs ? [{ id: 'playoffs', label: t('playoff.title') }] : []),
-                    { id: 'bcl-valuations', label: t('bcl.valuations') },
-                    ...(state.competitions.bcl ? [
-                        { id: 'bcl-schedule', label: t('bcl.schedule') },
-                        { id: 'bcl-standings', label: t('bcl.standings') },
-                        { id: 'bcl-bracket', label: t('bcl.bracket') },
-                    ] : []),
-                    ...(state.competitions.fec ? [
-                        { id: 'fec-schedule', label: t('fec.schedule') },
-                        { id: 'fec-standings', label: t('fec.standings') },
-                        { id: 'fec-bracket', label: t('fec.bracket') },
-                    ] : []),
+                    { id: 'league-nbl', label: t('dashboard.groupNbl') },
+                    { id: 'league-europe', label: t('dashboard.groupEurope') },
                 ],
             },
             system: {
@@ -354,6 +634,10 @@ export class DashboardScreen implements Screen {
                 if (action && action !== 'close') {
                     if (action === 'exit') {
                         this.exitGame();
+                    } else if (action === 'league-nbl') {
+                        this.openNblGroup();
+                    } else if (action === 'league-europe') {
+                        this.openEuropeGroup();
                     } else {
                         this.openScreen(action);
                     }
@@ -434,10 +718,47 @@ export class DashboardScreen implements Screen {
         }
     }
 
+    private openNewsItem(index: number): void {
+        const item = this.newsItems[index];
+        if (!item) {
+            return;
+        }
+        switch (item.action) {
+            case 'roster':
+                this.openScreen('roster');
+                break;
+            case 'market':
+                this.openScreen('market');
+                break;
+            case 'finances':
+                this.openScreen('finances');
+                break;
+            case 'externalOffer':
+                this.openScreen('external');
+                break;
+            case 'youthIntake':
+                this.openScreen('youth');
+                break;
+            default:
+                break;
+        }
+    }
+
     update(input: UiInputFrame): void {
         const session = this.sessionOrThrow;
         ensurePlayoffs(session.state, this.ctx.config);
         this.rebuildMenu();
+        this.rebuildNews();
+        if (input.inbox) {
+            this.newsSelected = !this.newsSelected;
+        }
+        if (this.newsSelected && this.newsItems.length > 0) {
+            const picked = this.newsMenu.update(input, this.ctx.grid);
+            if (picked !== null) {
+                this.openNewsItem(Number(picked));
+            }
+            return;
+        }
         const action = this.menu.update(input, this.ctx.grid);
         switch (action) {
             case 'live':
@@ -462,105 +783,223 @@ export class DashboardScreen implements Screen {
         const session = this.sessionOrThrow;
         const state = session.state;
         const grid = this.ctx.grid;
-        drawChrome(this.ctx, t('dashboard.title'), [t('hint.navigate'), t('hint.select')]);
+        const infoCol = DashboardScreen.INFO_COL;
+        const footerHints = [t('hint.navigate'), t('hint.select'), 'I: inbox'];
+        drawChrome(this.ctx, t('dashboard.title'), footerHints);
+        drawTeamCrest(grid, state.userTeamId, 36, 2);
         this.menu.render(grid);
 
-        const infoCol = 40;
-        let row = 4;
+        this.rebuildNews();
+        if (this.newsItems.length > 0) {
+            const inboxRows = DashboardScreen.INBOX_ITEM_ROW + this.newsItems.length;
+            grid.fillCells(infoCol, DashboardScreen.INBOX_HEADER_ROW, grid.cols - infoCol, inboxRows - DashboardScreen.INBOX_HEADER_ROW, ROLE.bg);
+            grid.put(infoCol, DashboardScreen.INBOX_HEADER_ROW, ROLE.header, t('news.title'));
+            grid.put(infoCol, DashboardScreen.INBOX_HINT_ROW, ROLE.textDim, t('news.hint'));
+            this.newsMenu.setRow(DashboardScreen.INBOX_ITEM_ROW);
+            this.newsMenu.render(grid);
+        }
+
+        // Header + hint + inbox items + blank spacer.
+        let row = this.newsItems.length > 0
+            ? DashboardScreen.INBOX_ITEM_ROW + this.newsItems.length + 1
+            : DashboardScreen.INBOX_HINT_ROW;
         const inPlayoffs = isSeasonOver(state, this.ctx.config) && isEuropeanCalendarComplete(state, this.ctx.config) && state.playoffs !== null;
         const inEuropeanPhase = campaignPhase(state, this.ctx.config) === 'europe';
         const campaignOver = isCampaignOver(state, this.ctx.config);
 
         if (campaignOver && state.playoffs?.championTeamId) {
-            grid.put(infoCol, row, ROLE.header, t('dashboard.seasonOver'));
-            grid.put(infoCol, row + 1, ROLE.gold, t('playoff.champion', { team: teamName(state.playoffs.championTeamId) }));
+            row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('dashboard.seasonOver'));
+            row = this.putInfoLine(
+                grid,
+                infoCol,
+                row,
+                ROLE.gold,
+                t('playoff.champion', { team: teamName(state.playoffs.championTeamId) }),
+            );
             if (canStartNextSeason(state, this.ctx.config)) {
-                grid.put(infoCol, row + 2, ROLE.accent, t('dashboard.startNextSeason', { year: state.seasonYear + 1 }));
-                row += 4;
+                row = this.putInfoLine(grid, infoCol, row, ROLE.accent, t('dashboard.startNextSeason', { year: state.seasonYear + 1 }));
+                row++;
             } else {
-                row += 3;
+                row++;
             }
         } else if (inEuropeanPhase) {
-            grid.put(infoCol, row, ROLE.header, t('dashboard.europeanPhase'));
-            grid.put(infoCol, row + 1, ROLE.textDim, t('dashboard.europeanPhaseHint'));
-            row += 4;
+            row = this.renderEuropeanPhasePanel(grid, infoCol, row, state);
         } else if (inPlayoffs) {
-            grid.put(infoCol, row, ROLE.header, t(`playoff.stage.${state.playoffs?.stage ?? 0}` as Parameters<typeof t>[0]));
+            row = this.putInfoLine(grid, infoCol, row, ROLE.header, t(`playoff.stage.${state.playoffs?.stage ?? 0}` as Parameters<typeof t>[0]));
             const series = userActiveSeries(state, this.ctx.config.league);
             if (series) {
-                grid.put(infoCol, row + 1, ROLE.text,
-                    `${teamDef(series.homeTeamId).abbr} ${series.homeWins}:${series.awayWins} ${teamDef(series.awayTeamId).abbr}`);
+                row = this.putInfoLine(
+                    grid,
+                    infoCol,
+                    row,
+                    ROLE.text,
+                    `${teamDef(series.homeTeamId).abbr} ${series.homeWins}:${series.awayWins} ${teamDef(series.awayTeamId).abbr}`,
+                );
                 const next = nextUserFixture(state, this.ctx.config);
                 if (next) {
                     const isHome = next.homeTeamId === state.userTeamId;
-                    grid.put(infoCol, row + 2, isHome ? ROLE.success : ROLE.textDim, isHome ? t('dashboard.homeGame') : t('dashboard.awayGame'));
+                    row = this.putInfoLine(
+                        grid,
+                        infoCol,
+                        row,
+                        isHome ? ROLE.success : ROLE.textDim,
+                        isHome ? t('dashboard.homeGame') : t('dashboard.awayGame'),
+                    );
                 }
             } else {
-                grid.put(infoCol, row + 1, ROLE.danger, t('playoff.eliminated'));
+                row = this.putInfoLine(grid, infoCol, row, ROLE.danger, t('playoff.eliminated'));
             }
-            row += 4;
+            row++;
         } else {
-            const next = nextUserFixture(state, this.ctx.config);
-            if (next) {
-                const isHome = next.homeTeamId === state.userTeamId;
-                const comp = next.competitionId === 'bcl'
-                    ? t('dashboard.bclMatch')
-                    : next.competitionId === 'fec'
-                      ? t('dashboard.fecMatch')
-                      : t('dashboard.nblMatch');
-                grid.put(infoCol, row, ROLE.header, comp);
-                grid.put(infoCol, row + 1, ROLE.text,
-                    `${competitionLabel(next.competitionId)} ${t('common.round', { round: next.week ?? next.round })}: ${teamName(next.homeTeamId)} - ${teamName(next.awayTeamId)}`);
-                grid.put(infoCol, row + 2, isHome ? ROLE.success : ROLE.textDim, isHome ? t('dashboard.homeGame') : t('dashboard.awayGame'));
-                let extra = 3;
-                if (state.bclQualified) {
-                    grid.put(infoCol, row + extra, ROLE.gold, 'BCL');
-                    extra++;
+            const upcoming = upcomingUserFixtures(state, this.ctx.config, 3);
+            if (upcoming.length > 0) {
+                row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('dashboard.nextMatch'));
+                for (const fixture of upcoming) {
+                    if (row >= this.maxContentRow(grid)) {
+                        break;
+                    }
+                    row = this.renderUpcomingFixture(grid, infoCol, row, fixture, state.userTeamId);
                 }
-                if (state.fecQualified) {
-                    grid.put(infoCol, row + extra, ROLE.gold, 'FEC');
-                    extra++;
-                }
-                row += extra + 1;
+                row++;
             }
         }
 
-        // Market attention: incoming offers waiting in the transfer inbox.
         const externalCount = pendingExternalOffers(state).length;
         if (state.market.incomingOffers.length > 0 || externalCount > 0) {
             const total = state.market.incomingOffers.length + externalCount;
-            grid.put(infoCol, row, ROLE.gold, t('dashboard.offersWaiting', { n: total }));
-            row += 2;
+            row = this.putInfoLine(grid, infoCol, row, ROLE.gold, t('dashboard.offersWaiting', { n: total }));
+            row++;
         }
 
         const financeWarning = financeWarningMessage(state, this.ctx);
         if (financeWarning) {
             const projection = projectSeasonCashflow(state, this.ctx.config.economy, this.ctx.config.league);
-            grid.put(infoCol, row, projection.warningTier === 'red' ? ROLE.danger : ROLE.warning, financeWarning);
-            row += 2;
+            row = this.putInfoLine(
+                grid,
+                infoCol,
+                row,
+                projection.warningTier === 'red' ? ROLE.danger : ROLE.warning,
+                financeWarning,
+            );
+            row++;
         }
+
+        row = this.renderThisWeekPanel(grid, infoCol, row, state);
 
         const lastRound = session.lastRound;
         if (lastRound) {
             row = this.renderLastRoundResults(grid, row, lastRound, state.userTeamId);
             if (lastRound.economy) {
                 row++;
-                grid.put(infoCol, row, ROLE.header, t('dashboard.weekEconomy'));
+                row = this.renderWeekEconomy(grid, infoCol, row, lastRound.economy);
+            }
+        }
+
+        if (state.careerHistory.length > 0 || (state.careerMilestones?.seasonsCompleted ?? 0) > 0) {
+            if (row < this.maxContentRow(grid)) {
                 row++;
-                const eco = lastRound.economy;
-                const lines: Array<[string, number]> = [
-                    [t('ledger.tickets'), eco.ticketIncome],
-                    [t('ledger.sponsors'), eco.sponsorIncome],
-                    [t('ledger.salaries'), -eco.salaries],
-                    [t('ledger.maintenance'), -eco.maintenance],
-                ];
-                for (const [label, amount] of lines) {
-                    if (amount !== 0) {
-                        grid.put(infoCol + 1, row, amount >= 0 ? ROLE.success : ROLE.danger, `${label}: ${amount >= 0 ? '+' : ''}${Math.round(amount / 1000)}k`);
-                        row++;
+                row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('career.title'));
+                const m = state.careerMilestones;
+                if (m && m.seasonsCompleted > 0) {
+                    row = this.putInfoLine(
+                        grid,
+                        infoCol,
+                        row,
+                        ROLE.textDim,
+                        t('dashboard.milestones', {
+                            titles: m.championships,
+                            playoffs: m.playoffAppearances,
+                            bcl: m.bclTitles,
+                        }),
+                    );
+                }
+                for (const entry of state.careerHistory.slice(-3)) {
+                    if (row >= this.maxContentRow(grid)) {
+                        break;
                     }
+                    row = this.putInfoLine(
+                        grid,
+                        infoCol,
+                        row,
+                        ROLE.textDim,
+                        t('career.seasonLine', {
+                            year: entry.seasonYear,
+                            rank: entry.nblLeagueRank ?? '-',
+                            finish: entry.nblFinish,
+                        }),
+                    );
                 }
             }
         }
+
+        drawChromeFooter(grid, footerHints);
+    }
+
+    private renderThisWeekPanel(grid: AppContext['grid'], infoCol: number, row: number, state: GameState): number {
+        row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('dashboard.thisWeek'));
+
+        const market = this.ctx.config.market;
+        let windowLabel: string;
+        if (isFullTransferMarketOpen(state, market)) {
+            windowLabel = t('dashboard.windowFull');
+        } else if (isFreeAgentMarketOpen(state)) {
+            windowLabel = t('dashboard.windowFaOnly');
+        } else {
+            windowLabel = t('dashboard.windowClosed');
+        }
+        row = this.putInfoLine(grid, infoCol, row, ROLE.text, windowLabel);
+
+        const projection = projectSeasonCashflow(state, this.ctx.config.economy, this.ctx.config.league);
+        const netColor = projection.projectedEndBalance >= this.ctx.config.economy.financial.minEndBalance
+            ? ROLE.success
+            : ROLE.warning;
+        row = this.putInfoLine(
+            grid,
+            infoCol,
+            row,
+            netColor,
+            t('dashboard.weeklyNet', { amount: formatMoney(projection.projectedEndBalance - state.club.budget) }),
+        );
+
+        const expiring = userExpiringContractPlayers(state).length;
+        if (expiring > 0) {
+            row = this.putInfoLine(grid, infoCol, row, ROLE.warning, t('dashboard.expiringContracts', { n: expiring }));
+        }
+
+        if (state.boardObjective) {
+            const targetLine = t('dashboard.boardTarget', { rank: state.boardObjective.promisedMaxRank });
+            row = this.putInfoLine(
+                grid,
+                infoCol,
+                row,
+                state.boardObjective.warned ? ROLE.danger : ROLE.accent,
+                targetLine,
+            );
+            if (state.boardObjective.warned) {
+                row = this.putInfoLine(grid, infoCol, row, ROLE.danger, t('dashboard.boardWarning'));
+            }
+        }
+
+        if (state.club.transferEmbargo) {
+            row = this.putInfoLine(grid, infoCol, row, ROLE.danger, t('dashboard.embargo'));
+        }
+
+        for (const key of ['arena', 'training', 'academy'] as const) {
+            const rounds = facilityProjectRoundsLeft(state, key);
+            if (rounds !== null && rounds > 0) {
+                row = this.putInfoLine(
+                    grid,
+                    infoCol,
+                    row,
+                    ROLE.textDim,
+                    t('dashboard.facilityProgress', {
+                        facility: t(`club.facility.${key}` as Parameters<typeof t>[0]),
+                        rounds,
+                    }),
+                );
+            }
+        }
+
+        return row + 1;
     }
 }

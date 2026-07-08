@@ -48,21 +48,25 @@ export class FinancesScreen implements Screen {
             used: formatMoney(projection.seasonWageBill),
             max: formatMoney(projection.maxWageBill),
         }));
-        grid.put(4, 5, ROLE.text, t('finance.weeklyBurn', { amount: formatMoney(projection.weeklyBurn) }));
-        grid.put(4, 6, ROLE.text, t('finance.sponsorsPerRound', {
+        const wagePct = projection.maxWageBill > 0
+            ? Math.round((projection.seasonWageBill / projection.maxWageBill) * 100)
+            : 0;
+        grid.put(4, 5, ROLE.textDim, t('finance.wageBudgetPct', { pct: wagePct }));
+        grid.put(4, 6, ROLE.text, t('finance.weeklyBurn', { amount: formatMoney(projection.weeklyBurn) }));
+        grid.put(4, 7, ROLE.text, t('finance.sponsorsPerRound', {
             amount: formatMoney(state.club.sponsors.reduce((s, d) => s + d.perRound, 0)),
         }));
         const realCap = realArenaCapacity(leagueConfig, state.userTeamId);
         const capacity = arenaCapacity(state, economyConfig, realCap);
         const gate = computeGateReceipts(state.club.fanSupport, state.club.ticketPrice, capacity, economyConfig);
-        grid.put(4, 7, ROLE.text, t('finance.ticketPrice', { amount: state.club.ticketPrice }));
-        grid.put(4, 8, ROLE.textDim, t('finance.projectedGate', {
+        grid.put(4, 8, ROLE.text, t('finance.ticketPrice', { amount: state.club.ticketPrice }));
+        grid.put(4, 9, ROLE.textDim, t('finance.projectedGate', {
             amount: formatMoney(gate.ticketIncome),
             sold: gate.ticketsSold,
             capacity,
         }));
         const endRole = projection.projectedEndBalance >= 0 ? ROLE.success : ROLE.danger;
-        grid.put(4, 9, endRole, t('finance.projectedEnd', { amount: formatMoney(projection.projectedEndBalance) }));
+        grid.put(4, 10, endRole, t('finance.projectedEnd', { amount: formatMoney(projection.projectedEndBalance) }));
         const homeBoost = homeCourtAdvantage(
             state,
             state.userTeamId,
@@ -70,9 +74,9 @@ export class FinancesScreen implements Screen {
             leagueConfig,
             balanceConfig.match.homeAdvantage,
         );
-        grid.put(4, 10, ROLE.textDim, t('finance.homeAdvantage', { pct: homeAdvantageDisplayPct(homeBoost) }));
+        grid.put(4, 11, ROLE.textDim, t('finance.homeAdvantage', { pct: homeAdvantageDisplayPct(homeBoost) }));
         if (warning) {
-            grid.put(4, 11, projection.warningTier === 'red' ? ROLE.danger : ROLE.warning, warning);
+            grid.put(4, 12, projection.warningTier === 'red' ? ROLE.danger : ROLE.warning, warning);
         }
         grid.putRight(grid.cols - 4, 2, ROLE.accent, t('club.fans', { n: Math.round(state.club.fanSupport) }));
 

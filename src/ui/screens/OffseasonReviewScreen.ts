@@ -147,60 +147,86 @@ export class OffseasonReviewScreen implements Screen {
             t('offseason.review.continue'),
         ]);
 
-        let row = 4;
-        grid.put(3, row, ROLE.header, t('offseason.nblFinish', { finish: finishLabel(s.nblFinish) }));
-        row++;
+        const leftCol = 3;
+        const rightCol = 42;
+        let leftRow = 4;
+        let rightRow = 4;
+
+        grid.put(leftCol, leftRow, ROLE.header, t('offseason.nblFinish', { finish: finishLabel(s.nblFinish) }));
+        leftRow++;
+        const awards = this.ctx.session?.state.lastSeasonAwards;
+        if (awards && awards.awards.length > 0) {
+            grid.put(leftCol, leftRow, ROLE.gold, t('awards.title'));
+            leftRow++;
+            for (const award of awards.awards.slice(0, 4)) {
+                const key = award.kind === 'allNbl'
+                    ? 'awards.allNbl'
+                    : (`awards.${award.kind}` as Parameters<typeof t>[0]);
+                const value = award.kind === 'allNbl'
+                    ? award.playerName
+                    : award.kind === 'mvp'
+                      ? award.value.toFixed(1)
+                      : award.value.toFixed(1);
+                grid.put(leftCol, leftRow, ROLE.text, t(key, {
+                    name: award.playerName,
+                    value,
+                    pos: award.kind === 'allNbl' ? '' : '',
+                }));
+                leftRow++;
+            }
+        }
         if (s.nblPrize > 0) {
-            grid.put(3, row, ROLE.success, t('offseason.nblPrize', { amount: formatMoney(s.nblPrize) }));
-            row++;
+            grid.put(leftCol, leftRow, ROLE.success, t('offseason.nblPrize', { amount: formatMoney(s.nblPrize) }));
+            leftRow++;
         }
         if (s.nblLeagueRank != null) {
-            grid.put(3, row, ROLE.text, t('offseason.nblLeagueRank', { rank: s.nblLeagueRank }));
-            row++;
+            grid.put(leftCol, leftRow, ROLE.text, t('offseason.nblLeagueRank', { rank: s.nblLeagueRank }));
+            leftRow++;
         }
         if (s.nblLeaguePrize > 0) {
-            grid.put(3, row, ROLE.success, t('offseason.nblLeaguePrize', { amount: formatMoney(s.nblLeaguePrize) }));
-            row++;
-        }
-        row++;
-        grid.put(3, row, ROLE.text, s.bclQualified ? t('offseason.bclQualified') : t('offseason.bclNotQualified'));
-        row++;
-        if (s.bclFinish) {
-            grid.put(3, row, ROLE.text, t('offseason.bclFinish', { finish: finishLabel(s.bclFinish) }));
-            row++;
-        }
-        if (s.bclPrize > 0) {
-            grid.put(3, row, ROLE.success, t('offseason.bclPrize', { amount: formatMoney(s.bclPrize) }));
-            row++;
-        }
-        row++;
-        grid.put(3, row, ROLE.text, s.fecQualified ? t('offseason.fecQualified') : t('offseason.fecNotQualified'));
-        row++;
-        if (s.fecFinish) {
-            grid.put(3, row, ROLE.text, t('offseason.fecFinish', { finish: finishLabel(s.fecFinish) }));
-            row++;
-        }
-        if (s.fecPrize > 0) {
-            grid.put(3, row, ROLE.success, t('offseason.fecPrize', { amount: formatMoney(s.fecPrize) }));
-            row++;
-        }
-        row++;
-        if (s.sponsorBonus > 0) {
-            grid.put(3, row, ROLE.success, t('offseason.sponsorBonus', {
-                amount: formatMoney(s.sponsorBonus),
-            }));
-            row++;
-        }
-        if (!s.sponsorTargetMet && s.sponsorPromisedRank !== null) {
-            grid.put(3, row, ROLE.warning, t('offseason.sponsorNoRenewal'));
-            row++;
-        }
-        if (s.totalIncome > 0) {
-            grid.put(3, row, ROLE.gold, t('offseason.review.totalIncome', { amount: formatMoney(s.totalIncome) }));
-            row++;
+            grid.put(leftCol, leftRow, ROLE.success, t('offseason.nblLeaguePrize', { amount: formatMoney(s.nblLeaguePrize) }));
+            leftRow++;
         }
 
-        const headerRow = row + 1;
+        grid.put(rightCol, rightRow, ROLE.text, s.bclQualified ? t('offseason.bclQualified') : t('offseason.bclNotQualified'));
+        rightRow++;
+        if (s.bclFinish) {
+            grid.put(rightCol, rightRow, ROLE.text, t('offseason.bclFinish', { finish: finishLabel(s.bclFinish) }));
+            rightRow++;
+        }
+        if (s.bclPrize > 0) {
+            grid.put(rightCol, rightRow, ROLE.success, t('offseason.bclPrize', { amount: formatMoney(s.bclPrize) }));
+            rightRow++;
+        }
+        rightRow++;
+        grid.put(rightCol, rightRow, ROLE.text, s.fecQualified ? t('offseason.fecQualified') : t('offseason.fecNotQualified'));
+        rightRow++;
+        if (s.fecFinish) {
+            grid.put(rightCol, rightRow, ROLE.text, t('offseason.fecFinish', { finish: finishLabel(s.fecFinish) }));
+            rightRow++;
+        }
+        if (s.fecPrize > 0) {
+            grid.put(rightCol, rightRow, ROLE.success, t('offseason.fecPrize', { amount: formatMoney(s.fecPrize) }));
+            rightRow++;
+        }
+        rightRow++;
+        if (s.sponsorBonus > 0) {
+            grid.put(rightCol, rightRow, ROLE.success, t('offseason.sponsorBonus', {
+                amount: formatMoney(s.sponsorBonus),
+            }));
+            rightRow++;
+        }
+        if (!s.sponsorTargetMet && s.sponsorPromisedRank !== null) {
+            grid.put(rightCol, rightRow, ROLE.warning, t('offseason.sponsorNoRenewal'));
+            rightRow++;
+        }
+        if (s.totalIncome > 0) {
+            grid.put(rightCol, rightRow, ROLE.gold, t('offseason.review.totalIncome', { amount: formatMoney(s.totalIncome) }));
+            rightRow++;
+        }
+
+        const summaryBottom = Math.max(leftRow, rightRow);
+        const headerRow = Math.max(12, summaryBottom + 2);
         grid.put(2, headerRow, ROLE.header, t('offseason.review.expiringHeader'));
 
         const players = this.expiringPlayers();
