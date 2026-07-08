@@ -7,9 +7,9 @@ export const economyConfig = Object.freeze({
     // Player salary per season derived from overall rating:
     // base + (overall - 50) * perPoint (floored at min).
     salary: Object.freeze({
-        base: 280_000,
-        perPoint: 15_000,
-        min: 170_000,
+        base: 400_000,
+        perPoint: 26_000,
+        min: 230_000,
     }),
     tickets: Object.freeze({
         defaultPrice: 220,
@@ -17,7 +17,7 @@ export const economyConfig = Object.freeze({
         maxPrice: 600,
         priceStep: 10,
         referencePrice: 220,
-        incomeScale: 0.65,
+        incomeScale: 0.72,
         plateauMin: 0.75,
         plateauMax: 1.25,
         fairPriceBase: 0.90,
@@ -96,11 +96,11 @@ export const economyConfig = Object.freeze({
         { maxRank: 12, prize: 100_000 },
     ]),
     // Weekly NBL central income (TV / league pool) by club tier 1..5.
-    leagueSharePerRoundByTier: Object.freeze([35_000, 50_000, 67_000, 75_000, 95_000]),
+    leagueSharePerRoundByTier: Object.freeze([50_000, 70_000, 92_000, 105_000, 130_000]),
     sponsors: Object.freeze({
         slots: 1,
         // Per-round base payment range by deal tier 1..5 (success bonuses are separate).
-        perRoundByTier: Object.freeze([75_000, 130_000, 190_000, 270_000, 380_000]),
+        perRoundByTier: Object.freeze([85_000, 145_000, 210_000, 300_000, 420_000]),
         // Relationship 0..100 scales payment [minMult..maxMult].
         relationMinMult: 0.8,
         relationMaxMult: 1.25,

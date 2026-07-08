@@ -22,6 +22,20 @@ function bestUserPlayer(state: ReturnType<typeof createNewGame>): Player {
     return players.sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes))[0] as Player;
 }
 
+/** Frees wage-cap headroom so negotiation tests are not blocked by roster payroll. */
+function freeWageCapForNegotiation(state: ReturnType<typeof createNewGame>, exceptPlayerId: string): void {
+    const min = config.economy.salary.min;
+    for (const id of state.teams[state.userTeamId]?.playerIds ?? []) {
+        if (id === exceptPlayerId) {
+            continue;
+        }
+        const p = state.players[id];
+        if (p?.contract) {
+            p.contract.salary = min;
+        }
+    }
+}
+
 function advanceThroughRound12(state: ReturnType<typeof createNewGame>): void {
     while (state.currentRound <= 12) {
         advanceRoundInstant(state, config);
@@ -101,6 +115,7 @@ describe('contracts (M1-M5)', () => {
 
         // Generous: accept immediately.
         state.club.budget = 50_000_000;
+        freeWageCapForNegotiation(state, player.id);
         const generous = negotiateOffer(state, player.id, { salary: Math.round(demand * 1.3), years: 2 }, 'renew', marketConfig, config.economy);
         expect(generous.status).toBe('accepted');
         expect(player.contract?.yearsLeft).toBe(2);
@@ -134,6 +149,7 @@ describe('negotiation hints are truthful', () => {
                 player.contract.yearsLeft = 1;
             }
             state.club.budget = 50_000_000;
+            freeWageCapForNegotiation(state, player.id);
             const low = negotiateOffer(state, player.id, { salary: 300_000, years: 2 }, 'renew', marketConfig, config.economy);
             expect(low.status).toBe('rejected');
             expect(low.hintSalary).not.toBeNull();
@@ -154,6 +170,7 @@ describe('negotiation hints are truthful', () => {
             team.playerIds.pop();
         }
         state.club.budget = 50_000_000;
+        freeWageCapForNegotiation(state, freeAgent.id);
         const low = negotiateOffer(state, freeAgent.id, { salary: 100_000, years: 1 }, 'freeAgent', marketConfig, config.economy);
         expect(low.status).toBe('rejected');
         const follow = negotiateOffer(state, freeAgent.id, { salary: low.hintSalary ?? 0, years: 1 }, 'freeAgent', marketConfig, config.economy);
@@ -178,12 +195,13 @@ describe('transferTerms negotiation', () => {
 
     it('accepts at the hinted salary when fee meets transfer value', () => {
         const state = createNewGame(config, 921, 'NYM');
-        state.club.budget = 50_000_000;
         const aiPlayer = Object.values(state.players).find((p) => p.teamId && p.teamId !== 'NYM' && p.contract);
         expect(aiPlayer).toBeDefined();
         if (!aiPlayer) {
             return;
         }
+        state.club.budget = 50_000_000;
+        freeWageCapForNegotiation(state, aiPlayer.id);
         const fee = transferValue(aiPlayer, marketConfig, config.economy);
         const salary = requiredSalary(state, aiPlayer, 2, 'transferTerms', marketConfig, config.economy, { agreedTransferFee: fee });
         const result = negotiateOffer(
