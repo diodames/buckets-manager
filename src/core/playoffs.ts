@@ -31,13 +31,56 @@ export function startPlayoffs(state: GameState, league: LeagueConfig): PlayoffSt
         awayWins: 0,
         games: [],
     }));
-    const playoffs: PlayoffState = { stage: 0, seeds, series, championTeamId: null };
+    const playoffs: PlayoffState = {
+        stage: 0,
+        seeds,
+        series,
+        championTeamId: null,
+        thirdPlaceSeries: null,
+        thirdPlaceTeamId: null,
+    };
     state.playoffs = playoffs;
     return playoffs;
 }
 
 export function winsNeeded(stage: number, league: LeagueConfig): number {
     return league.playoffs.winsNeeded[stage] ?? 3;
+}
+
+export function thirdPlaceWinsNeeded(league: LeagueConfig): number {
+    return league.playoffs.thirdPlaceWinsNeeded ?? 2;
+}
+
+function seriesLosers(series: PlayoffSeries, league: LeagueConfig): TeamId | null {
+    const winner = seriesWinner(series, league);
+    if (!winner) {
+        return null;
+    }
+    return series.homeTeamId === winner ? series.awayTeamId : series.homeTeamId;
+}
+
+export function thirdPlaceSeriesDecided(playoffs: PlayoffState, league: LeagueConfig): boolean {
+    const series = playoffs.thirdPlaceSeries;
+    if (!series) {
+        return false;
+    }
+    const needed = thirdPlaceWinsNeeded(league);
+    return series.homeWins >= needed || series.awayWins >= needed;
+}
+
+export function thirdPlaceWinner(playoffs: PlayoffState, league: LeagueConfig): TeamId | null {
+    const series = playoffs.thirdPlaceSeries;
+    if (!series) {
+        return null;
+    }
+    const needed = thirdPlaceWinsNeeded(league);
+    if (series.homeWins >= needed) {
+        return series.homeTeamId;
+    }
+    if (series.awayWins >= needed) {
+        return series.awayTeamId;
+    }
+    return null;
 }
 
 export function seriesDecided(series: PlayoffSeries, league: LeagueConfig): boolean {
@@ -56,13 +99,22 @@ export function seriesWinner(series: PlayoffSeries, league: LeagueConfig): TeamI
     return null;
 }
 
-/** Undecided series of the current stage (each plays one game per round). */
+/** Undecided series of the current stage plus any parallel bronze series. */
 export function activeSeries(state: GameState, league: LeagueConfig): PlayoffSeries[] {
     const playoffs = state.playoffs;
-    if (!playoffs || playoffs.championTeamId) {
+    if (!playoffs) {
         return [];
     }
-    return playoffs.series.filter((s) => s.stage === playoffs.stage && !seriesDecided(s, league));
+    const active: PlayoffSeries[] = [];
+    if (!playoffs.championTeamId) {
+        active.push(
+            ...playoffs.series.filter((s) => s.stage === playoffs.stage && !seriesDecided(s, league)),
+        );
+    }
+    if (playoffs.thirdPlaceSeries && !thirdPlaceSeriesDecided(playoffs, league)) {
+        active.push(playoffs.thirdPlaceSeries);
+    }
+    return active;
 }
 
 /** Builds the next game of a series: the higher seed hosts odd games. */
@@ -94,24 +146,68 @@ export function recordSeriesGame(series: PlayoffSeries, fixture: Fixture): void 
     }
 }
 
+function maybeStartThirdPlaceSeries(playoffs: PlayoffState, stageSeries: PlayoffSeries[], league: LeagueConfig): void {
+    if (playoffs.thirdPlaceSeries || stageSeries[0]?.stage !== 1) {
+        return;
+    }
+    const losers = stageSeries
+        .sort((a, b) => a.slot - b.slot)
+        .map((s) => seriesLosers(s, league))
+        .filter((id): id is TeamId => id !== null);
+    if (losers.length !== 2) {
+        return;
+    }
+    const a = losers[0];
+    const b = losers[1];
+    if (!a || !b) {
+        return;
+    }
+    const [home, away] = (playoffs.seeds[a] ?? 99) <= (playoffs.seeds[b] ?? 99) ? [a, b] : [b, a];
+    playoffs.thirdPlaceSeries = {
+        id: 'PO3RD-0',
+        stage: 3,
+        slot: 0,
+        homeTeamId: home,
+        awayTeamId: away,
+        homeWins: 0,
+        awayWins: 0,
+        games: [],
+    };
+}
+
+function maybeResolveThirdPlace(playoffs: PlayoffState, league: LeagueConfig): void {
+    if (!playoffs.thirdPlaceSeries || playoffs.thirdPlaceTeamId) {
+        return;
+    }
+    if (thirdPlaceSeriesDecided(playoffs, league)) {
+        playoffs.thirdPlaceTeamId = thirdPlaceWinner(playoffs, league);
+    }
+}
+
 /**
  * When every series of the current stage is decided, pairs consecutive
  * bracket winners into the next stage — or crowns the champion.
  */
 export function maybeAdvanceStage(state: GameState, league: LeagueConfig): void {
     const playoffs = state.playoffs;
-    if (!playoffs || playoffs.championTeamId) {
+    if (!playoffs) {
+        return;
+    }
+    maybeResolveThirdPlace(playoffs, league);
+    if (playoffs.championTeamId && playoffs.thirdPlaceTeamId) {
         return;
     }
     const stageSeries = playoffs.series.filter((s) => s.stage === playoffs.stage);
     if (stageSeries.length === 0 || !stageSeries.every((s) => seriesDecided(s, league))) {
         return;
     }
+    maybeStartThirdPlaceSeries(playoffs, stageSeries, league);
     const winners = stageSeries
         .sort((a, b) => a.slot - b.slot)
         .map((s) => seriesWinner(s, league) as TeamId);
     if (winners.length === 1) {
         playoffs.championTeamId = winners[0] as TeamId;
+        maybeResolveThirdPlace(playoffs, league);
         return;
     }
     const nextStage = playoffs.stage + 1;

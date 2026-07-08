@@ -1,3 +1,5 @@
+import { economyConfig } from '../../config/economy';
+import { leagueConfig } from '../../config/league';
 import { SAVE_FORMAT_VERSION } from '../game';
 import type { GameState } from '../model/types';
 
@@ -71,6 +73,11 @@ const migrations: Record<number, (old: unknown) => unknown> = {
     4: (old) => {
         const file = old as { formatVersion: number; state: Record<string, unknown> };
         file.state.playoffs ??= null;
+        const playoffs = file.state.playoffs as Record<string, unknown> | null;
+        if (playoffs) {
+            playoffs.thirdPlaceSeries ??= null;
+            playoffs.thirdPlaceTeamId ??= null;
+        }
         file.state.version = 5;
         return { ...file, formatVersion: 5 };
     },
@@ -336,6 +343,69 @@ const migrations: Record<number, (old: unknown) => unknown> = {
         file.state.market = market;
         file.state.version = 23;
         return { ...file, formatVersion: 23 };
+    },
+    // v23 -> v24: AI NBL club budgets (nblFinances).
+    23: (old) => {
+        const file = old as { formatVersion: number; state: Record<string, unknown> };
+        const state = file.state;
+        const userTeamId = state.userTeamId as string;
+        const finances: Record<string, { budget: number; fanSupport: number; sponsorTier: number }> = {};
+        for (const teamDef of leagueConfig.teams) {
+            if (teamDef.id === userTeamId) {
+                continue;
+            }
+            const tier = Math.max(1, Math.min(5, Math.round(teamDef.tier)));
+            finances[teamDef.id] = {
+                budget: economyConfig.startingBudgetByTier[tier - 1] ?? economyConfig.startingBudget,
+                fanSupport: economyConfig.fanSupport.start,
+                sponsorTier: tier,
+            };
+        }
+        state.nblFinances = finances;
+        state.version = 24;
+        return { ...file, formatVersion: 24 };
+    },
+    // v24 -> v25: NBL 3rd-place playoff, BCL qualifying entrant, FIBA Europe Cup.
+    24: (old) => {
+        const file = old as { formatVersion: number; state: Record<string, unknown> };
+        const state = file.state;
+        const playoffs = state.playoffs as Record<string, unknown> | null | undefined;
+        if (playoffs) {
+            playoffs.thirdPlaceSeries ??= null;
+            playoffs.thirdPlaceTeamId ??= null;
+        }
+        state.bclDirectQualified ??= state.bclQualified ?? false;
+        state.bclQualifyingEntrantId ??= null;
+        state.fecQualified ??= false;
+        state.lastFecQualifierIds ??= [];
+        const comps = state.competitions as Record<string, Record<string, unknown>> | undefined;
+        if (comps?.bcl) {
+            comps.bcl.qualifyingSeries ??= null;
+            comps.bcl.qualifyingEntrantId ??= null;
+            comps.bcl.qualifyingOpponentId ??= null;
+        }
+        state.version = 25;
+        return { ...file, formatVersion: 25 };
+    },
+    // v25 -> v26: European weekly prize tracking and pre-season scouting state.
+    25: (old) => {
+        const file = old as { formatVersion: number; state: Record<string, unknown> };
+        const state = file.state;
+        const market = state.market as Record<string, unknown> | undefined;
+        if (market) {
+            market.scoutingComplete ??= true;
+            market.scoutedFreeAgents ??= {};
+            market.scoutingBudget ??= 0;
+            market.scoutingBudgetTotal ??= 0;
+        }
+        const comps = state.competitions as Record<string, Record<string, unknown>> | undefined;
+        for (const key of ['bcl', 'fec']) {
+            if (comps?.[key]) {
+                comps[key].weeklyPrizePaidTotal ??= 0;
+            }
+        }
+        state.version = 26;
+        return { ...file, formatVersion: 26 };
     },
 };
 

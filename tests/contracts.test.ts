@@ -295,10 +295,14 @@ describe('BCL prestige flavour', () => {
             groups: [{ id: 'G1', teamIds: ['NYM', 'X1', 'X2', 'X3'], fixtures: [] }],
             fixtures: [],
             playoffs: null,
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
             qualifiedTeamIds: ['NYM'],
             championTeamId: null,
             userFinish: null,
             prizePaid: false,
+            weeklyPrizePaidTotal: 0,
         };
         const withBcl = walkAwayIntent(state, foreign, 'NYM', marketConfig, externalOffersConfig);
         expect(withBcl).toBeLessThan(withoutBcl);

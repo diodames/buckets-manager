@@ -27,6 +27,7 @@ export class OffseasonReviewScreen implements Screen {
     private readonly onContinue: () => void;
     private readonly table: DataTable;
     private message: string | null = null;
+    private continueFocused = false;
 
     constructor(ctx: AppContext, summary: OffseasonReviewSummary, onContinue: () => void) {
         this.ctx = ctx;
@@ -41,10 +42,6 @@ export class OffseasonReviewScreen implements Screen {
             return [];
         }
         return userExpiringContractPlayers(session.state);
-    }
-
-    private continueIndex(): number {
-        return this.expiringPlayers().length;
     }
 
     private openRenew(player: Player): void {
@@ -85,10 +82,6 @@ export class OffseasonReviewScreen implements Screen {
             ],
             color: ROLE.warning,
         }));
-        rows.push({
-            cells: [t('offseason.review.continueRow'), '→', '', '', ''],
-            color: ROLE.accent,
-        });
         this.table.setData(
             [
                 { header: t('col.name'), width: 18 },
@@ -99,24 +92,46 @@ export class OffseasonReviewScreen implements Screen {
             ],
             rows,
         );
-        if (this.table.selected > rows.length - 1) {
-            this.table.selected = rows.length - 1;
+        if (players.length === 0) {
+            this.continueFocused = true;
+        } else if (this.table.selected > players.length - 1) {
+            this.table.selected = players.length - 1;
+            this.continueFocused = false;
         }
     }
 
     update(input: UiInputFrame): void {
         if (input.cancel) {
-            this.ctx.screens.pop();
-            this.onContinue();
+            this.finishContinue();
             return;
         }
-        const activated = this.table.update(input, this.ctx.grid);
-        if (input.confirm && activated !== null) {
-            if (activated === this.continueIndex()) {
+
+        const players = this.expiringPlayers();
+        if (players.length === 0) {
+            if (input.confirm) {
+                this.finishContinue();
+            }
+            return;
+        }
+
+        if (this.continueFocused) {
+            if (input.up) {
+                this.continueFocused = false;
+                this.table.selected = players.length - 1;
+            }
+        } else {
+            this.table.update(input, this.ctx.grid);
+            if (input.down && this.table.selected >= players.length - 1) {
+                this.continueFocused = true;
+            }
+        }
+
+        if (input.confirm) {
+            if (this.continueFocused) {
                 this.finishContinue();
                 return;
             }
-            const player = this.expiringPlayers()[activated];
+            const player = players[this.table.selected];
             if (player) {
                 this.openRenew(player);
             }
@@ -159,6 +174,17 @@ export class OffseasonReviewScreen implements Screen {
             row++;
         }
         row++;
+        grid.put(3, row, ROLE.text, s.fecQualified ? t('offseason.fecQualified') : t('offseason.fecNotQualified'));
+        row++;
+        if (s.fecFinish) {
+            grid.put(3, row, ROLE.text, t('offseason.fecFinish', { finish: finishLabel(s.fecFinish) }));
+            row++;
+        }
+        if (s.fecPrize > 0) {
+            grid.put(3, row, ROLE.success, t('offseason.fecPrize', { amount: formatMoney(s.fecPrize) }));
+            row++;
+        }
+        row++;
         if (s.sponsorBonus > 0) {
             grid.put(3, row, ROLE.success, t('offseason.sponsorBonus', {
                 amount: formatMoney(s.sponsorBonus),
@@ -175,17 +201,32 @@ export class OffseasonReviewScreen implements Screen {
         }
 
         const headerRow = row + 1;
-        const tableRow = headerRow + 1;
-        const visibleRows = Math.max(3, grid.rows - tableRow - 3);
+        grid.put(2, headerRow, ROLE.header, t('offseason.review.expiringHeader'));
+
+        const players = this.expiringPlayers();
+        let tableRow = headerRow + 1;
+        if (players.length === 0) {
+            grid.put(2, tableRow, ROLE.textDim, t('offseason.review.noExpiring'));
+            tableRow++;
+        }
+
+        const footerRow = grid.rows - 2;
+        const visibleRows = Math.max(2, footerRow - tableRow - 2);
         this.table.setLayoutPosition(tableRow, visibleRows);
 
-        grid.put(2, headerRow, ROLE.header, t('offseason.review.expiringHeader'));
         this.rebuildTable();
-        const players = this.expiringPlayers();
-        if (players.length === 0) {
-            grid.put(2, tableRow + 1, ROLE.textDim, t('offseason.review.noExpiring'));
+        if (players.length > 0) {
+            this.table.render(grid);
         }
-        this.table.render(grid);
+
+        const continueLabel = `>> ${t('offseason.review.continueRow')}`;
+        if (this.continueFocused) {
+            grid.fillCells(2, footerRow, continueLabel.length + 2, 1, ROLE.highlight);
+            grid.put(3, footerRow, ROLE.highlightText, continueLabel);
+        } else {
+            grid.put(2, footerRow, ROLE.accent, continueLabel);
+        }
+
         if (this.message) {
             grid.put(2, grid.rows - 3, ROLE.success, this.message);
         }

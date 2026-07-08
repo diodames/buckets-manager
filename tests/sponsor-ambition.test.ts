@@ -77,7 +77,7 @@ describe('settleSponsorSeasonEnd', () => {
     it('pays no bonus and flags renewal downgrade when the bold target is missed', () => {
         const state = createNewGame(config, 502, 'NYM');
         state.lastSeasonStandings[state.userTeamId] = 5;
-        state.playoffs = { stage: 2, seeds: {}, series: [], championTeamId: 'PCE' };
+        state.playoffs = { stage: 2, seeds: {}, series: [], championTeamId: 'PCE', thirdPlaceSeries: null, thirdPlaceTeamId: 'NYM' };
         state.club.sponsors = [{
             id: 'd1',
             brandKey: 'banka',
@@ -103,7 +103,7 @@ describe('settleSponsorSeasonEnd', () => {
     it('pays bold bonus when user wins the playoffs despite a mid-table regular season finish', () => {
         const state = createNewGame(config, 507, 'DEC');
         state.lastSeasonStandings[state.userTeamId] = 6;
-        state.playoffs = { stage: 2, seeds: {}, series: [], championTeamId: 'DEC' };
+        state.playoffs = { stage: 2, seeds: {}, series: [], championTeamId: 'DEC', thirdPlaceSeries: null, thirdPlaceTeamId: 'NYM' };
         state.club.sponsors = [{
             id: 'd1',
             brandKey: 'banka',

@@ -49,7 +49,7 @@ describe('createNewGame (real NBL rosters)', () => {
     it('tier-5 clubs start with the highest budget', () => {
         const nym = leagueConfig.teams.find((t) => t.id === 'NYM')!;
         expect(nym.tier).toBe(5);
-        expect(state.club.budget).toBe(12_000_000);
+        expect(state.club.budget).toBe(12_500_000);
     });
 
     it('is deterministic per seed and club state starts clean', () => {

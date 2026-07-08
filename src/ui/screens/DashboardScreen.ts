@@ -1,6 +1,6 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
-import { advanceRoundInstant, ensurePlayoffs, isCampaignOver, isSeasonOver, nextUserFixture, prepareUserMatch, type RoundResult } from '../../core/game';
+import { advanceRoundInstant, campaignPhase, ensurePlayoffs, isCampaignOver, isEuropeanCalendarComplete, isSeasonOver, nextUserFixture, prepareUserMatch, type RoundResult } from '../../core/game';
 import { canStartNextSeason, completeOffseasonRollover, prepareOffseasonReview } from '../../core/season';
 import { pendingExternalOffers } from '../../core/breakthrough';
 import { userActiveSeries } from '../../core/playoffs';
@@ -20,6 +20,9 @@ import { BclBracketScreen } from './BclBracketScreen';
 import { BclScheduleScreen } from './BclScheduleScreen';
 import { BclStandingsScreen } from './BclStandingsScreen';
 import { BclValuationsScreen } from './BclValuationsScreen';
+import { FecBracketScreen } from './FecBracketScreen';
+import { FecScheduleScreen } from './FecScheduleScreen';
+import { FecStandingsScreen } from './FecStandingsScreen';
 import { BoxScoreScreen } from './BoxScoreScreen';
 import { ClubScreen } from './ClubScreen';
 import { FinancesScreen } from './FinancesScreen';
@@ -37,6 +40,7 @@ import { SaveLoadScreen } from './SaveLoadScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { SponsorChoiceScreen } from './SponsorChoiceScreen';
+import { ScoutingScreen } from './ScoutingScreen';
 import { StandingsScreen } from './StandingsScreen';
 import { TrainingScreen } from './TrainingScreen';
 import { YouthIntakeScreen } from './YouthIntakeScreen';
@@ -61,19 +65,32 @@ export class DashboardScreen implements Screen {
     private rebuildMenu(): void {
         const session = this.sessionOrThrow;
         const state = session.state;
-        const inPlayoffs = isSeasonOver(state, this.ctx.config);
+        const inPlayoffs = isSeasonOver(state, this.ctx.config) && isEuropeanCalendarComplete(state, this.ctx.config) && state.playoffs !== null;
+        const inEuropeanPhase = campaignPhase(state, this.ctx.config) === 'europe';
         const campaignOver = isCampaignOver(state, this.ctx.config);
         const canContinue = canStartNextSeason(state, this.ctx.config);
-        const userPlays = inPlayoffs ? userActiveSeries(state, this.ctx.config.league) !== null : !campaignOver;
+        const userPlays = campaignOver
+            ? canContinue
+            : inEuropeanPhase
+              ? true
+              : inPlayoffs
+                ? userActiveSeries(state, this.ctx.config.league) !== null
+                : !campaignOver;
 
         const playLabel = campaignOver
             ? canContinue
                 ? t('dashboard.startNextSeason', { year: state.seasonYear + 1 })
                 : t('dashboard.noMatch')
+            : inEuropeanPhase
+              ? t('dashboard.playEuropean')
+              : inPlayoffs
+                ? t('playoff.playLive')
+                : t('dashboard.playLive', { round: state.currentRound });
+        const simLabel = inEuropeanPhase
+            ? t('dashboard.simEuropean')
             : inPlayoffs
-              ? t('playoff.playLive')
-              : t('dashboard.playLive', { round: state.currentRound });
-        const simLabel = inPlayoffs ? t('playoff.playInstant') : t('dashboard.playInstant');
+              ? t('playoff.playInstant')
+              : t('dashboard.playInstant');
         const prospects = state.market.youthProspects.length;
         const offers = state.market.incomingOffers.length + pendingExternalOffers(state).length;
 
@@ -102,7 +119,13 @@ export class DashboardScreen implements Screen {
             const summary = completeOffseasonRollover(session.state, this.ctx.config, rng.fork('rollover'));
             this.autosave();
             this.ctx.screens.push(new OffseasonScreen(this.ctx, summary, () => {
-                this.afterOffseasonSummary();
+                if (!session.state.market.scoutingComplete && session.state.currentRound === 1) {
+                    this.ctx.screens.push(new ScoutingScreen(this.ctx, () => {
+                        this.afterOffseasonSummary();
+                    }));
+                } else {
+                    this.afterOffseasonSummary();
+                }
             }));
         }));
     }
@@ -305,6 +328,11 @@ export class DashboardScreen implements Screen {
                         { id: 'bcl-standings', label: t('bcl.standings') },
                         { id: 'bcl-bracket', label: t('bcl.bracket') },
                     ] : []),
+                    ...(state.competitions.fec ? [
+                        { id: 'fec-schedule', label: t('fec.schedule') },
+                        { id: 'fec-standings', label: t('fec.standings') },
+                        { id: 'fec-bracket', label: t('fec.bracket') },
+                    ] : []),
                 ],
             },
             system: {
@@ -383,6 +411,15 @@ export class DashboardScreen implements Screen {
             case 'bcl-bracket':
                 this.ctx.screens.push(new BclBracketScreen(this.ctx));
                 break;
+            case 'fec-schedule':
+                this.ctx.screens.push(new FecScheduleScreen(this.ctx));
+                break;
+            case 'fec-standings':
+                this.ctx.screens.push(new FecStandingsScreen(this.ctx));
+                break;
+            case 'fec-bracket':
+                this.ctx.screens.push(new FecBracketScreen(this.ctx));
+                break;
             case 'save':
                 this.ctx.screens.push(new SaveLoadScreen(this.ctx, 'save'));
                 break;
@@ -430,7 +467,8 @@ export class DashboardScreen implements Screen {
 
         const infoCol = 40;
         let row = 4;
-        const inPlayoffs = isSeasonOver(state, this.ctx.config);
+        const inPlayoffs = isSeasonOver(state, this.ctx.config) && isEuropeanCalendarComplete(state, this.ctx.config) && state.playoffs !== null;
+        const inEuropeanPhase = campaignPhase(state, this.ctx.config) === 'europe';
         const campaignOver = isCampaignOver(state, this.ctx.config);
 
         if (campaignOver && state.playoffs?.championTeamId) {
@@ -442,6 +480,10 @@ export class DashboardScreen implements Screen {
             } else {
                 row += 3;
             }
+        } else if (inEuropeanPhase) {
+            grid.put(infoCol, row, ROLE.header, t('dashboard.europeanPhase'));
+            grid.put(infoCol, row + 1, ROLE.textDim, t('dashboard.europeanPhaseHint'));
+            row += 4;
         } else if (inPlayoffs) {
             grid.put(infoCol, row, ROLE.header, t(`playoff.stage.${state.playoffs?.stage ?? 0}` as Parameters<typeof t>[0]));
             const series = userActiveSeries(state, this.ctx.config.league);
@@ -461,17 +503,25 @@ export class DashboardScreen implements Screen {
             const next = nextUserFixture(state, this.ctx.config);
             if (next) {
                 const isHome = next.homeTeamId === state.userTeamId;
-                const comp = next.competitionId === 'bcl' ? t('dashboard.bclMatch') : t('dashboard.nblMatch');
+                const comp = next.competitionId === 'bcl'
+                    ? t('dashboard.bclMatch')
+                    : next.competitionId === 'fec'
+                      ? t('dashboard.fecMatch')
+                      : t('dashboard.nblMatch');
                 grid.put(infoCol, row, ROLE.header, comp);
                 grid.put(infoCol, row + 1, ROLE.text,
                     `${competitionLabel(next.competitionId)} ${t('common.round', { round: next.week ?? next.round })}: ${teamName(next.homeTeamId)} - ${teamName(next.awayTeamId)}`);
                 grid.put(infoCol, row + 2, isHome ? ROLE.success : ROLE.textDim, isHome ? t('dashboard.homeGame') : t('dashboard.awayGame'));
+                let extra = 3;
                 if (state.bclQualified) {
-                    grid.put(infoCol, row + 3, ROLE.gold, 'BCL');
-                    row += 5;
-                } else {
-                    row += 4;
+                    grid.put(infoCol, row + extra, ROLE.gold, 'BCL');
+                    extra++;
                 }
+                if (state.fecQualified) {
+                    grid.put(infoCol, row + extra, ROLE.gold, 'FEC');
+                    extra++;
+                }
+                row += extra + 1;
             }
         }
 

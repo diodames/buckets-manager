@@ -1,6 +1,6 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
-import { seriesWinner, winsNeeded } from '../../core/playoffs';
+import { seriesWinner, thirdPlaceWinsNeeded, thirdPlaceWinner, winsNeeded } from '../../core/playoffs';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
 import { teamDef, teamName } from '../format';
@@ -49,8 +49,24 @@ export class PlayoffsScreen implements Screen {
                     winner ? t('playoff.advances', { team: teamDef(winner).abbr }) : t('playoff.firstTo', { n: needed }));
             });
         }
+        if (playoffs.thirdPlaceSeries) {
+            const col = 3 + stages * 34;
+            grid.put(col, 3, ROLE.header, t('playoff.stage.3'));
+            const series = playoffs.thirdPlaceSeries;
+            const winner = thirdPlaceWinner(playoffs, this.ctx.config.league);
+            const needed = thirdPlaceWinsNeeded(this.ctx.config.league);
+            const homeSeed = playoffs.seeds[series.homeTeamId] ?? 0;
+            const awaySeed = playoffs.seeds[series.awayTeamId] ?? 0;
+            const line = `(${homeSeed}) ${teamDef(series.homeTeamId).abbr} ${series.homeWins}:${series.awayWins} ${teamDef(series.awayTeamId).abbr} (${awaySeed})`;
+            grid.put(col, 5, winner ? ROLE.textDim : ROLE.text, line);
+            grid.put(col, 6, winner ? ROLE.success : ROLE.textDim,
+                winner ? t('playoff.advances', { team: teamDef(winner).abbr }) : t('playoff.firstTo', { n: needed }));
+        }
         if (playoffs.championTeamId) {
             grid.putCenter(grid.rows - 5, ROLE.gold, t('playoff.champion', { team: teamName(playoffs.championTeamId) }));
+        }
+        if (playoffs.thirdPlaceTeamId) {
+            grid.putCenter(grid.rows - 4, ROLE.text, `3rd: ${teamName(playoffs.thirdPlaceTeamId)}`);
         }
     }
 }

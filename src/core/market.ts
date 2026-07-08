@@ -13,7 +13,7 @@ import {
 } from '../config/youthAcademy';
 import { generateFreeAgents } from './league/generate';
 import { totalRounds } from './league/schedule';
-import { effectiveFacilityLevel, interpolateFacilityValue } from './economy';
+import { effectiveFacilityLevel, interpolateFacilityValue, aiCanAffordTransferFee, aiCanSignFreeAgent, creditAiBudget, debitAiBudget } from './economy';
 import { canAffordContract, financeWarningTier } from './cashflow';
 import { generateName } from './namegen';
 import { advanceSeasonMarket, aiSigningBoost } from './seasonMarket';
@@ -383,7 +383,9 @@ export function negotiateOffer(
         }
         const score = externalRetentionScore(state, player, extOffer, offer.salary, offer.years, market, economy, extCfg);
         if (score >= extCfg.retention.acceptThreshold) {
-            const affordability = canAffordContract(state, economy, leagueConfig, offer.salary, player.id);
+            const affordability = canAffordContract(state, economy, leagueConfig, offer.salary, player.id, {
+                skipWageBudget: true,
+            });
             if (!affordability.ok) {
                 return {
                     status: affordability.reason === 'wageBudgetExceeded' ? 'wageBudgetExceeded' : 'projectedDeficit',
@@ -518,12 +520,16 @@ export function acceptTransferOffer(state: GameState, offerId: string, economy: 
     if ((userTeam?.playerIds.length ?? 0) <= 10) {
         return false; // roster minimum (NBL rule)
     }
+    if (!aiCanAffordTransferFee(state, offer.fromTeamId, offer.amount)) {
+        return false;
+    }
     removeFromTeam(state, player);
     const buyer = state.teams[offer.fromTeamId];
     if (buyer) {
         player.teamId = offer.fromTeamId;
         buyer.playerIds.push(player.id);
     }
+    debitAiBudget(state, offer.fromTeamId, offer.amount);
     pushLedger(state, economy, 'transferIn', offer.amount);
     unlistPlayer(state, player.id);
     return true;
@@ -620,6 +626,7 @@ export function bidOnPlayer(state: GameState, playerId: PlayerId, amount: number
 export function executePurchase(state: GameState, playerId: PlayerId, fee: number, market: MarketConfig, economy: EconomyConfig): boolean {
     const player = state.players[playerId];
     const userTeam = state.teams[state.userTeamId];
+    const sellerId = player?.teamId ?? null;
     if (!player || !userTeam || fee > state.club.budget || userTeam.playerIds.length >= market.roster.maxPlayers) {
         return false;
     }
@@ -627,6 +634,9 @@ export function executePurchase(state: GameState, playerId: PlayerId, fee: numbe
     player.teamId = state.userTeamId;
     userTeam.playerIds.push(player.id);
     pushLedger(state, economy, 'transferOut', -fee);
+    if (sellerId && sellerId !== state.userTeamId) {
+        creditAiBudget(state, sellerId, fee);
+    }
     return true;
 }
 
@@ -669,11 +679,16 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             if (!rng.chance(interest)) {
                 continue;
             }
+            const factor = tCfg.offerFactorMin + rng.next() * (tCfg.offerFactorMax - tCfg.offerFactorMin);
+            const baseAmount = Math.round((transferValue(player, market, economy) * factor) / 50_000) * 50_000;
             const buyers = Object.keys(state.teams).filter((id) => id !== state.userTeamId);
-            const buyer = rng.pick(buyers);
+            const affordableBuyers = buyers.filter((id) => aiCanAffordTransferFee(state, id, baseAmount));
+            if (affordableBuyers.length === 0) {
+                continue;
+            }
+            const buyer = rng.pick(affordableBuyers);
             const needs = teamNeeds(state, buyer, market);
             const needF = (needs.find((n) => n.position === player.position)?.need ?? 0) > 0 ? tCfg.needFactorMax : 1;
-            const factor = tCfg.offerFactorMin + rng.next() * (tCfg.offerFactorMax - tCfg.offerFactorMin);
             const amount = Math.round((transferValue(player, market, economy) * factor * needF) / 50_000) * 50_000;
             const floor = listing.askingPrice !== null ? listing.askingPrice * 0.8 : 0;
             if (amount >= floor) {
@@ -703,15 +718,21 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
             if (stars.length > 0) {
                 const target = rng.pick(stars);
                 const factor = tCfg.unsolicitedFactorMin + rng.next() * (tCfg.unsolicitedFactorMax - tCfg.unsolicitedFactorMin);
-                state.market.incomingOffers.push({
-                    id: `uns-${round}-${rng.int(0, 99_999)}`,
-                    playerId: target.id,
-                    fromTeamId: rng.pick(Object.keys(state.teams).filter((id) => id !== state.userTeamId)),
-                    amount: Math.round((transferValue(target, market, economy) * factor) / 50_000) * 50_000,
-                    expiresRound: round + tCfg.offerTtlRounds,
-                    countered: false,
-                });
-                state.market.unsolicitedBidUsed = true;
+                const amount = Math.round((transferValue(target, market, economy) * factor) / 50_000) * 50_000;
+                const affordableBuyers = Object.keys(state.teams).filter(
+                    (id) => id !== state.userTeamId && aiCanAffordTransferFee(state, id, amount),
+                );
+                if (affordableBuyers.length > 0) {
+                    state.market.incomingOffers.push({
+                        id: `uns-${round}-${rng.int(0, 99_999)}`,
+                        playerId: target.id,
+                        fromTeamId: rng.pick(affordableBuyers),
+                        amount,
+                        expiresRound: round + tCfg.offerTtlRounds,
+                        countered: false,
+                    });
+                    state.market.unsolicitedBidUsed = true;
+                }
             }
         }
     }
@@ -744,8 +765,12 @@ export function marketTick(state: GameState, market: MarketConfig, economy: Econ
                     (overallRating(a.attributes) + aiSigningBoost(state, a.id, teamId)),
             )[0];
             if (signing) {
+                const salary = baseSalary(overallRating(signing.attributes), economy);
+                if (!aiCanSignFreeAgent(state, teamId, salary, economy, leagueConfig)) {
+                    continue;
+                }
                 signing.teamId = teamId;
-                signing.contract = { salary: baseSalary(overallRating(signing.attributes), economy), yearsLeft: 1 };
+                signing.contract = { salary, yearsLeft: 1 };
                 team.playerIds.push(signing.id);
                 freeAgents.splice(freeAgents.indexOf(signing), 1);
             }

@@ -14,7 +14,8 @@ import { startPlayoffs } from '../src/core/playoffs';
 import { canStartNextSeason, startNextSeason } from '../src/core/season';
 import { createRng } from '../src/core/rng';
 import { bclPrizeAmount } from '../src/core/bcl/prizes';
-import { assignNblBclQualifiers, czechBclQualifiers, nblPlayoffBclQualifiers, startBclSeason } from '../src/core/bcl/index';
+import { assignNblBclQualifiers, czechBclQualifiers, nblPlayoffBclQualifiers, nblPlayoffBclQualifyingEntrant, nblPlayoffFecQualifiers, startBclSeason } from '../src/core/bcl/index';
+import { startFecSeason } from '../src/core/fec/index';
 import { testConfig as config } from './helpers';
 
 function simFullSeason(state: ReturnType<typeof createNewGame>): void {
@@ -58,10 +59,21 @@ function addUnsignedProspect(
     return prospect;
 }
 
+function finishPlayoffs(
+    state: ReturnType<typeof createNewGame>,
+    champion = 'NYM',
+    thirdPlace = 'PCE',
+): void {
+    if (!state.playoffs) {
+        state.currentRound = 23;
+        startPlayoffs(state, config.league);
+    }
+    state.playoffs!.championTeamId = champion;
+    state.playoffs!.thirdPlaceTeamId = thirdPlace;
+}
+
 function endSeason(state: ReturnType<typeof createNewGame>) {
-    state.currentRound = 23;
-    startPlayoffs(state, config.league);
-    state.playoffs!.championTeamId = 'NYM';
+    finishPlayoffs(state);
 }
 
 describe('season rollover', () => {
@@ -69,9 +81,7 @@ describe('season rollover', () => {
         const state = createNewGame(config, 5001, 'NYM');
         simFullSeason(state);
         if (!canStartNextSeason(state, config)) {
-            state.currentRound = 23;
-            startPlayoffs(state, config.league);
-            state.playoffs!.championTeamId = 'NYM';
+            finishPlayoffs(state);
         }
         expect(canStartNextSeason(state, config)).toBe(true);
         const beforeYear = state.seasonYear;
@@ -221,7 +231,7 @@ describe('offseason economy', () => {
         const state = createNewGame(config, 6003, 'NYM');
         state.currentRound = 23;
         startPlayoffs(state, config.league);
-        state.playoffs!.championTeamId = 'NYM';
+        finishPlayoffs(state);
         startNextSeason(state, config, createRng(102));
         expect(state.club.sponsorOffers).toHaveLength(3);
         expect(state.club.sponsorOffers.map((o) => o.ambitionId).sort()).toEqual(['bold', 'safe', 'standard']);
@@ -272,12 +282,27 @@ describe('BCL', () => {
             games: [],
         });
         state.playoffs!.championTeamId = 'DEC';
+        state.playoffs!.thirdPlaceTeamId = 'BRN';
+        state.playoffs!.thirdPlaceSeries = {
+            id: 'PO3RD-0',
+            stage: 3,
+            slot: 0,
+            homeTeamId: 'BRN',
+            awayTeamId: 'PCE',
+            homeWins: 2,
+            awayWins: 0,
+            games: [],
+        };
 
         expect(nblPlayoffBclQualifiers(state, 2, config.league)).toEqual(['DEC', 'NYM']);
+        expect(nblPlayoffBclQualifyingEntrant(state)).toBe('BRN');
+        expect(nblPlayoffFecQualifiers(state)).toEqual(['PCE']);
 
         assignNblBclQualifiers(state, 2, config.league);
         expect(state.bclQualified).toBe(true);
         expect(state.lastBclQualifierIds).toEqual(['DEC', 'NYM']);
+        expect(state.bclQualifyingEntrantId).toBe('BRN');
+        expect(state.lastFecQualifierIds).toEqual(['PCE']);
     });
 
     it('offseason rollover qualifies playoff winner despite mid-table regular season finish', () => {
@@ -292,7 +317,7 @@ describe('BCL', () => {
             };
         }
         endSeason(state);
-        state.playoffs!.championTeamId = 'DEC';
+        finishPlayoffs(state, 'DEC', 'NYM');
         const finalsStage = config.league.playoffs.winsNeeded.length - 1;
         state.playoffs!.series.push({
             id: 'PO2-0',
@@ -329,10 +354,33 @@ describe('BCL', () => {
 
     it('calculates BCL champion prize', () => {
         const amount = bclPrizeAmount('champion', config.bcl);
-        expect(amount).toBeGreaterThan(20_000_000);
+        expect(amount).toBeGreaterThan(15_000_000);
+        expect(amount).toBeLessThan(20_000_000);
         expect(bclPrizeAmount('groupStage', config.bcl)).toBe(
             config.bcl.prizes.entry + config.bcl.prizes.groupStage,
         );
+    });
+
+    it('starts FEC season with 10 regular-season groups', () => {
+        const state = createNewGame(config, 7010, 'PCE');
+        finishPlayoffs(state, 'NYM', 'BRN');
+        state.playoffs!.thirdPlaceSeries = {
+            id: 'PO3RD-0',
+            stage: 3,
+            slot: 0,
+            homeTeamId: 'BRN',
+            awayTeamId: 'PCE',
+            homeWins: 0,
+            awayWins: 2,
+            games: [],
+        };
+        state.playoffs!.thirdPlaceTeamId = 'BRN';
+        assignNblBclQualifiers(state, 2, config.league);
+        const comp = startFecSeason(state, config.fec, createRng(43));
+        expect(comp).not.toBeNull();
+        expect(comp!.groups).toHaveLength(10);
+        expect(comp!.qualifiedTeamIds).toContain('PCE');
+        expect(state.fecQualified).toBe(true);
     });
 });
 

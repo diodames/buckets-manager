@@ -109,7 +109,7 @@ export interface MatchSummary {
     seed: number;
 }
 
-export type CompetitionId = 'nbl' | 'bcl';
+export type CompetitionId = 'nbl' | 'bcl' | 'fec';
 
 export type BclPhase =
     | 'qualifying'
@@ -119,6 +119,24 @@ export type BclPhase =
     | 'quarterFinals'
     | 'finalFour'
     | 'complete';
+
+export type FecPhase =
+    | 'qualifying'
+    | 'regularSeason'
+    | 'secondRound'
+    | 'quarterFinals'
+    | 'semiFinals'
+    | 'finals'
+    | 'complete';
+
+export type FecUserFinish =
+    | 'champion'
+    | 'finalist'
+    | 'semifinal'
+    | 'quarterfinal'
+    | 'secondRound'
+    | 'groupStage'
+    | 'qualifying';
 
 export interface Fixture {
     id: string;
@@ -149,7 +167,13 @@ export interface StandingsRow {
 export interface LedgerEntry {
     round: number;
     // i18n key suffix under ledger.<kind>.
-    kind: 'tickets' | 'sponsors' | 'sponsorSigning' | 'sponsorBonus' | 'sponsorPenalty' | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'leaguePrize' | 'transferIn' | 'transferOut' | 'buyout';
+    kind:
+        | 'tickets' | 'sponsors' | 'sponsorSigning' | 'sponsorBonus' | 'sponsorPenalty'
+        | 'salaries' | 'maintenance' | 'upgrade' | 'bonus' | 'leaguePrize' | 'leagueShare'
+        | 'transferIn' | 'transferOut' | 'buyout'
+        | 'bclMatchFee' | 'bclWinBonus' | 'bclTravel'
+        | 'fecMatchFee' | 'fecWinBonus' | 'fecTravel'
+        | 'europeanParticipation';
     amount: number;
 }
 
@@ -189,6 +213,13 @@ export interface FacilityProject {
     targetLevel: number;
     startedRound: number;
     completesRound: number;
+}
+
+export interface TeamFinance {
+    budget: number;
+    fanSupport: number;
+    /** Auto-assigned sponsor deal tier 1..5 for weekly income. */
+    sponsorTier: number;
 }
 
 export interface ClubState {
@@ -297,6 +328,25 @@ export interface MarketState {
     externalOffers: ExternalOffer[];
     /** True after an unsolicited bid arrives this season (no market listing). */
     unsolicitedBidUsed: boolean;
+    /** Pre-season scouting phase finished for the current season year. */
+    scoutingComplete: boolean;
+    /** FA scout reports keyed by player id (opening pool). */
+    scoutedFreeAgents: Record<PlayerId, FreeAgentScoutReport>;
+    /** Remaining scouting budget this offseason (CZK). */
+    scoutingBudget: number;
+    /** Total scouting budget allocated at rollover. */
+    scoutingBudgetTotal: number;
+}
+
+export interface FreeAgentScoutReport {
+    playerId: PlayerId;
+    overallMin: number;
+    overallMax: number;
+    starMin: number;
+    starMax: number;
+    linkedTeamId?: TeamId;
+    revealed: boolean;
+    tier: 'rumour' | 'quick' | 'deep';
 }
 
 export interface PendingFreeAgent {
@@ -325,19 +375,27 @@ export interface PlayoffState {
     seeds: Record<TeamId, number>;
     series: PlayoffSeries[];
     championTeamId: TeamId | null;
+    // Best-of-N series between semifinal losers for 3rd place.
+    thirdPlaceSeries: PlayoffSeries | null;
+    thirdPlaceTeamId: TeamId | null;
 }
 
 export interface CompetitionState {
     id: CompetitionId;
-    phase: BclPhase;
+    phase: BclPhase | FecPhase;
     fixtures: Fixture[];
     groups: BclGroup[];
     playoffs: PlayoffState | null;
+    // Czech 3rd-place NBL team vs a European club before the group stage.
+    qualifyingSeries: PlayoffSeries | null;
+    qualifyingEntrantId: TeamId | null;
+    qualifyingOpponentId: TeamId | null;
     qualifiedTeamIds: TeamId[];
     championTeamId: TeamId | null;
     prizePaid: boolean;
-    // User's BCL finish for prize calculation.
-    userFinish: BclUserFinish | null;
+    /** CZK paid during the season via weekly European economy ticks. */
+    weeklyPrizePaidTotal: number;
+    userFinish: BclUserFinish | FecUserFinish | null;
 }
 
 export type BclUserFinish =
@@ -350,7 +408,15 @@ export type BclUserFinish =
     | 'playIn'
     | 'qualifying';
 
-export type NblPlayoffFinish = 'champion' | 'finalist' | 'semifinal' | 'quarterfinal' | 'playoffs' | 'missed';
+export type NblPlayoffFinish =
+    | 'champion'
+    | 'finalist'
+    | 'thirdPlace'
+    | 'fourthPlace'
+    | 'semifinal'
+    | 'quarterfinal'
+    | 'playoffs'
+    | 'missed';
 
 export type OffseasonMovementKind = 'retired' | 'leftAbroad' | 'freeAgent';
 
@@ -375,6 +441,9 @@ export interface OffseasonReviewSummary {
     bclQualified: boolean;
     bclFinish: BclUserFinish | null;
     bclPrize: number;
+    fecQualified: boolean;
+    fecFinish: FecUserFinish | null;
+    fecPrize: number;
     sponsorBonus: number;
     sponsorTargetMet: boolean;
     sponsorPromisedRank: number | null;
@@ -390,6 +459,9 @@ export interface OffseasonSummary {
     bclQualified: boolean;
     bclFinish: BclUserFinish | null;
     bclPrize: number;
+    fecQualified: boolean;
+    fecFinish: FecUserFinish | null;
+    fecPrize: number;
     contractsExpired: number;
     newFreeAgents: number;
     youthGraduated: number;
@@ -416,8 +488,10 @@ export interface GameState {
     teams: Record<TeamId, Team>;
     players: Record<PlayerId, Player>;
     fixtures: Fixture[];
-    // The user club's management state (AI clubs keep no books).
+    // The user club's management state (budget, facilities, sponsors, ledger).
     club: ClubState;
+    /** Lightweight books for AI NBL clubs (excludes the user team). */
+    nblFinances: Record<TeamId, TeamFinance>;
     market: MarketState;
     // Post-season bracket; null until the regular season ends.
     playoffs: PlayoffState | null;
@@ -431,8 +505,16 @@ export interface GameState {
     lastOffseason: OffseasonSummary | null;
     // Whether user qualified for BCL in the upcoming/current season.
     bclQualified: boolean;
-    // Czech NBL teams that earned BCL entry from the last completed NBL playoffs.
+    // Champion or finalist with direct BCL group-stage entry.
+    bclDirectQualified: boolean;
+    // Czech NBL teams that earned direct BCL entry from the last completed NBL playoffs.
     lastBclQualifierIds: TeamId[];
+    // Czech 3rd-place team that must win BCL qualifying to enter the group stage.
+    bclQualifyingEntrantId: TeamId | null;
+    // Whether user qualified for FIBA Europe Cup in the upcoming/current season.
+    fecQualified: boolean;
+    // Czech NBL teams that earned FIBA Europe Cup entry from the last completed NBL playoffs.
+    lastFecQualifierIds: TeamId[];
 }
 
 export function createEmptyBoxLine(): BoxLine {

@@ -1,5 +1,6 @@
 import type { BalanceConfig } from '../../config/balance';
 import type { BclConfig, BclTeamDef } from '../../config/bcl';
+import type { FecConfig } from '../../config/fec';
 import type { LeagueConfig, RealPlayerDef, TeamDef } from '../../config/league';
 import type { NamePools } from '../../config/names';
 import { generateName } from '../namegen';
@@ -262,4 +263,55 @@ export function generateBclClubs(
 
 export function bclTeamDefById(id: string, bcl: BclConfig): BclTeamDef | undefined {
     return bcl.teams.find((t) => t.id === id || t.nblTeamId === id);
+}
+
+/** Adds FIBA Europe Cup-only clubs and players to an existing game state. */
+export function generateFecClubs(
+    state: { teams: Record<string, Team>; players: Record<string, Player> },
+    fec: FecConfig,
+    balance: BalanceConfig,
+    pools: NamePools,
+    seasonYear: number,
+    rng: Rng,
+): void {
+    const usedNames = new Set(Object.values(state.players).map((p) => `${p.firstName} ${p.lastName}`));
+    let teamIndex = Object.keys(state.teams).length;
+    for (const teamDef of fec.teams) {
+        if (teamDef.nblTeamId) {
+            continue;
+        }
+        if (state.teams[teamDef.id]) {
+            continue;
+        }
+        const teamRng = rng.fork(`fec:${teamDef.id}`);
+        const teamPlayers: Player[] = teamDef.roster.map((def, i) =>
+            playerFromReal(teamRng.fork(`p${i}`), `${teamDef.id}-P${i + 1}`, teamDef.id, def, seasonYear, balance),
+        );
+        const toFill = Math.max(0, 12 - teamPlayers.length);
+        const fillPositions = [...missingPositions(teamDef.roster)];
+        for (let i = 0; i < toFill; i++) {
+            const position = fillPositions.shift() ?? teamRng.pick(POSITIONS);
+            teamPlayers.push(
+                generateYouthPlayer(teamRng, `${teamDef.id}-Y${i + 1}`, teamDef.id, position, pools, usedNames, balance),
+            );
+        }
+        for (const player of teamPlayers) {
+            player.contract = { salary: 0, yearsLeft: 99 };
+            state.players[player.id] = player;
+        }
+        const schemes = ['man', 'man', 'zone', 'press'] as const;
+        state.teams[teamDef.id] = {
+            id: teamDef.id,
+            playerIds: teamPlayers.map((pl) => pl.id),
+            tactics: {
+                starters: pickStarters(teamPlayers),
+                pace: 'normal',
+                offenseFocus: 'balanced',
+                defenseScheme: teamRng.pick(schemes),
+            },
+            colorSlotPrimary: 16 + teamIndex * 2,
+            colorSlotSecondary: 16 + teamIndex * 2 + 1,
+        };
+        teamIndex++;
+    }
 }

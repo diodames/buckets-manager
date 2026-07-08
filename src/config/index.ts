@@ -38,6 +38,10 @@ export function validateAllConfigs(): void {
     for (const budget of economyConfig.startingBudgetByTier) {
         assertConfig(budget > 0, 'startingBudgetByTier entries must be positive');
     }
+    assertConfig(economyConfig.leagueSharePerRoundByTier.length === 5, 'leagueSharePerRoundByTier must have 5 entries (tiers 1..5)');
+    for (const share of economyConfig.leagueSharePerRoundByTier) {
+        assertConfig(share >= 0, 'leagueSharePerRoundByTier entries must be >= 0');
+    }
     assertConfig(
         economyConfig.financial.wageBudgetPct > 0 && economyConfig.financial.wageBudgetPct <= 1,
         'financial.wageBudgetPct must be in (0, 1]',
@@ -151,3 +155,4 @@ export function validateAllConfigs(): void {
 
 export { balanceConfig, displayConfig, leagueConfig, namePools, paletteConfig };
 export { bclConfig } from './bcl';
+export { fecConfig } from './fec';

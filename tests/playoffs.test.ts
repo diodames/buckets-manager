@@ -46,6 +46,7 @@ describe('playoffs', () => {
         const state = run();
         const playoffs = state.playoffs;
         expect(playoffs?.championTeamId).toBeTruthy();
+        expect(playoffs?.thirdPlaceTeamId).toBeTruthy();
         for (const series of playoffs?.series ?? []) {
             const needed = winsNeeded(series.stage, leagueConfig);
             expect(seriesDecided(series, leagueConfig)).toBe(true);

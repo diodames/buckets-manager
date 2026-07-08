@@ -1,5 +1,6 @@
 import { balanceConfig } from '../src/config/balance';
 import { bclConfig } from '../src/config/bcl';
+import { fecConfig } from '../src/config/fec';
 import { economyConfig } from '../src/config/economy';
 import { leagueConfig } from '../src/config/league';
 import { externalOffersConfig } from '../src/config/externalOffers';
@@ -13,6 +14,7 @@ import type { GameConfig } from '../src/core/game';
 export const testConfig: GameConfig = {
     league: leagueConfig,
     bcl: bclConfig,
+    fec: fecConfig,
     balance: balanceConfig,
     names: namePools,
     moments: momentsConfig,

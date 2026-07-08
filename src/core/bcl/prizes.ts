@@ -28,13 +28,17 @@ export function bclPrizeAmount(finish: BclUserFinish | null, bcl: BclConfig): nu
     }
 }
 
+export function bclSettlementAmount(finish: BclUserFinish | null, bcl: BclConfig, alreadyPaid: number): number {
+    return Math.max(0, bclPrizeAmount(finish, bcl) - alreadyPaid);
+}
+
 export function payBclPrize(state: GameState, bcl: BclConfig, economy: { ledgerCapacity: number }): number {
     const comp = state.competitions.bcl;
     if (!comp || comp.prizePaid || !state.bclQualified) {
         return 0;
     }
-    const finish = comp.userFinish;
-    const amount = bclPrizeAmount(finish, bcl);
+    const finish = comp.userFinish as BclUserFinish | null;
+    const amount = bclSettlementAmount(finish, bcl, comp.weeklyPrizePaidTotal ?? 0);
     if (amount > 0) {
         state.club.ledger.push({ round: state.currentRound, kind: 'bonus', amount });
         if (state.club.ledger.length > economy.ledgerCapacity) {

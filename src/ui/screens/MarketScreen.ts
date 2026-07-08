@@ -7,6 +7,7 @@ import {
 } from '../../core/market';
 import type { Player, PlayerId } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
+import { canNegotiateScoutedFreeAgent, displayedOverall } from '../../core/scouting';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
 import { formatMoney, playerName, teamDef } from '../format';
@@ -107,14 +108,19 @@ export class MarketScreen implements Screen {
                         : p.teamId === null && !state.market.youthProspects.some((y) => y.player.id === p.id),
                 )
                 .sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes))
-                .slice(0, 60);
+                .slice(0, 80);
             for (const player of players) {
                 rows.push({ kind: 'player', playerId: player.id });
+                const ovrCell = this.tab === 'freeAgents' && state.market.scoutedFreeAgents[player.id]
+                    ? (state.market.scoutedFreeAgents[player.id]!.revealed
+                        ? String(displayedOverall(state, player))
+                        : `${state.market.scoutedFreeAgents[player.id]!.overallMin}-${state.market.scoutedFreeAgents[player.id]!.overallMax}`)
+                    : String(overallRating(player.attributes));
                 cells.push({
                     cells: [
                         playerName(player),
                         player.position,
-                        String(overallRating(player.attributes)),
+                        ovrCell,
                         player.teamId ? teamDef(player.teamId).abbr : t('market.freeAgent'),
                         formatMoney(transferValue(player, marketConfig, economy)),
                         `${player.age}`,
@@ -163,6 +169,10 @@ export class MarketScreen implements Screen {
         }
         if (player.teamId === null) {
             // Free agent: straight to personal terms.
+        if (!state.market.scoutingComplete && !canNegotiateScoutedFreeAgent(state, player.id)) {
+                this.say(t('scouting.needReport'), ROLE.warning);
+                return;
+            }
             if (!canNegotiate(state, player, marketConfig)) {
                 this.say(t('nego.locked'), ROLE.danger);
                 return;

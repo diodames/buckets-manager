@@ -238,7 +238,7 @@ describe('externalRetention negotiation', () => {
         const result = negotiateOffer(
             state,
             player.id,
-            { salary: 1_500_000, years: 2 },
+            { salary: 800_000, years: 2 },
             'externalRetention',
             testConfig.market,
             testConfig.economy,
