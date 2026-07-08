@@ -1,22 +1,37 @@
 import type { TrainingConfig, TrainingFocus } from '../config/training';
 import type { EconomyConfig } from '../config/economy';
 import type { LeagueConfig } from '../config/league';
+import { teamTier } from './economy';
 import { trainingDevMultiplier } from './economy';
 import { aiTrainingDevMultiplier } from './aiFacilities';
-import type { GameState, Player } from './model/types';
+import type { GameState, Player, TeamId } from './model/types';
 import { ATTRIBUTE_KEYS } from './model/types';
 import type { Rng } from './rng';
 
 /**
  * Weekly training tick, run once after every round for all teams. The user
  * club uses its chosen focus and benefits from its training facility; AI
- * clubs train 'balanced' at facility level 1.
+ * clubs use tier-based focus and facility upgrades.
  */
+export function aiTrainingFocus(teamId: TeamId, league: LeagueConfig): TrainingFocus {
+    const tier = teamTier(teamId, league);
+    if (tier >= 5) {
+        return 'shooting';
+    }
+    if (tier >= 4) {
+        return 'playmaking';
+    }
+    return 'balanced';
+}
+
 export function weeklyTrainingTick(state: GameState, config: { training: TrainingConfig; economy: EconomyConfig; league?: LeagueConfig }, rng: Rng): void {
     const training = config.training;
+    const league = config.league;
     for (const player of Object.values(state.players)) {
         const isUserPlayer = player.teamId === state.userTeamId;
-        const focus: TrainingFocus = isUserPlayer ? state.club.trainingFocus : 'balanced';
+        const focus: TrainingFocus = isUserPlayer
+            ? state.club.trainingFocus
+            : (player.teamId && league ? aiTrainingFocus(player.teamId, league) : 'balanced');
         let devMult = 1;
         if (isUserPlayer) {
             devMult = trainingDevMultiplier(state, config.economy);

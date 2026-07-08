@@ -12,7 +12,7 @@ export interface DifficultyModifiers {
 const MODS: Record<Difficulty, DifficultyModifiers> = {
     easy: { aiSkillMult: 0.92, userIncomeMult: 1.08, userInjuryMult: 0.75 },
     normal: { aiSkillMult: 1.0, userIncomeMult: 1.0, userInjuryMult: 1.0 },
-    hard: { aiSkillMult: 1.06, userIncomeMult: 0.95, userInjuryMult: 1.2 },
+    hard: { aiSkillMult: 1.09, userIncomeMult: 0.95, userInjuryMult: 1.2 },
 };
 
 export function difficultyModifiers(difficulty: Difficulty): DifficultyModifiers {

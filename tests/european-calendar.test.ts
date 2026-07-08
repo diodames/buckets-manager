@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { checkBclPhaseAdvancement, isBclRegularSeasonComplete, startBclSeason } from '../src/core/bcl/index';
 import { ensurePlayoffs, isEuropeanCalendarComplete, createNewGame } from '../src/core/game';
+import { generateBclClubs } from '../src/core/league/generate';
+import { createRng } from '../src/core/rng';
 import { testConfig as config } from './helpers';
 
 describe('european calendar', () => {
@@ -46,5 +49,39 @@ describe('european calendar', () => {
         };
         ensurePlayoffs(state, config);
         expect(state.playoffs).not.toBeNull();
+    });
+
+    it('advances BCL phase when regular season fixtures are complete but phase is stuck', () => {
+        const state = createNewGame(config, 9903, 'NYM');
+        state.currentRound = 23;
+        for (const f of state.fixtures) {
+            f.result = {
+                homeScore: 80,
+                awayScore: 75,
+                quarterScores: [[20, 18], [20, 19], [20, 19], [20, 19]],
+                box: {},
+                seed: 1,
+            };
+        }
+        generateBclClubs(state, config.bcl, config.balance, config.names, state.seasonYear, createRng(42).fork('bcl-gen'));
+        const comp = startBclSeason(state, config.bcl, config.league, createRng(42).fork('bcl-start'));
+        expect(comp).not.toBeNull();
+        for (const fixture of comp!.fixtures) {
+            if (!fixture.result) {
+                fixture.result = {
+                    homeScore: 82,
+                    awayScore: 78,
+                    quarterScores: [[20, 19], [21, 20], [20, 19], [21, 20]],
+                    box: {},
+                    seed: 2,
+                };
+            }
+        }
+        expect(isBclRegularSeasonComplete(comp!)).toBe(true);
+        expect(isEuropeanCalendarComplete(state, config)).toBe(false);
+
+        checkBclPhaseAdvancement(state, config.bcl, config.league, createRng(99));
+
+        expect(state.competitions.bcl?.phase).not.toBe('regularSeason');
     });
 });

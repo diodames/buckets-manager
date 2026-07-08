@@ -44,7 +44,7 @@ export const marketConfig = Object.freeze({
         formRatioCold: 0.95,
         // Position scarcity on demand and transfer value.
         scarcePositionBonus: 1.08,
-        surplusPositionDiscount: 0.92,
+        surplusPositionDiscount: 0.95,
         scarcePositions: Object.freeze(['PG', 'C'] as const),
         scarceOverallOffset: 8,
         // Czech players command a modest premium (limited foreign slots, domestic value).
@@ -57,17 +57,20 @@ export const marketConfig = Object.freeze({
         releaseTeamMorale: 2,
     }),
     transfers: Object.freeze({
-        // Transfer value TV = salary * base * ageV * potV * contractV (M6).
+        // Transfer value TV = salary * base * ageV * potV * contractV * scarcity (M6).
         salaryMult: 2.2,
+        // Smoother age curve: avoid a cliff at 30; veterans still discount but stay tradable.
         ageValue: Object.freeze([
-            { maxAge: 22, factor: 1.5 },
-            { maxAge: 26, factor: 1.2 },
+            { maxAge: 22, factor: 1.35 },
+            { maxAge: 26, factor: 1.15 },
             { maxAge: 29, factor: 1.0 },
-            { maxAge: 32, factor: 0.6 },
-            { maxAge: 99, factor: 0.35 },
+            { maxAge: 32, factor: 0.88 },
+            { maxAge: 35, factor: 0.72 },
+            { maxAge: 99, factor: 0.5 },
         ]),
         potentialCap: 1.6,
-        contractValue: Object.freeze({ multi: 1.0, finalYear: 0.55, expiringSoon: 0.35 }),
+        // Final-year deals cost less, but not so much that prime veterans look broken.
+        contractValue: Object.freeze({ multi: 1.0, finalYear: 0.78, expiringSoon: 0.58 }),
         expiringSoonRounds: 6,
         // Transfer market (M9): open all season; closes when NBL playoffs start. FA always open.
         preseasonWindowRound: 1,
@@ -84,11 +87,11 @@ export const marketConfig = Object.freeze({
         needFactorMax: 1.15,
         aiCounterCeiling: 1.1,
         offerTtlRounds: 2,
-        // Bidding on AI players (M8).
-        sellFactorSurplus: 0.85,
-        sellFactorNormal: 1.10,
-        sellFactorCore: 1.45,
-        sellFactorCzechCore: 1.50,
+        // Bidding on AI players (M8). Tighter spread so asking prices track ability more closely.
+        sellFactorSurplus: 0.93,
+        sellFactorNormal: 1.05,
+        sellFactorCore: 1.22,
+        sellFactorCzechCore: 1.28,
         // Unsolicited bids for stars (M10) — rare; at most one per season.
         unsolicitedChancePerRound: 0.005,
         unsolicitedFactorMin: 1.2,
@@ -101,6 +104,8 @@ export const marketConfig = Object.freeze({
         // When fee >= transfer value, demand scales by this (serious buyer signal).
         transferFeeCommitmentMult: 0.96,
         bidStep: 200_000,
+        // Premium for buying a player under contract (rights fee on top of sell factor).
+        clubRightsPremium: 1.1,
     }),
     youth: Object.freeze({
         // Intake after this round (M11).

@@ -18,7 +18,7 @@ export const balanceConfig = Object.freeze({
         base: Object.freeze({ inside: 0.56, mid: 0.43, three: 0.35 }),
         // How strongly the attacker-vs-defender skill delta (normalized to
         // -1..1) swings the make probability.
-        skillSwing: 0.22,
+        skillSwing: 0.25,
         makeProbMin: 0.05,
         makeProbMax: 0.95,
         // Shot-kind mix per offensive focus, weights sum to 1.

@@ -1,6 +1,4 @@
-import { financeWarningTier } from './cashflow';
 import { pendingExternalOffers } from './breakthrough';
-import { isFreeAgentMarketOpen, isFullTransferMarketOpen } from './market';
 import type { EconomyConfig } from '../config/economy';
 import type { LeagueConfig } from '../config/league';
 import type { MarketConfig } from '../config/market';
@@ -11,9 +9,7 @@ export type NewsItemId =
     | 'expiringContracts'
     | 'incomingOffers'
     | 'externalOffers'
-    | 'financeWarning'
     | 'injuryReturns'
-    | 'transferWindow'
     | 'youthIntake'
     | 'negotiationLocked';
 
@@ -29,8 +25,8 @@ export interface NewsItem {
 /** Dashboard inbox headlines sorted by priority. */
 export function buildNewsItems(
     state: GameState,
-    economy: EconomyConfig,
-    league: LeagueConfig,
+    _economy: EconomyConfig,
+    _league: LeagueConfig,
     market: MarketConfig = marketConfig,
 ): NewsItem[] {
     const items: NewsItem[] = [];
@@ -69,16 +65,6 @@ export function buildNewsItems(
         });
     }
 
-    const finTier = financeWarningTier(state, economy, league);
-    if (finTier === 'yellow' || finTier === 'red') {
-        items.push({
-            id: 'financeWarning',
-            labelKey: finTier === 'red' ? 'news.financeRed' : 'news.financeYellow',
-            action: 'finances',
-            priority: finTier === 'red' ? 100 : 70,
-        });
-    }
-
     if (team) {
         const returning = team.playerIds.filter((id) => {
             const p = state.players[id];
@@ -93,18 +79,6 @@ export function buildNewsItems(
             });
         }
     }
-
-    const transferLabel = isFullTransferMarketOpen(state, market)
-        ? 'news.transferWindowOpen'
-        : isFreeAgentMarketOpen(state)
-          ? 'news.transferWindowFaOnly'
-          : 'news.transferWindowClosed';
-    items.push({
-        id: 'transferWindow',
-        labelKey: transferLabel,
-        action: 'market',
-        priority: 30,
-    });
 
     if (!state.market.youthIntakeDone && state.currentRound >= 14) {
         items.push({

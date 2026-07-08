@@ -121,7 +121,6 @@ export const cs: Record<TranslationKey, string> = {
     'dashboard.europeanActive': 'aktivni',
     'dashboard.europeanEliminated': 'venku',
     'dashboard.europeanComplete': 'hotovo',
-    'dashboard.offersWaiting': 'Na trhu čeká {n} nabídka/y!',
     'dashboard.lastPlayoffResults': 'Poslední výsledky playoff',
 
     'playoff.title': 'PLAYOFF',
@@ -488,9 +487,6 @@ export const cs: Record<TranslationKey, string> = {
     'chrome.warningYellow': 'Těsný rozpočet',
     'chrome.warningRed': 'Krizový rozpočet',
 
-    'dashboard.financeWarningYellow': 'Vedení: hrozí schodek nebo nízká rezerva.',
-    'dashboard.financeWarningRed': 'Vedení: nestačí na platy v příštím týdnu.',
-
     'ledger.tickets': 'Vstupné',
     'ledger.sponsors': 'Platby sponzorů',
     'ledger.sponsorSigning': 'Podpisový bonus sponzora',
@@ -545,7 +541,6 @@ export const cs: Record<TranslationKey, string> = {
     'market.openUntilPlayoffs': 'Prestupy otevreny (kola 1-12)',
     'market.deadlinePassed': 'Jen volni hraci (placene prestupy uzavreny)',
     'market.playoffsClosed': 'Trh uzavren (play-off)',
-    'news.transferWindowFaOnly': 'Jen volni hraci (placene prestupy uzavreny)',
 
     'briefing.title': 'Skautovaci zprava',
     'briefing.opponent': 'vs {team}',
@@ -580,7 +575,8 @@ export const cs: Record<TranslationKey, string> = {
     'market.wageBudgetExceeded': 'Smlouva překračuje rozpočet na platy.',
     'market.projectedDeficit': 'Smlouva by zanechala schodek na konci sezóny.',
     'market.bidRejected': 'Nabídka odmítnuta.',
-    'market.transferBreakdown': 'Základní hodnota {base} Kč | Požadavek klubu {ask} Kč',
+    'market.transferBreakdown': 'Zakladni hodnota {base} Kc | Odstupne {ask} Kc (jde klubu {team})',
+    'market.freeAgentBreakdown': 'Bez odstupneho | Ocekavany plat {salary} Kc/rok (+ poplatek agentovi)',
     'market.hintScout': 'Enter: skaut report',
     'market.hintSign': 'Mezernik: jednani',
     'market.rosterMin': 'Soupiska by klesla pod ligové minimum.',
@@ -604,6 +600,8 @@ export const cs: Record<TranslationKey, string> = {
     'external.retained': '{player} zůstal po vaší protinabídce.',
     'external.retainFailed': '{player} chce odejít - zkuste znovu nebo prodejte.',
     'col.price': 'Cena',
+    'col.transferFee': 'Odstupne',
+    'col.salaryDemand': 'Platova domnenka',
     'col.salary': 'Plat',
     'col.years': 'Rok',
 
@@ -665,6 +663,10 @@ export const cs: Record<TranslationKey, string> = {
     'youth.quote.2': 'Trenér: "Basketbalové myšlení nad jeho věk."',
     'youth.quote.3': 'Trenér: "Připomíná mi mladého Hrubana."',
     'youth.quote.4': 'Trenér: "Chce to dotáhnout až do NBA."',
+    'youth.quote.top.PG': 'Trenér: "Tenhle kluk bude další Satoranský."',
+    'youth.quote.top.SG': 'Trenér: "Tenhle kluk má potenciál NBA, vidím v něm Vítka Krejčího."',
+    'youth.quote.top.PF': 'Trenér: "Tenhle kluk bude další Veselý."',
+    'youth.quote.top.C': 'Trenér: "Tenhle diamant se nám brousí do podoby Balvana."',
 
     'roster.foreignCap': 'Cizinci: {count}/{max}',
     'role.floorGeneral': 'Rozvod hry',
@@ -694,13 +696,10 @@ export const cs: Record<TranslationKey, string> = {
     'news.expiringContracts': 'Konci smlouvy v teto sezone',
     'news.incomingOffers': 'Prichozi nabidky na hrace',
     'news.externalOffers': 'Cekajici zahranicni nabidky',
-    'news.financeYellow': 'Finance: napjaty cashflow',
-    'news.financeRed': 'Finance: kriticky stav rozpoctu',
     'news.injuryReturns': 'Hraci se brzy vrati ze zraneni',
-    'news.transferWindowOpen': 'Prestupove okno je otevrene',
-    'news.transferWindowClosed': 'Okno zavreno (jen volni hraci)',
     'news.youthIntake': 'Cekaji mladi z akademie',
     'news.hint': 'Enter: otevrit',
+    'news.focusHint': 'I: otevrit prehled',
 
     'tutorial.title': 'UVOD',
     'tutorial.progress': 'Krok {step} z {total}',
@@ -727,12 +726,10 @@ export const cs: Record<TranslationKey, string> = {
     'hint.contextual.transferWindowClosed.title': 'Prestupovy deadline',
     'hint.contextual.transferWindowClosed.body': 'Po 12. kole jen volni hraci. Placene prestupy jsou uzavrene.',
 
-    'dashboard.thisWeek': 'Tento tyden',
     'dashboard.windowFull': 'Prestupy: otevreno (kola 1-12)',
     'dashboard.windowFaOnly': 'Prestupy: jen volni hraci',
     'dashboard.windowClosed': 'Prestupy: uzavreno',
     'dashboard.weeklyNet': 'Projekce sezony: {amount}',
-    'dashboard.expiringContracts': 'Expirujici smlouvy: {n}',
     'dashboard.facilityProgress': 'Upgrade {facility}: {rounds} kol',
     'dashboard.boardTarget': 'Cil predstavenstva: top {rank}',
     'dashboard.boardWarning': 'Varovani: cil nesplnen',
@@ -748,6 +745,8 @@ export const cs: Record<TranslationKey, string> = {
     'market.watchlisted': 'Pridano do sledovani',
     'market.unwatchlisted': 'Odebrano ze sledovani',
     'market.hintFilters': 'F: filtry  W: sledovani',
+    'market.hintLeagueFee': 'Odstupne jde prodavajicimu klubu; plat se jedna zvlast.',
+    'market.hintFreeAgentSalary': 'Bez odstupneho; platis plat + poplatek agentovi.',
 
     'nego.foreignCapFull': 'Limit cizincu (max 6) je plny.',
     'youth.foreignCapFull': 'Nelze podepsat - plny limit cizincu (6).',

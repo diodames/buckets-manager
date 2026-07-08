@@ -7,7 +7,7 @@ import { advanceRoundInstant, createNewGame } from '../src/core/game';
 import {
     acceptTransferOffer, bidOnPlayer, canNegotiate, contractBuyout, contractDemand, executePurchase,
     isAcademyPlayer, listPlayer, marketTick, marketSalaryForPlayer, negotiateOffer, releasePlayer, renewalStatus, requiredSalary, resyncRosterContracts, returnYouthToAcademy, runYouthIntake,
-    signYouth, teamNeeds, transferValue,
+    signYouth, teamNeeds, transferAskingPrice, transferValue, leagueTransferFee, freeAgentSalaryDemand,
 } from '../src/core/market';
 import type { Player } from '../src/core/model/types';
 import { overallRating } from '../src/core/model/types';
@@ -241,6 +241,79 @@ describe('transfers (M6-M9)', () => {
         expect(transferValue(young, marketConfig, config.economy)).toBeGreaterThan(
             transferValue(oldTwin, marketConfig, config.economy) * 2,
         );
+    });
+
+    it('similar-rated peers a few years apart stay in a sane fee band', () => {
+        const state = createNewGame(config, 917, 'NYM');
+        const template = Object.values(state.players).find(
+            (p) => p.teamId !== null && p.position === 'SG' && overallRating(p.attributes) >= 70,
+        );
+        expect(template).toBeDefined();
+        if (!template) {
+            return;
+        }
+        const overall = overallRating(template.attributes);
+        const prime: Player = {
+            ...template,
+            id: 'TEST-PRIME',
+            age: 25,
+            potential: overall + 8,
+            contract: { salary: template.contract?.salary ?? 1_500_000, yearsLeft: 3 },
+        };
+        const veteran: Player = {
+            ...template,
+            id: 'TEST-VET',
+            age: 30,
+            potential: overall + 2,
+            contract: { salary: template.contract?.salary ?? 1_500_000, yearsLeft: 1 },
+        };
+        const primeAsk = transferAskingPrice(state, prime, marketConfig, config.economy);
+        const veteranAsk = transferAskingPrice(state, veteran, marketConfig, config.economy);
+        expect(primeAsk).toBeGreaterThan(veteranAsk);
+        expect(primeAsk).toBeLessThan(veteranAsk * 3.5);
+        expect(veteranAsk).toBeGreaterThan(1_500_000);
+    });
+
+    it('league transfer fee includes club rights premium and exceeds raw value', () => {
+        const state = createNewGame(config, 918, 'NYM');
+        const player = Object.values(state.players).find((p) => p.teamId !== null && p.teamId !== 'NYM');
+        expect(player).toBeDefined();
+        if (!player) {
+            return;
+        }
+        const tv = transferValue(player, marketConfig, config.economy, state);
+        const ask = leagueTransferFee(state, player, marketConfig, config.economy);
+        expect(ask).toBeGreaterThan(tv);
+        expect(ask).toBeGreaterThanOrEqual(
+            Math.round((tv * marketConfig.transfers.clubRightsPremium) / 50_000) * 50_000 * 0.9,
+        );
+    });
+
+    it('league transfer fee is higher than free-agent salary demand for comparable players', () => {
+        const state = createNewGame(config, 919, 'NYM');
+        const template = Object.values(state.players).find(
+            (p) => p.teamId !== null && p.teamId !== 'NYM' && overallRating(p.attributes) >= 70,
+        );
+        expect(template).toBeDefined();
+        if (!template) {
+            return;
+        }
+        const onTeam: Player = {
+            ...template,
+            id: 'TEST-ON-TEAM',
+            teamId: template.teamId,
+            contract: { salary: template.contract?.salary ?? 1_500_000, yearsLeft: 2 },
+        };
+        const free: Player = {
+            ...template,
+            id: 'TEST-FREE',
+            teamId: null,
+            contract: { salary: 0, yearsLeft: 1 },
+            morale: 60,
+        };
+        const fee = leagueTransferFee(state, onTeam, marketConfig, config.economy);
+        const demand = freeAgentSalaryDemand(state, free, marketConfig, config.economy);
+        expect(fee).toBeGreaterThan(demand);
     });
 
     it('listing a player attracts AI offers that can be accepted for cash', () => {

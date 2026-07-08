@@ -5,6 +5,8 @@ import { startingBudgetForTeam } from '../src/core/economy';
 import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver, seasonRounds, upcomingUserFixtures } from '../src/core/game';
 import { computeNblStandings } from '../src/core/league/standings';
 import { POSITIONS } from '../src/core/model/types';
+import { createRng } from '../src/core/rng';
+import { startNextSeason } from '../src/core/season';
 import { testConfig as config } from './helpers';
 
 describe('config', () => {
@@ -113,12 +115,27 @@ describe('full season (instant rounds)', () => {
         }
         // Post-season: advancing now plays playoff rounds until a champion.
         let guard = 0;
-        while (!isCampaignOver(state, config) && guard++ < 40) {
+        while (!isCampaignOver(state, config) && guard++ < 55) {
             advanceRoundInstant(state, config);
         }
         expect(isCampaignOver(state, config)).toBe(true);
         expect(state.playoffs?.championTeamId).toBeTruthy();
-        expect(() => advanceRoundInstant(state, config)).toThrow();
+        expect(() => advanceRoundInstant(state, config)).toThrow('completeRound: the season including playoffs is over');
+    });
+
+    it('simulates three full seasons through 2027 without stalling', { timeout: 60_000 }, () => {
+        const state = createNewGame(config, 77001, 'NYM');
+        expect(state.seasonYear).toBe(2025);
+        for (let season = 0; season < 3; season++) {
+            let guard = 0;
+            while (!isCampaignOver(state, config) && guard++ < 320) {
+                advanceRoundInstant(state, config);
+            }
+            expect(isCampaignOver(state, config)).toBe(true);
+            startNextSeason(state, config, createRng(state.masterSeed).fork(`multi:${state.seasonYear}`));
+        }
+        expect(state.seasonYear).toBe(2028);
+        expect(state.currentRound).toBe(1);
     });
 });
 

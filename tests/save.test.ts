@@ -96,6 +96,25 @@ describe('save round-trip', () => {
         expect(migrated.formatVersion).toBe(SAVE_FORMAT_VERSION);
         expect(migrated.state.players[player!.id]?.contract?.salary).toBe(expected);
     });
+
+    it('repairs playoffs missing bronze on save load', () => {
+        const state = createNewGame(config, 556, 'NYM');
+        state.currentRound = 30;
+        state.playoffs = {
+            stage: 2,
+            seeds: { NYM: 1, PCE: 2, BRN: 3, DEC: 4 },
+            series: [
+                { id: 'PO1-0', stage: 1, slot: 0, homeTeamId: 'NYM', awayTeamId: 'BRN', homeWins: 3, awayWins: 0, games: [] },
+                { id: 'PO1-1', stage: 1, slot: 1, homeTeamId: 'PCE', awayTeamId: 'DEC', homeWins: 0, awayWins: 3, games: [] },
+                { id: 'PO2-0', stage: 2, slot: 0, homeTeamId: 'NYM', awayTeamId: 'DEC', homeWins: 4, awayWins: 1, games: [] },
+            ],
+            championTeamId: 'NYM',
+            thirdPlaceSeries: null,
+            thirdPlaceTeamId: null,
+        };
+        const loaded = deserializeSave(serializeSave(state, 'bronze-repair', new Date().toISOString())).state;
+        expect(loaded.playoffs?.thirdPlaceSeries).not.toBeNull();
+    });
 });
 
 describe('MemoryStorageAdapter', () => {

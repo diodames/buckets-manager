@@ -55,7 +55,7 @@ describe('economy solvency', () => {
         simulateRegularSeason(state);
         payMidTablePrizes(state, 6);
         const profit = state.club.budget - start;
-        expect(profit).toBeGreaterThanOrEqual(-2_800_000);
+        expect(profit).toBeGreaterThanOrEqual(-3_200_000);
         expect(profit).toBeLessThanOrEqual(1_000_000);
     });
 
@@ -81,7 +81,7 @@ describe('economy solvency', () => {
         equipStandardSponsor(state);
         simulateRegularSeason(state);
         payMidTablePrizes(state, 10);
-        expect(state.club.budget).toBeGreaterThan(start - 2_100_000);
+        expect(state.club.budget).toBeGreaterThan(start - 2_300_000);
     });
 
     it('AI NBL clubs keep finite budgets after a full regular season', () => {

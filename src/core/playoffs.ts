@@ -146,11 +146,16 @@ export function recordSeriesGame(series: PlayoffSeries, fixture: Fixture): void 
     }
 }
 
-function maybeStartThirdPlaceSeries(playoffs: PlayoffState, stageSeries: PlayoffSeries[], league: LeagueConfig): void {
-    if (playoffs.thirdPlaceSeries || stageSeries[0]?.stage !== 1) {
+/** Creates the bronze series from decided semifinals when it was skipped earlier. */
+export function ensureThirdPlaceSeries(playoffs: PlayoffState, league: LeagueConfig): void {
+    if (playoffs.thirdPlaceSeries || playoffs.thirdPlaceTeamId) {
         return;
     }
-    const losers = stageSeries
+    const semifinals = playoffs.series.filter((s) => s.stage === 1);
+    if (semifinals.length !== 2 || !semifinals.every((s) => seriesDecided(s, league))) {
+        return;
+    }
+    const losers = semifinals
         .sort((a, b) => a.slot - b.slot)
         .map((s) => seriesLosers(s, league))
         .filter((id): id is TeamId => id !== null);
@@ -175,6 +180,13 @@ function maybeStartThirdPlaceSeries(playoffs: PlayoffState, stageSeries: Playoff
     };
 }
 
+function maybeStartThirdPlaceSeries(playoffs: PlayoffState, stageSeries: PlayoffSeries[], league: LeagueConfig): void {
+    if (stageSeries[0]?.stage !== 1) {
+        return;
+    }
+    ensureThirdPlaceSeries(playoffs, league);
+}
+
 function maybeResolveThirdPlace(playoffs: PlayoffState, league: LeagueConfig): void {
     if (!playoffs.thirdPlaceSeries || playoffs.thirdPlaceTeamId) {
         return;
@@ -182,6 +194,12 @@ function maybeResolveThirdPlace(playoffs: PlayoffState, league: LeagueConfig): v
     if (thirdPlaceSeriesDecided(playoffs, league)) {
         playoffs.thirdPlaceTeamId = thirdPlaceWinner(playoffs, league);
     }
+}
+
+/** Ensures a bronze series exists and records the winner when already decided. */
+export function repairPlayoffThirdPlace(playoffs: PlayoffState, league: LeagueConfig): void {
+    ensureThirdPlaceSeries(playoffs, league);
+    maybeResolveThirdPlace(playoffs, league);
 }
 
 /**
@@ -193,8 +211,11 @@ export function maybeAdvanceStage(state: GameState, league: LeagueConfig): void 
     if (!playoffs) {
         return;
     }
-    maybeResolveThirdPlace(playoffs, league);
+    repairPlayoffThirdPlace(playoffs, league);
     if (playoffs.championTeamId && playoffs.thirdPlaceTeamId) {
+        return;
+    }
+    if (playoffs.championTeamId) {
         return;
     }
     const stageSeries = playoffs.series.filter((s) => s.stage === playoffs.stage);
@@ -207,7 +228,7 @@ export function maybeAdvanceStage(state: GameState, league: LeagueConfig): void 
         .map((s) => seriesWinner(s, league) as TeamId);
     if (winners.length === 1) {
         playoffs.championTeamId = winners[0] as TeamId;
-        maybeResolveThirdPlace(playoffs, league);
+        repairPlayoffThirdPlace(playoffs, league);
         return;
     }
     const nextStage = playoffs.stage + 1;

@@ -9,7 +9,7 @@ export const trainingConfig = Object.freeze({
     restRecoveryBonus: 25,
     // Base development points distributed per week to a young player at a
     // level-1 facility (scaled by age curve and facility multiplier).
-    baseDevPoints: 0.9,
+    baseDevPoints: 0.68,
     // Age curve: full growth until growEnd, fades to zero at declineStart,
     // then negative drift per week beyond it.
     ageCurve: Object.freeze({

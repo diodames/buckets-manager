@@ -16,12 +16,11 @@ import { projectSeasonCashflow } from '../../core/cashflow';
 import { nextContextualHint } from '../../core/contextualHints';
 import { isFreeAgentMarketOpen, isFullTransferMarketOpen } from '../../core/market';
 import { facilityProjectRoundsLeft } from '../../core/economy';
-import { userExpiringContractPlayers } from '../../core/season';
 import { formatMoney } from '../format';
 import { ContextualHintScreen } from './ContextualHintScreen';
 import { t, type TranslationKey } from '../../i18n';
 import { AUTOSAVE_KEY } from '../../services/storage';
-import { drawChrome, drawChromeFooter, financeWarningMessage } from '../chrome';
+import { drawChrome, drawChromeFooter } from '../chrome';
 import { competitionLabel, fixtureLine, teamDef, teamName } from '../format';
 import {
     activeResultGroups,
@@ -261,6 +260,7 @@ export class DashboardScreen implements Screen {
 
     private static readonly NBL_RESULTS_COL = 3;
     private static readonly INFO_COL = 40;
+    /** First row for the left-column results block (one blank row below the main menu). */
     private static readonly RESULTS_START_ROW = 10;
     private static readonly INBOX_HEADER_ROW = 3;
     private static readonly INBOX_HINT_ROW = 4;
@@ -268,6 +268,28 @@ export class DashboardScreen implements Screen {
 
     private maxContentRow(grid: AppContext['grid']): number {
         return grid.rows - 2;
+    }
+
+    /** Left-column anchor for last-round results; independent of right-panel height. */
+    private leftResultsRow(): number {
+        return Math.max(
+            DashboardScreen.RESULTS_START_ROW,
+            this.menu.layoutRow + this.menu.items.length + 1,
+        );
+    }
+
+    private clearLeftResultsBand(grid: AppContext['grid'], resultsRow: number): void {
+        const height = this.maxContentRow(grid) - resultsRow;
+        if (height <= 0) {
+            return;
+        }
+        grid.fillCells(
+            DashboardScreen.NBL_RESULTS_COL,
+            resultsRow,
+            DashboardScreen.INFO_COL - DashboardScreen.NBL_RESULTS_COL,
+            height,
+            ROLE.bg,
+        );
     }
 
     /** Writes one info-panel line when vertical space remains; returns the next row. */
@@ -306,17 +328,24 @@ export class DashboardScreen implements Screen {
         results: RoundResult['results'],
         userTeamId: string,
         maxVisible: number,
+        maxRow: number,
         prefixLines = false,
     ): number {
+        if (startRow >= maxRow) {
+            return startRow;
+        }
         grid.put(col, startRow, ROLE.textDim, label);
         const { visible, hidden } = truncateResultList(results, maxVisible);
         let row = startRow + 1;
         for (const { fixture } of visible) {
+            if (row >= maxRow) {
+                break;
+            }
             const prefix = prefixLines ? competitionLabel(fixture.competitionId) : undefined;
             this.renderFixtureResult(grid, col, row, fixture, userTeamId, prefix);
             row++;
         }
-        if (hidden > 0) {
+        if (hidden > 0 && row < maxRow) {
             grid.put(col, row, ROLE.textDim, t('dashboard.resultsMore', { n: hidden }));
             row++;
         }
@@ -349,10 +378,11 @@ export class DashboardScreen implements Screen {
         const grouped = groupResultsByCompetition(lastRound.results);
         const activeGroups = activeResultGroups(grouped);
         const header = `${t('dashboard.lastResults')} (${t('common.round', { round: lastRound.round })})`;
-        const resultsRow = Math.max(DashboardScreen.RESULTS_START_ROW, rightPanelRow);
+        const resultsRow = this.leftResultsRow();
         if (resultsRow >= maxRow) {
             return rightPanelRow;
         }
+        this.clearLeftResultsBand(grid, resultsRow);
         const maxVisible = Math.max(2, maxRow - resultsRow - 1);
         const columns = resultColumnStarts(grid.cols, activeGroups);
 
@@ -369,6 +399,7 @@ export class DashboardScreen implements Screen {
                     grouped[group],
                     userTeamId,
                     maxVisible,
+                    maxRow,
                 );
             });
             return rightPanelRow;
@@ -383,6 +414,7 @@ export class DashboardScreen implements Screen {
             lastRound.results,
             userTeamId,
             maxVisible,
+            maxRow,
         );
         return rightPanelRow;
     }
@@ -752,12 +784,16 @@ export class DashboardScreen implements Screen {
         if (input.inbox) {
             this.newsSelected = !this.newsSelected;
         }
-        if (this.newsSelected && this.newsItems.length > 0) {
-            const picked = this.newsMenu.update(input, this.ctx.grid);
+        if (this.newsItems.length > 0) {
+            const picked = this.newsSelected
+                ? this.newsMenu.update(input, this.ctx.grid)
+                : this.newsMenu.tryClick(input, this.ctx.grid);
             if (picked !== null) {
                 this.openNewsItem(Number(picked));
             }
-            return;
+            if (this.newsSelected) {
+                return;
+            }
         }
         const action = this.menu.update(input, this.ctx.grid);
         switch (action) {
@@ -790,19 +826,34 @@ export class DashboardScreen implements Screen {
         this.menu.render(grid);
 
         this.rebuildNews();
+        const statusLineCount = this.countOverviewStatusLines(state);
+        const overviewHeight = 1
+            + (this.newsItems.length > 0 ? 1 + this.newsItems.length : 0)
+            + statusLineCount;
+        grid.fillCells(
+            infoCol,
+            DashboardScreen.INBOX_HEADER_ROW,
+            grid.cols - infoCol,
+            overviewHeight,
+            ROLE.bg,
+        );
+        grid.put(infoCol, DashboardScreen.INBOX_HEADER_ROW, ROLE.header, t('news.title'));
         if (this.newsItems.length > 0) {
-            const inboxRows = DashboardScreen.INBOX_ITEM_ROW + this.newsItems.length;
-            grid.fillCells(infoCol, DashboardScreen.INBOX_HEADER_ROW, grid.cols - infoCol, inboxRows - DashboardScreen.INBOX_HEADER_ROW, ROLE.bg);
-            grid.put(infoCol, DashboardScreen.INBOX_HEADER_ROW, ROLE.header, t('news.title'));
-            grid.put(infoCol, DashboardScreen.INBOX_HINT_ROW, ROLE.textDim, t('news.hint'));
+            grid.put(
+                infoCol,
+                DashboardScreen.INBOX_HINT_ROW,
+                ROLE.textDim,
+                t(this.newsSelected ? 'news.hint' : 'news.focusHint'),
+            );
             this.newsMenu.setRow(DashboardScreen.INBOX_ITEM_ROW);
-            this.newsMenu.render(grid);
+            this.newsMenu.render(grid, this.newsSelected);
         }
 
-        // Header + hint + inbox items + blank spacer.
         let row = this.newsItems.length > 0
-            ? DashboardScreen.INBOX_ITEM_ROW + this.newsItems.length + 1
-            : DashboardScreen.INBOX_HINT_ROW;
+            ? DashboardScreen.INBOX_ITEM_ROW + this.newsItems.length
+            : DashboardScreen.INBOX_HEADER_ROW + 1;
+        row = this.renderOverviewStatus(grid, infoCol, row, state);
+        row++;
         const inPlayoffs = isSeasonOver(state, this.ctx.config) && isEuropeanCalendarComplete(state, this.ctx.config) && state.playoffs !== null;
         const inEuropeanPhase = campaignPhase(state, this.ctx.config) === 'europe';
         const campaignOver = isCampaignOver(state, this.ctx.config);
@@ -864,28 +915,6 @@ export class DashboardScreen implements Screen {
             }
         }
 
-        const externalCount = pendingExternalOffers(state).length;
-        if (state.market.incomingOffers.length > 0 || externalCount > 0) {
-            const total = state.market.incomingOffers.length + externalCount;
-            row = this.putInfoLine(grid, infoCol, row, ROLE.gold, t('dashboard.offersWaiting', { n: total }));
-            row++;
-        }
-
-        const financeWarning = financeWarningMessage(state, this.ctx);
-        if (financeWarning) {
-            const projection = projectSeasonCashflow(state, this.ctx.config.economy, this.ctx.config.league);
-            row = this.putInfoLine(
-                grid,
-                infoCol,
-                row,
-                projection.warningTier === 'red' ? ROLE.danger : ROLE.warning,
-                financeWarning,
-            );
-            row++;
-        }
-
-        row = this.renderThisWeekPanel(grid, infoCol, row, state);
-
         const lastRound = session.lastRound;
         if (lastRound) {
             row = this.renderLastRoundResults(grid, row, lastRound, state.userTeamId);
@@ -935,9 +964,27 @@ export class DashboardScreen implements Screen {
         drawChromeFooter(grid, footerHints);
     }
 
-    private renderThisWeekPanel(grid: AppContext['grid'], infoCol: number, row: number, state: GameState): number {
-        row = this.putInfoLine(grid, infoCol, row, ROLE.header, t('dashboard.thisWeek'));
+    private countOverviewStatusLines(state: GameState): number {
+        let count = 2;
+        if (state.boardObjective) {
+            count++;
+            if (state.boardObjective.warned) {
+                count++;
+            }
+        }
+        if (state.club.transferEmbargo) {
+            count++;
+        }
+        for (const key of ['arena', 'training', 'academy'] as const) {
+            const rounds = facilityProjectRoundsLeft(state, key);
+            if (rounds !== null && rounds > 0) {
+                count++;
+            }
+        }
+        return count;
+    }
 
+    private renderOverviewStatus(grid: AppContext['grid'], infoCol: number, row: number, state: GameState): number {
         const market = this.ctx.config.market;
         let windowLabel: string;
         if (isFullTransferMarketOpen(state, market)) {
@@ -960,11 +1007,6 @@ export class DashboardScreen implements Screen {
             netColor,
             t('dashboard.weeklyNet', { amount: formatMoney(projection.projectedEndBalance - state.club.budget) }),
         );
-
-        const expiring = userExpiringContractPlayers(state).length;
-        if (expiring > 0) {
-            row = this.putInfoLine(grid, infoCol, row, ROLE.warning, t('dashboard.expiringContracts', { n: expiring }));
-        }
 
         if (state.boardObjective) {
             const targetLine = t('dashboard.boardTarget', { rank: state.boardObjective.promisedMaxRank });
@@ -1000,6 +1042,6 @@ export class DashboardScreen implements Screen {
             }
         }
 
-        return row + 1;
+        return row;
     }
 }

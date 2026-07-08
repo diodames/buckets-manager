@@ -5,6 +5,7 @@ import { SAVE_FORMAT_VERSION } from '../game';
 import { relinkCompetitionGroups } from '../bcl/index';
 import { resyncRosterContracts } from '../market';
 import type { GameState } from '../model/types';
+import { repairPlayoffThirdPlace } from '../playoffs';
 
 export interface SaveFile {
     formatVersion: number;
@@ -505,6 +506,9 @@ export function deserializeSave(raw: string): SaveFile {
     }
     if (comps.fec) {
         relinkCompetitionGroups(comps.fec);
+    }
+    if (complete.state.playoffs?.championTeamId && !complete.state.playoffs.thirdPlaceTeamId) {
+        repairPlayoffThirdPlace(complete.state.playoffs, leagueConfig);
     }
     return complete;
 }

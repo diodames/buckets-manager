@@ -15,7 +15,7 @@ export function aiTrainingDevMultiplier(finance: TeamFinance, economy: EconomyCo
     return table[Math.max(0, Math.min(table.length - 1, level - 1))] ?? 1;
 }
 
-/** Solvent tier 4-5 AI clubs slowly invest in training facilities. */
+/** Solvent tier 3-5 AI clubs slowly invest in training facilities. */
 export function tickAiFacilities(state: GameState, economy: EconomyConfig, league: LeagueConfig): void {
     for (const teamDef of league.teams) {
         if (teamDef.id === state.userTeamId) {
@@ -29,12 +29,13 @@ export function tickAiFacilities(state: GameState, economy: EconomyConfig, leagu
         finance.roundsSinceFacilityUpgrade = (finance.roundsSinceFacilityUpgrade ?? 0) + 1;
 
         const tier = teamTier(teamDef.id, league);
-        if (tier < 4) {
+        if (tier < 3) {
             continue;
         }
         const trainingLevel = finance.facilities.training;
         const maxLevel = economy.facilities.maxLevel;
-        if (trainingLevel >= Math.min(3, maxLevel)) {
+        const trainingCap = tier >= 5 ? Math.min(4, maxLevel) : tier >= 4 ? Math.min(3, maxLevel) : Math.min(2, maxLevel);
+        if (trainingLevel >= trainingCap) {
             continue;
         }
         const payroll = teamSeasonWageBill(state, teamDef.id, economy);
@@ -43,7 +44,7 @@ export function tickAiFacilities(state: GameState, economy: EconomyConfig, leagu
         if (finance.budget < reserve) {
             continue;
         }
-        const upgradeInterval = tier >= 5 ? 44 : 66;
+        const upgradeInterval = tier >= 5 ? 36 : tier >= 4 ? 66 : 80;
         if ((finance.roundsSinceFacilityUpgrade ?? 0) < upgradeInterval) {
             continue;
         }

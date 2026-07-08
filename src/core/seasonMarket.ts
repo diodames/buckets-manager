@@ -1,9 +1,12 @@
 import type { BalanceConfig } from '../config/balance';
+import { leagueConfig } from '../config/league';
 import type { SeasonDepartureDef, SeasonMarketConfig, SeasonSigningDef } from '../config/seasonSignings';
 import { seasonMarketForYear } from '../config/seasonSignings';
 import type { GameConfig } from './game';
+import { teamTier } from './economy';
 import { generateFreeAgents, playerFromDef } from './league/generate';
-import type { GameState, PendingFreeAgent, Player, PlayerId, TeamId } from './model/types';
+import type { GameState, PendingFreeAgent, Player, PlayerId, Position, TeamId } from './model/types';
+import { overallRating } from './model/types';
 import { type Rng } from './rng';
 
 function signingPlayerId(seasonYear: number, def: SeasonSigningDef): string {
@@ -118,6 +121,25 @@ export function advanceSeasonMarket(state: GameState, completedRound: number, ma
         }
         releaseToFreeAgency(state, player);
         state.market.processedDepartureKeys.push(key);
+        hintReplacementSignings(state, dep.teamId, player.position, player.id);
+    }
+}
+
+function isYouthProspectPlayer(state: GameState, playerId: PlayerId): boolean {
+    return state.market.youthProspects.some((p) => p.player.id === playerId);
+}
+
+/** Nudge tier 4-5 clubs toward same-position FAs after a scripted departure. */
+function hintReplacementSignings(state: GameState, clubId: TeamId, position: Position, departedPlayerId: PlayerId): void {
+    if (teamTier(clubId, leagueConfig) < 4) {
+        return;
+    }
+    const candidates = Object.values(state.players)
+        .filter((p) => p.teamId === null && p.position === position && p.id !== departedPlayerId && !isYouthProspectPlayer(state, p.id))
+        .sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes))
+        .slice(0, 3);
+    for (const candidate of candidates) {
+        state.market.signingHints[candidate.id] = clubId;
     }
 }
 

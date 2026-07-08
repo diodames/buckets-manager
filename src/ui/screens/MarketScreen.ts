@@ -4,9 +4,10 @@ import type { UiInputFrame } from '../../app/UiInput';
 import { marketConfig } from '../../config/market';
 import {
     acceptTransferOffer, bidOnPlayer, canNegotiate, counterTransferOffer, executePurchase,
-    isFreeAgentMarketOpen, isFullTransferMarketOpen, rejectTransferOffer, toggleWatchlist, transferAskingPrice, transferValue, unlistPlayer,
+    freeAgentSalaryDemand, isFreeAgentMarketOpen, isFullTransferMarketOpen, leagueTransferFee, rejectTransferOffer,
+    toggleWatchlist, transferAskingPrice, transferValue, unlistPlayer,
 } from '../../core/market';
-import type { Player, PlayerId } from '../../core/model/types';
+import type { Player, PlayerId, GameState } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import {
     canNegotiateScoutedFreeAgent,
@@ -72,11 +73,21 @@ export class MarketScreen implements Screen {
         this.message = null;
     }
 
+    private listedCost(state: GameState, player: Player): number {
+        const economy = this.ctx.config.economy;
+        if (player.teamId && player.teamId !== state.userTeamId) {
+            return leagueTransferFee(state, player, marketConfig, economy);
+        }
+        if (player.teamId === null) {
+            return freeAgentSalaryDemand(state, player, marketConfig, economy);
+        }
+        return transferValue(player, marketConfig, economy, state);
+    }
+
     private rebuild(): void {
         const state = this.state;
         const rows: Row[] = [];
         const cells: Array<{ cells: string[]; color?: number }> = [];
-        const economy = this.ctx.config.economy;
 
         if (this.tab === 'offers') {
             for (const offer of state.market.incomingOffers) {
@@ -128,7 +139,7 @@ export class MarketScreen implements Screen {
                         player.position,
                         String(overallRating(player.attributes)),
                         player.teamId ? teamDef(player.teamId).abbr : t('market.freeAgent'),
-                        formatMoney(transferValue(player, marketConfig, economy, state)),
+                        formatMoney(this.listedCost(state, player)),
                         `${player.age}`,
                     ],
                     color: ROLE.accent,
@@ -142,10 +153,7 @@ export class MarketScreen implements Screen {
                 if (this.filters.maxAge !== null && p.age > this.filters.maxAge) {
                     return false;
                 }
-                const price = p.teamId && p.teamId !== state.userTeamId
-                    ? transferAskingPrice(state, p, marketConfig, economy)
-                    : transferValue(p, marketConfig, economy, state);
-                if (this.filters.maxPrice !== null && price > this.filters.maxPrice) {
+                if (this.filters.maxPrice !== null && this.listedCost(state, p) > this.filters.maxPrice) {
                     return false;
                 }
                 return true;
@@ -172,9 +180,7 @@ export class MarketScreen implements Screen {
                         player.position,
                         ovrCell,
                         player.teamId ? teamDef(player.teamId).abbr : t('market.freeAgent'),
-                        player.teamId && player.teamId !== state.userTeamId
-                            ? formatMoney(transferAskingPrice(state, player, marketConfig, economy))
-                            : formatMoney(transferValue(player, marketConfig, economy, state)),
+                        formatMoney(this.listedCost(state, player)),
                         `${player.age}`,
                     ],
                 });
@@ -182,13 +188,18 @@ export class MarketScreen implements Screen {
         }
 
         this.rows = rows;
+        const priceHeader = this.tab === 'league'
+            ? t('col.transferFee')
+            : this.tab === 'freeAgents'
+              ? t('col.salaryDemand')
+              : t('col.price');
         this.table.setData(
             [
                 { header: t('col.name'), width: 20 },
                 { header: t('col.pos'), width: 3 },
                 { header: t('col.ovr'), width: 3, align: 'right' },
                 { header: t('col.team'), width: 14 },
-                { header: t('col.price'), width: 8, align: 'right' },
+                { header: priceHeader, width: 8, align: 'right' },
                 { header: t('col.age'), width: 6, align: 'right' },
             ],
             cells,
@@ -205,6 +216,8 @@ export class MarketScreen implements Screen {
             this.say(t('nego.locked'), ROLE.danger);
             return;
         }
+        const demand = freeAgentSalaryDemand(state, player, marketConfig, this.ctx.config.economy);
+        this.say(t('market.freeAgentBreakdown', { salary: formatMoney(demand) }), ROLE.textDim);
         this.ctx.screens.push(
             new NegotiationScreen(this.ctx, player.id, 'freeAgent', (accepted) => {
                 this.say(
@@ -288,7 +301,8 @@ export class MarketScreen implements Screen {
         const baseValue = transferValue(player, marketConfig, economy, state);
         const asking = transferAskingPrice(state, player, marketConfig, economy);
         const bid = Math.min(asking, state.club.budget);
-        this.say(t('market.transferBreakdown', { base: formatMoney(baseValue), ask: formatMoney(asking) }), ROLE.textDim);
+        const seller = player.teamId ? teamDef(player.teamId).abbr : '';
+        this.say(t('market.transferBreakdown', { base: formatMoney(baseValue), ask: formatMoney(asking), team: seller }), ROLE.textDim);
         const result = bidOnPlayer(state, player.id, bid, marketConfig, economy);
         switch (result.status) {
             case 'agreed':
@@ -447,8 +461,14 @@ export class MarketScreen implements Screen {
               ? t('market.deadlinePassed')
               : t('market.playoffsClosed');
         grid.putRight(grid.cols - 2, 2, fullOpen ? ROLE.success : faOpen ? ROLE.warning : ROLE.danger, windowLabel);
-        if (this.tab !== 'offers' && this.tab !== 'watchlist') {
+        if (this.tab === 'league') {
+            grid.put(2, 3, ROLE.textDim, `${t('market.hintFilters')}  |  ${t('market.hintLeagueFee')}`);
+        } else if (this.tab === 'freeAgents') {
+            grid.put(2, 3, ROLE.textDim, `${t('market.hintFilters')}  |  ${t('market.hintFreeAgentSalary')}`);
+        } else if (this.tab !== 'offers' && this.tab !== 'watchlist') {
             grid.put(2, 3, ROLE.textDim, t('market.hintFilters'));
+        }
+        if (this.tab !== 'offers' && this.tab !== 'watchlist') {
             if (this.showFilters) {
                 grid.put(2, 4, ROLE.accent, [
                     t('market.filterPos', { pos: this.filters.position === 'all' ? t('market.filterAll') : this.filters.position }),

@@ -53,7 +53,7 @@ export const leagueConfig = Object.freeze({
     // Post-season: top N seeds, wins needed per stage (QF, SF, Finals).
     playoffs: Object.freeze({
         teams: 8,
-        winsNeeded: Object.freeze([2, 2, 3]),
+        winsNeeded: Object.freeze([2, 3, 4]),
         thirdPlaceWinsNeeded: 2,
     }),
     teams: Object.freeze<TeamDef[]>([

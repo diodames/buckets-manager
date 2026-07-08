@@ -18,6 +18,7 @@ describe('difficulty modifiers', () => {
         expect(difficultyModifiers('easy').userInjuryMult).toBe(0.75);
         expect(difficultyModifiers('hard').userIncomeMult).toBe(0.95);
         expect(difficultyModifiers('hard').userInjuryMult).toBe(1.2);
+        expect(difficultyModifiers('hard').aiSkillMult).toBe(1.09);
         const hard = createNewGame(config, 9920, 'DEC', 'hard');
         expect(userInjuryMultiplier(hard)).toBe(1.2);
     });

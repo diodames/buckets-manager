@@ -262,7 +262,19 @@ export function transferSellFactor(state: GameState, player: Player, market: Mar
 }
 
 export function transferAskingPrice(state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
-    return Math.round((transferValue(player, market, economy, state) * transferSellFactor(state, player, market, economy)) / 50_000) * 50_000;
+    const tCfg = market.transfers;
+    const base = transferValue(player, market, economy, state) * transferSellFactor(state, player, market, economy);
+    return Math.round((base * tCfg.clubRightsPremium) / 50_000) * 50_000;
+}
+
+/** Transfer fee paid to the selling club (displayed on the league players tab). */
+export function leagueTransferFee(state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
+    return transferAskingPrice(state, player, market, economy);
+}
+
+/** Expected annual salary demand for a free agent (no transfer fee to a club). */
+export function freeAgentSalaryDemand(state: GameState, player: Player, market: MarketConfig, economy: EconomyConfig): number {
+    return contractDemand(state, player, market, economy);
 }
 
 /** True once the NBL playoff bracket has started. */
@@ -800,15 +812,16 @@ export function bidOnPlayer(state: GameState, playerId: PlayerId, amount: number
     const tCfg = market.transfers;
     const sellF = transferSellFactor(state, player, market, economy);
     const starter = isStarter(state, player);
-    const price = transferValue(player, market, economy, state) * sellF;
-    if (starter && sellF >= tCfg.sellFactorCore && amount < price) {
+    const floor = transferValue(player, market, economy, state) * sellF;
+    const ask = transferAskingPrice(state, player, market, economy);
+    if (starter && sellF >= tCfg.sellFactorCore && amount < floor) {
         return { status: 'notForSale', counterAmount: null };
     }
-    if (amount >= price) {
+    if (amount >= ask) {
         return { status: 'agreed', counterAmount: null };
     }
-    if (amount >= price * 0.8) {
-        return { status: 'counter', counterAmount: Math.round(price / 50_000) * 50_000 };
+    if (amount >= ask * 0.8) {
+        return { status: 'counter', counterAmount: Math.round(ask / 50_000) * 50_000 };
     }
     return { status: 'rejected', counterAmount: null };
 }

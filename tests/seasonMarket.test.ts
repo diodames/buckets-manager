@@ -62,6 +62,11 @@ describe('season market pool', () => {
         );
         expect(riceOnRoster).toBe(false);
         expect(freeAgentNames(state).some((n) => n.includes('Rice'))).toBe(true);
+
+        const hintedSg = Object.entries(state.market.signingHints).filter(([, teamId]) => teamId === 'NYM')
+            .map(([id]) => state.players[id])
+            .filter((p) => p?.position === 'SG');
+        expect(hintedSg.length).toBeGreaterThan(0);
     });
 
     it('stores signing hints for likely AI destinations', () => {

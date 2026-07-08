@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { leagueConfig } from '../src/config/league';
 import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver } from '../src/core/game';
 import { computeNblStandings } from '../src/core/league/standings';
-import { seriesDecided, startPlayoffs, winsNeeded } from '../src/core/playoffs';
+import { ensureThirdPlaceSeries, seriesDecided, startPlayoffs, winsNeeded } from '../src/core/playoffs';
 import { testConfig as config } from './helpers';
 
 function playRegularSeason(seed: number, teamId: string) {
@@ -72,5 +72,87 @@ describe('playoffs', () => {
         const after = computeNblStandings(state);
         expect(after).toEqual(before);
         expect(state.fixtures).toHaveLength(132);
+    });
+
+    it('repairs bronze series when champion was crowned without third place', () => {
+        const state = playRegularSeason(53, 'NYM');
+        state.competitions.bcl = {
+            id: 'bcl',
+            phase: 'complete',
+            fixtures: [],
+            groups: [],
+            playoffs: null,
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: 'BCL-RYT',
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: 'groupStage',
+        };
+        state.competitions.fec = {
+            id: 'fec',
+            phase: 'complete',
+            fixtures: [],
+            groups: [],
+            playoffs: null,
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: 'FEC-ABC',
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+        let guard = 0;
+        while (!isCampaignOver(state, config) && guard++ < 60) {
+            advanceRoundInstant(state, config);
+        }
+        expect(isCampaignOver(state, config)).toBe(true);
+        const champion = state.playoffs?.championTeamId;
+        expect(champion).toBeTruthy();
+
+        state.playoffs!.thirdPlaceTeamId = null;
+        state.playoffs!.thirdPlaceSeries = null;
+        expect(isCampaignOver(state, config)).toBe(false);
+
+        guard = 0;
+        while (!isCampaignOver(state, config) && guard++ < 10) {
+            advanceRoundInstant(state, config);
+        }
+        expect(isCampaignOver(state, config)).toBe(true);
+        expect(state.playoffs?.thirdPlaceTeamId).toBeTruthy();
+    });
+
+    it('ensureThirdPlaceSeries creates bronze from decided semifinals', () => {
+        const state = playRegularSeason(54, 'BRN');
+        const playoffs = startPlayoffs(state, leagueConfig);
+        playoffs.stage = 2;
+        playoffs.series.push(
+            {
+                id: 'PO1-0', stage: 1, slot: 0,
+                homeTeamId: playoffs.series[0]!.homeTeamId,
+                awayTeamId: playoffs.series[0]!.awayTeamId,
+                homeWins: 3, awayWins: 0, games: [],
+            },
+            {
+                id: 'PO1-1', stage: 1, slot: 1,
+                homeTeamId: playoffs.series[1]!.homeTeamId,
+                awayTeamId: playoffs.series[1]!.awayTeamId,
+                homeWins: 0, awayWins: 3, games: [],
+            },
+            {
+                id: 'PO2-0', stage: 2, slot: 0,
+                homeTeamId: 'NYM', awayTeamId: 'PCE',
+                homeWins: 4, awayWins: 1, games: [],
+            },
+        );
+        playoffs.championTeamId = 'NYM';
+        ensureThirdPlaceSeries(playoffs, leagueConfig);
+        expect(playoffs.thirdPlaceSeries).not.toBeNull();
+        expect(playoffs.thirdPlaceSeries?.homeTeamId).toBeTruthy();
+        expect(playoffs.thirdPlaceSeries?.awayTeamId).toBeTruthy();
     });
 });

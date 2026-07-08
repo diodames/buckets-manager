@@ -4,6 +4,7 @@ import { marketConfig } from '../../config/market';
 import { economyConfig } from '../../config/economy';
 import { facilityProjectRoundsLeft } from '../../core/economy';
 import { releaseYouth, signYouth } from '../../core/market';
+import { youthCoachQuoteKey } from '../../core/youthQuotes';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
@@ -113,7 +114,7 @@ export class YouthIntakeScreen implements Screen {
             const selected = state.market.youthProspects[this.menu.selected];
             if (selected) {
                 const row = 6 + this.menu.items.length + 1;
-                grid.put(3, row, ROLE.accent, t(`youth.quote.${selected.quoteIndex}` as Parameters<typeof t>[0]));
+                grid.put(3, row, ROLE.accent, t(youthCoachQuoteKey(selected)));
             }
         }
         if (this.message) {

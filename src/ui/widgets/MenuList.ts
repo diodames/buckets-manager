@@ -58,6 +58,31 @@ export class MenuList {
         return this.layout.width;
     }
 
+    private pointerIndex(input: UiInputFrame, grid: TextGrid): number | null {
+        if (!input.pointer) {
+            return null;
+        }
+        const row = grid.rowAtY(input.pointer.y);
+        const col = grid.colAtX(input.pointer.x);
+        const index = row - this.layout.row;
+        const inside =
+            index >= 0 && index < this.items.length && col >= this.layout.col && col < this.layout.col + this.layout.width;
+        if (!inside || this.items[index]?.disabled) {
+            return null;
+        }
+        return index;
+    }
+
+    /** Returns the activated item id from a pointer click only, or null. */
+    tryClick(input: UiInputFrame, grid: TextGrid): string | null {
+        const index = this.pointerIndex(input, grid);
+        if (index === null || !input.click) {
+            return null;
+        }
+        this.selected = index;
+        return this.items[index]?.id ?? null;
+    }
+
     /** Returns the activated item id, or null. */
     update(input: UiInputFrame, grid: TextGrid): string | null {
         if (input.up) {
@@ -66,17 +91,11 @@ export class MenuList {
         if (input.down) {
             this.move(1);
         }
-        if (input.pointer) {
-            const row = grid.rowAtY(input.pointer.y);
-            const col = grid.colAtX(input.pointer.x);
-            const index = row - this.layout.row;
-            const inside =
-                index >= 0 && index < this.items.length && col >= this.layout.col && col < this.layout.col + this.layout.width;
-            if (inside && !this.items[index]?.disabled) {
-                this.selected = index;
-                if (input.click) {
-                    return this.items[index]?.id ?? null;
-                }
+        const pointerIndex = this.pointerIndex(input, grid);
+        if (pointerIndex !== null) {
+            this.selected = pointerIndex;
+            if (input.click) {
+                return this.items[pointerIndex]?.id ?? null;
             }
         }
         if (input.confirm) {
