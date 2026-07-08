@@ -1,6 +1,6 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
-import { computeStandings } from '../../core/league/standings';
+import { computeNblStandings } from '../../core/league/standings';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
 import { teamName } from '../format';
@@ -29,7 +29,7 @@ export class StandingsScreen implements Screen {
         if (!session) {
             return;
         }
-        const standings = computeStandings(Object.keys(session.state.teams), session.state.fixtures);
+        const standings = computeNblStandings(session.state);
         this.table.setData(
             [
                 { header: t('col.rank'), width: 3, align: 'right' },

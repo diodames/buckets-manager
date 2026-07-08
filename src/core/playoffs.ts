@@ -1,5 +1,5 @@
 import type { LeagueConfig } from '../config/league';
-import { computeStandings } from './league/standings';
+import { computeNblStandings } from './league/standings';
 import type { Fixture, GameState, PlayoffSeries, PlayoffState, TeamId } from './model/types';
 
 /**
@@ -8,7 +8,7 @@ import type { Fixture, GameState, PlayoffSeries, PlayoffState, TeamId } from './
  * winners meet in the next stage.
  */
 export function startPlayoffs(state: GameState, league: LeagueConfig): PlayoffState {
-    const standings = computeStandings(Object.keys(state.teams), state.fixtures);
+    const standings = computeNblStandings(state);
     const qualified = standings.slice(0, league.playoffs.teams).map((row) => row.teamId);
     const seeds: Record<TeamId, number> = {};
     qualified.forEach((teamId, index) => {

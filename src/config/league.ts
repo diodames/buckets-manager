@@ -21,6 +21,7 @@ export interface TeamDef {
     city: string;
     primary: Rgb;
     secondary: Rgb;
+    arenaName: string;
     arenaCapacity: number | null;
     tier: number;
     roster: RealPlayerDef[];
@@ -57,11 +58,10 @@ export const leagueConfig = Object.freeze({
     teams: Object.freeze<TeamDef[]>([
         {
             id: 'NYM', abbr: 'NYM', name: 'ERA Basketball Nymburk', shortName: 'Nymburk', city: 'Nymburk',
-            primary: hex('#1D1D1B'), secondary: hex('#E30613'), arenaCapacity: 1500, tier: 5,
+            primary: hex('#1D1D1B'), secondary: hex('#E30613'), arenaName: 'Sportovní centrum Nymburk', arenaCapacity: 1500, tier: 5,
             roster: [
                 p('Ondřej', 'Sehnal', 'PG', 4, 191, 1997, 'CZE'),
                 p("Sir'Jabari", 'Rice', 'SG', 5, 193, 1998, 'USA'),
-                p('Tony', 'Perkins', 'SG', 4, 193, 2001, 'USA'),
                 p('Jaromír', 'Bohačík', 'SG', 4, 197, 1992, 'CZE'),
                 p('Matěj', 'Svoboda', 'SF', 4, 196, 1996, 'CZE'),
                 p('Vojtěch', 'Hruban', 'SF', 4, 198, 1989, 'CZE'),
@@ -76,13 +76,12 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'PCE', abbr: 'PCE', name: 'BK KVIS Pardubice', shortName: 'Pardubice', city: 'Pardubice',
-            primary: hex('#C8102E'), secondary: hex('#FFFFFF'), arenaCapacity: 1400, tier: 4,
+            primary: hex('#C8102E'), secondary: hex('#FFFFFF'), arenaName: 'Sportovní hala Pardubice', arenaCapacity: 1400, tier: 4,
             roster: [
                 p('Robert', 'Bonham', 'PG', 4, null, 2002, 'USA'),
                 p('Martin', 'Nábělek', 'PG', 3, 178, 1998, 'CZE'),
                 p('Jakub', 'Tůma', 'PG', 3, 192, 1998, 'CZE'),
                 p('Jamonda', 'Bryant', 'SG', 5, null, 2000, 'USA'),
-                p('Jacob', 'Evans III', 'SG', 4, 196, 1997, 'USA'),
                 p('Adam', 'Lukeš', 'SG', 2, null, 2004, 'CZE'),
                 p('Ryan', 'Moffatt', 'SF', 3, null, 2000, 'USA'),
                 p('Michal', 'Svojanovský', 'SF', 3, 195, 2001, 'CZE'),
@@ -95,7 +94,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'BRN', abbr: 'BRN', name: 'PUMPA Basket Brno', shortName: 'Brno', city: 'Brno',
-            primary: hex('#003876'), secondary: hex('#E03A3E'), arenaCapacity: 2900, tier: 4,
+            primary: hex('#003876'), secondary: hex('#E03A3E'), arenaName: 'STAREZ Aréna Vodova', arenaCapacity: 2900, tier: 4,
             roster: [
                 p('Tevin', 'Olison', 'PG', 4, null, 1998, 'USA'),
                 p('Viktor', 'Půlpán', 'PG', 4, 191, 1996, 'CZE'),
@@ -109,12 +108,13 @@ export const leagueConfig = Object.freeze({
                 p('Šimon', 'Svoboda', 'SF', 2, null, 2004, 'CZE'),
                 p('Kevin', 'Kalu', 'SF', 2, null, 2003, 'CZE'),
                 p('Ryker', 'Cisarik', 'PF', 4, null, 2002, 'USA'),
+                p('Kameron', 'Chatman', 'PF', 4, null, 1996, 'CAN'),
                 p('Adam', 'Kejval', 'C', 3, null, 2002, 'CZE'),
             ],
         },
         {
             id: 'UST', abbr: 'UST', name: 'SLUNETA Ústí nad Labem', shortName: 'Ústí n. L.', city: 'Ústí nad Labem',
-            primary: hex('#FDB913'), secondary: hex('#005BAA'), arenaCapacity: 1600, tier: 3,
+            primary: hex('#FDB913'), secondary: hex('#005BAA'), arenaName: 'Sportovní hala Sluneta', arenaCapacity: 1600, tier: 3,
             roster: [
                 p('Tomáš', 'Vyoral', 'PG', 4, 192, 1992, 'CZE'),
                 p('Jayhlon', 'Young', 'PG', 4, null, 2001, 'USA'),
@@ -132,7 +132,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'OPA', abbr: 'OPA', name: 'BK Opava', shortName: 'Opava', city: 'Opava',
-            primary: hex('#FFD200'), secondary: hex('#003DA5'), arenaCapacity: 2154, tier: 3,
+            primary: hex('#FFD200'), secondary: hex('#003DA5'), arenaName: 'Víceúčelová hala Opava', arenaCapacity: 2154, tier: 3,
             roster: [
                 p('Jakub', 'Šiřina', 'PG', 4, 185, 1987, 'CZE'),
                 p('Radovan', 'Kouřil', 'PG', 4, null, 1995, 'CZE'),
@@ -151,7 +151,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'PIS', abbr: 'PIS', name: 'Sršni Photomate Písek', shortName: 'Písek', city: 'Písek',
-            primary: hex('#FFCC00'), secondary: hex('#1A1A1A'), arenaCapacity: null, tier: 3,
+            primary: hex('#FFCC00'), secondary: hex('#1A1A1A'), arenaName: 'Sportovní hala Písek', arenaCapacity: null, tier: 3,
             roster: [
                 p('Vojtěch', 'Sýkora', 'PG', 4, null, 2001, 'CZE'),
                 p('Matěj', 'Burda', 'PG', 2, null, 2001, 'CZE'),
@@ -169,7 +169,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'DEC', abbr: 'DEC', name: 'BK ARMEX ENERGY Děčín', shortName: 'Děčín', city: 'Děčín',
-            primary: hex('#0057B8'), secondary: hex('#FFFFFF'), arenaCapacity: 1047, tier: 3,
+            primary: hex('#0057B8'), secondary: hex('#FFFFFF'), arenaName: 'Sportovní hala Děčín', arenaCapacity: 1047, tier: 3,
             roster: [
                 p('Al-Amir', 'Dawes', 'PG', 4, null, 2000, 'USA'),
                 p('Lukáš', 'Feštr', 'PG', 3, null, 1994, 'CZE'),
@@ -187,7 +187,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'OST', abbr: 'OST', name: 'NH Ostrava', shortName: 'Ostrava', city: 'Ostrava',
-            primary: hex('#0072CE'), secondary: hex('#FFFFFF'), arenaCapacity: 1200, tier: 2,
+            primary: hex('#0072CE'), secondary: hex('#FFFFFF'), arenaName: 'Sportovní hala NH Ostrava', arenaCapacity: 1200, tier: 2,
             roster: [
                 p('Adam', 'Číž', 'PG', 3, null, 1991, 'CZE'),
                 p('Mikuláš', 'Čank', 'PG', 1, null, 2006, 'CZE'),
@@ -206,7 +206,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'OLO', abbr: 'OLO', name: 'BK Olomoucko', shortName: 'Olomoucko', city: 'Olomouc',
-            primary: hex('#1E5AA8'), secondary: hex('#FFFFFF'), arenaCapacity: 2000, tier: 2,
+            primary: hex('#1E5AA8'), secondary: hex('#FFFFFF'), arenaName: 'Sportovní hala Olomouc', arenaCapacity: 2000, tier: 2,
             roster: [
                 p('Ondřej', 'Šiška', 'PG', 3, 190, 1993, 'CZE'),
                 p('Marek', 'Půlpán', 'PG', 2, 191, 2004, 'CZE'),
@@ -225,7 +225,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'USK', abbr: 'USK', name: 'USK Praha', shortName: 'USK Praha', city: 'Praha',
-            primary: hex('#0D4F9E'), secondary: hex('#FFFFFF'), arenaCapacity: 1065, tier: 2,
+            primary: hex('#0D4F9E'), secondary: hex('#FFFFFF'), arenaName: 'Sportovní hala USK', arenaCapacity: 1065, tier: 2,
             roster: [
                 p('David', 'Látal', 'PG', 2, 181, 2005, 'CZE'),
                 p('Matěj', 'Šafařík', 'PG', 3, 188, 2003, 'CZE'),
@@ -244,7 +244,7 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'SLA', abbr: 'SLA', name: 'SK Slavia Praha ERA NBK', shortName: 'Slavia Praha', city: 'Praha',
-            primary: hex('#E4002B'), secondary: hex('#FFFFFF'), arenaCapacity: 1980, tier: 2,
+            primary: hex('#E4002B'), secondary: hex('#FFFFFF'), arenaName: 'Sportovní hala Slavia', arenaCapacity: 1980, tier: 2,
             roster: [
                 p('Radovan', 'Mrázek', 'PG', 2, null, 2004, 'CZE'),
                 p('Jakub', 'Mršťák', 'PG', 2, null, 2006, 'CZE'),
@@ -262,20 +262,17 @@ export const leagueConfig = Object.freeze({
         },
         {
             id: 'HKR', abbr: 'HKR', name: 'BK GAPA Hradec Králové', shortName: 'Hradec Král.', city: 'Hradec Králové',
-            primary: hex('#1A1A1A'), secondary: hex('#F47920'), arenaCapacity: 700, tier: 1,
+            primary: hex('#1A1A1A'), secondary: hex('#F47920'), arenaName: 'Sportovní hala HK', arenaCapacity: 700, tier: 1,
             roster: [
                 p('Pedja', 'Stamenković', 'PG', 3, null, 1988, 'SRB'),
                 p('Tomáš', 'Dvořák', 'PG', 2, 187, 2002, 'CZE'),
-                p('Lassi', 'Nikkarinen', 'PG', 4, null, 1997, 'FIN'),
                 p('Kareem', 'Brewton', 'SG', 3, null, 1995, 'USA'),
                 p('Jan', 'Bubeníček', 'SG', 1, null, 2005, 'CZE'),
                 p('Tomáš', 'Merta', 'SF', 2, null, 2001, 'CZE'),
                 p('Tomáš', 'Tkadlec', 'SF', 2, 190, 1999, 'CZE'),
                 p('Matija', 'Popović', 'SF', 2, null, 1996, 'SRB'),
                 p('David', 'Škranc', 'PF', 3, 203, 1996, 'CZE'),
-                p('Kameron', 'Chatman', 'PF', 4, null, 1996, 'CAN'),
                 p('Tomáš', 'Mikyska', 'PF', 2, null, 2000, 'CZE'),
-                p('Austin', 'Johnson', 'PF', 2, null, 1999, 'USA'),
                 p('Martin', 'Roub', 'C', 4, null, 1997, 'CZE'),
             ],
         },

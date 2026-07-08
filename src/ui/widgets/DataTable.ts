@@ -33,8 +33,16 @@ export class DataTable {
     private readonly layout: TableLayout;
 
     constructor(layout: TableLayout, selectable: boolean) {
-        this.layout = layout;
+        this.layout = { ...layout };
         this.selectable = selectable;
+    }
+
+    setLayoutPosition(row: number, visibleRows?: number): void {
+        this.layout.row = row;
+        if (visibleRows !== undefined) {
+            this.layout.visibleRows = visibleRows;
+        }
+        this.clampScroll();
     }
 
     setData(columns: TableColumn[], rows: TableRow[]): void {
@@ -46,6 +54,18 @@ export class DataTable {
 
     get totalWidth(): number {
         return this.columns.reduce((sum, c) => sum + c.width + 1, 0);
+    }
+
+    get scrollOffset(): number {
+        return this.scroll;
+    }
+
+    get layoutRow(): number {
+        return this.layout.row;
+    }
+
+    get layoutVisibleRows(): number {
+        return this.layout.visibleRows;
     }
 
     private clampScroll(): void {
@@ -126,9 +146,7 @@ export class DataTable {
             const screenRow = row + 1 + (i - this.scroll);
             const entry = this.rows[i] as TableRow;
             const isSelected = this.selectable && i === this.selected;
-            if (isSelected) {
-                grid.fillCells(col, screenRow, this.totalWidth, 1, ROLE.highlight);
-            }
+            grid.fillCells(col, screenRow, this.totalWidth, 1, isSelected ? ROLE.highlight : ROLE.bg);
             const color = isSelected ? ROLE.highlightText : (entry.color ?? ROLE.text);
             grid.put(col, screenRow, color, this.formatRow(entry.cells));
         }

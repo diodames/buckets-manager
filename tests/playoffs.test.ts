@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { leagueConfig } from '../src/config/league';
 import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver } from '../src/core/game';
-import { computeStandings } from '../src/core/league/standings';
+import { computeNblStandings } from '../src/core/league/standings';
 import { seriesDecided, startPlayoffs, winsNeeded } from '../src/core/playoffs';
 import { testConfig as config } from './helpers';
 
@@ -16,7 +16,7 @@ function playRegularSeason(seed: number, teamId: string) {
 describe('playoffs', () => {
     it('seeds the top 8 of the table into bracket pairings', () => {
         const state = playRegularSeason(50, 'NYM');
-        const standings = computeStandings(Object.keys(state.teams), state.fixtures);
+        const standings = computeNblStandings(state);
         const playoffs = startPlayoffs(state, leagueConfig);
 
         expect(playoffs.series).toHaveLength(4);
@@ -63,12 +63,12 @@ describe('playoffs', () => {
 
     it('playoff games never leak into the regular-season standings', () => {
         const state = playRegularSeason(52, 'BRN');
-        const before = computeStandings(Object.keys(state.teams), state.fixtures);
+        const before = computeNblStandings(state);
         let guard = 0;
         while (!isCampaignOver(state, config) && guard++ < 60) {
             advanceRoundInstant(state, config);
         }
-        const after = computeStandings(Object.keys(state.teams), state.fixtures);
+        const after = computeNblStandings(state);
         expect(after).toEqual(before);
         expect(state.fixtures).toHaveLength(132);
     });

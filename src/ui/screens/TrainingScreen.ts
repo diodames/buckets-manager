@@ -1,6 +1,7 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { trainingConfig, type TrainingFocus } from '../../config/training';
+import { facilityProjectRoundsLeft } from '../../core/economy';
 import type { Player } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import { t, type TranslationKey } from '../../i18n';
@@ -70,7 +71,16 @@ export class TrainingScreen implements Screen {
         const focus = state.club.trainingFocus;
         grid.put(2, 2, ROLE.header, t('training.focus', { focus: t(`training.focus.${focus}` as TranslationKey) }));
         grid.put(2, 3, ROLE.textDim, t(`training.focusDesc.${focus}` as TranslationKey));
-        grid.put(2, 4, ROLE.textDim, t('training.facility', { level: state.club.facilities.training }));
+        const trainingProject = state.club.facilityProjects.training;
+        if (trainingProject) {
+            grid.put(2, 4, ROLE.warning, t('training.facilityUpgrading', {
+                level: state.club.facilities.training,
+                target: trainingProject.targetLevel,
+                rounds: facilityProjectRoundsLeft(state, 'training') ?? 0,
+            }));
+        } else {
+            grid.put(2, 4, ROLE.textDim, t('training.facility', { level: state.club.facilities.training }));
+        }
 
         this.table.setData(
             [

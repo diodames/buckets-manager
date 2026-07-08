@@ -4,21 +4,25 @@ import type { UiInputFrame } from '../../app/UiInput';
 import { courtConfig } from '../../config/court';
 import { balanceConfig } from '../../config/balance';
 import { completeRound, type RoundResult } from '../../core/game';
-import type { Fixture, PlayerId } from '../../core/model/types';
+import type { Fixture, MatchSummary, PlayerId } from '../../core/model/types';
 import { createRng } from '../../core/rng';
 import type { MatchEvent } from '../../core/sim/events';
+import { foldEvents } from '../../core/sim/boxscore';
 import type { EngineStop, MatchEngine, MatchOutcome } from '../../core/sim/matchEngine';
 import { buildPressContext, generatePressConference } from '../../core/press';
 import { t } from '../../i18n';
 import { commentaryLine } from '../commentary';
+import { buildBoxColumns, boxScoreRows, quarterScoreLine } from '../boxscore';
 import { CourtRenderer } from '../court';
 import { shortPlayerName, teamDef } from '../format';
 import { ROLE } from '../theme';
+import { DataTable } from '../widgets/DataTable';
 import { MenuList } from '../widgets/MenuList';
+import { BoxScoreScreen, injuryNoteFrom } from './BoxScoreScreen';
 import { DashboardScreen } from './DashboardScreen';
 import { PressConferenceScreen } from './PressConferenceScreen';
 
-type Phase = 'pregame' | 'playing' | 'paused' | 'subOut' | 'subIn' | 'tactics' | 'moment' | 'report';
+type Phase = 'pregame' | 'playing' | 'paused' | 'subOut' | 'subIn' | 'tactics' | 'moment' | 'boxscoreLive';
 
 const PACES = ['slow', 'normal', 'fast'] as const;
 const FOCUSES = ['inside', 'balanced', 'perimeter'] as const;
@@ -45,8 +49,12 @@ export class MatchLiveScreen implements Screen {
     private subOutId: PlayerId | null = null;
     private outcome: MatchOutcome | null = null;
     private roundResult: RoundResult | null = null;
+    private reportShown = false;
     // Live box for the on-court panel, folded from consumed events only.
     private readonly liveStats = new Map<PlayerId, { pts: number; reb: number; ast: number }>();
+    private boxLiveTable: DataTable | null = null;
+    private boxLiveViewingHome = true;
+    private boxLiveSummary: MatchSummary | null = null;
 
     constructor(ctx: AppContext, fixture: Fixture, engine: MatchEngine) {
         this.ctx = ctx;
@@ -191,21 +199,29 @@ export class MatchLiveScreen implements Screen {
 
     private finishInstantly(): void {
         this.queue = [];
-        this.pendingStop = null;
         this.enterReport();
     }
 
     private enterReport(): void {
+        if (this.reportShown) {
+            return;
+        }
+        this.reportShown = true;
+        this.pendingStop = null;
         if (!this.outcome) {
             this.outcome = this.engine.finish();
             this.score = [this.outcome.summary.homeScore, this.outcome.summary.awayScore];
-            this.roundResult = completeRound(this.state, this.ctx.config, { fixture: this.fixture, outcome: this.outcome });
-            const session = this.ctx.session;
-            if (session) {
-                session.lastRound = this.roundResult;
-            }
         }
-        this.phase = 'report';
+        const summary = this.outcome.summary;
+        const injured = Object.keys(this.outcome.injuries)[0];
+        const injuryNote = injuryNoteFrom(
+            this.state,
+            injured,
+            injured ? this.outcome.injuries[injured] : undefined,
+        );
+        this.ctx.screens.replace(
+            new BoxScoreScreen(this.ctx, this.fixture, summary, () => this.leaveToPress(), { injuryNote }),
+        );
     }
 
     private leaveToPress(): void {
@@ -214,6 +230,13 @@ export class MatchLiveScreen implements Screen {
         if (!summary) {
             this.ctx.screens.reset(new DashboardScreen(this.ctx));
             return;
+        }
+        if (!this.roundResult && this.outcome) {
+            this.roundResult = completeRound(this.state, this.ctx.config, { fixture: this.fixture, outcome: this.outcome });
+            const session = this.ctx.session;
+            if (session) {
+                session.lastRound = this.roundResult;
+            }
         }
         const context = buildPressContext(state, summary, this.fixture.homeTeamId, this.roundResult?.userInjuredId ?? null);
         const rng = createRng(state.masterSeed).fork(`press:${this.fixture.id}`);
@@ -236,6 +259,7 @@ export class MatchLiveScreen implements Screen {
                 { id: 'timeout', label: t('live.timeout', { n: this.engine.timeoutsOf(teamId) }), disabled: this.engine.timeoutsOf(teamId) <= 0 },
                 { id: 'sub', label: t('live.substitution') },
                 { id: 'tactics', label: t('live.tactics') },
+                { id: 'boxScore', label: t('live.boxScore') },
                 { id: 'instant', label: t('live.instant') },
             ],
             { col: 4, row: 6, width: 34 },
@@ -300,6 +324,36 @@ export class MatchLiveScreen implements Screen {
         );
     }
 
+    private openLiveBoxScore(): void {
+        const folded = foldEvents(
+            this.engine.events.slice(0, this.consumedEvents),
+            this.fixture.homeTeamId,
+        );
+        this.boxLiveSummary = {
+            homeScore: folded.homeScore,
+            awayScore: folded.awayScore,
+            quarterScores: folded.quarterScores,
+            box: folded.box,
+            seed: 0,
+        };
+        this.boxLiveViewingHome = this.fixture.homeTeamId === this.state.userTeamId;
+        this.boxLiveTable = new DataTable({ col: 4, row: 10, visibleRows: 10 }, false);
+        this.refreshLiveBoxTable();
+        this.phase = 'boxscoreLive';
+    }
+
+    private refreshLiveBoxTable(): void {
+        if (!this.boxLiveTable || !this.boxLiveSummary) {
+            return;
+        }
+        const teamId = this.boxLiveViewingHome ? this.fixture.homeTeamId : this.fixture.awayTeamId;
+        const highlight = new Set<PlayerId>(this.state.teams[this.state.userTeamId]?.playerIds ?? []);
+        this.boxLiveTable.setData(
+            buildBoxColumns(),
+            boxScoreRows(this.state, teamId, this.boxLiveSummary.box, highlight),
+        );
+    }
+
     // --- update ---
 
     update(input: UiInputFrame): void {
@@ -337,12 +391,28 @@ export class MatchLiveScreen implements Screen {
             case 'moment':
                 this.updateMoment(input);
                 break;
-            case 'report':
-                if (input.confirm) {
-                    this.leaveToPress();
-                }
+            case 'boxscoreLive':
+                this.updateBoxscoreLive(input);
                 break;
         }
+    }
+
+    private updateBoxscoreLive(input: UiInputFrame): void {
+        if (input.cancel) {
+            this.phase = 'playing';
+            this.boxLiveTable = null;
+            this.boxLiveSummary = null;
+            return;
+        }
+        if (input.left) {
+            this.boxLiveViewingHome = true;
+            this.refreshLiveBoxTable();
+        }
+        if (input.right) {
+            this.boxLiveViewingHome = false;
+            this.refreshLiveBoxTable();
+        }
+        this.boxLiveTable?.update(input, this.ctx.grid);
     }
 
     private updatePlaying(input: UiInputFrame): void {
@@ -375,6 +445,10 @@ export class MatchLiveScreen implements Screen {
                 }
                 return;
             }
+            if (this.engine.isFinished) {
+                this.enterReport();
+                return;
+            }
             this.pump();
             return;
         }
@@ -400,6 +474,9 @@ export class MatchLiveScreen implements Screen {
                 break;
             case 'tactics':
                 this.openTactics();
+                break;
+            case 'boxScore':
+                this.openLiveBoxScore();
                 break;
             case 'instant':
                 this.finishInstantly();
@@ -489,6 +566,11 @@ export class MatchLiveScreen implements Screen {
         return entry;
     }
 
+    /** Phases where the side HUD would collide with a centered overlay. */
+    private hidesMatchHud(): boolean {
+        return this.phase === 'pregame' || this.phase === 'moment' || this.phase === 'boxscoreLive';
+    }
+
     /** Right-hand live panel: the user's five on court, stats, energy bars. */
     private renderOnCourtPanel(topRow: number): void {
         const grid = this.ctx.grid;
@@ -539,27 +621,31 @@ export class MatchLiveScreen implements Screen {
 
         this.court.render();
 
-        // Commentary (left) and the on-court panel (right).
         const commentaryTop = grid.rows - 2 - courtConfig.commentaryLines;
-        this.commentary.forEach((line, index) => {
-            grid.put(2, commentaryTop + index, index === this.commentary.length - 1 ? ROLE.text : ROLE.textDim, line.slice(0, 57));
-        });
-        this.renderOnCourtPanel(commentaryTop);
+        if (!this.hidesMatchHud()) {
+            this.commentary.forEach((line, index) => {
+                grid.put(2, commentaryTop + index, index === this.commentary.length - 1 ? ROLE.text : ROLE.textDim, line.slice(0, 57));
+            });
+            this.renderOnCourtPanel(commentaryTop);
+        }
 
-        // Bottom hints.
-        grid.fillCells(0, grid.rows - 1, grid.cols, 1, ROLE.panel);
-        grid.put(1, grid.rows - 1, ROLE.textDim, t('live.hints'));
+        if (this.phase !== 'pregame') {
+            grid.fillCells(0, grid.rows - 1, grid.cols, 1, ROLE.panel);
+            grid.put(1, grid.rows - 1, ROLE.textDim, t('live.hints'));
+        }
 
         // Phase overlays.
         if (this.phase === 'pregame') {
-            const boxCol = Math.floor(grid.cols / 2) - 20;
+            const boxCol = Math.floor(grid.cols / 2) - 22;
             const boxRow = Math.floor(grid.rows / 2) - 6;
-            grid.fillCells(boxCol, boxRow, 44, 12, ROLE.panel);
-            grid.frame(boxCol, boxRow, 44, 12, ROLE.border);
+            const boxW = 48;
+            const boxH = 13;
+            grid.fillCells(boxCol, boxRow, boxW, boxH, ROLE.panel);
+            grid.frame(boxCol, boxRow, boxW, boxH, ROLE.border);
             grid.putCenter(boxRow + 1, ROLE.header, t('live.tipoff', { home: home.shortName, away: away.shortName }));
             grid.putCenter(boxRow + 3, ROLE.accent, t('talk.title'));
             this.menu?.render(grid);
-            grid.putCenter(boxRow + 10, ROLE.textDim, t('live.pressStart'));
+            grid.putCenter(boxRow + boxH - 2, ROLE.textDim, t('live.pressStart'));
         }
         if (this.phase === 'paused' || this.phase === 'subOut' || this.phase === 'subIn' || this.phase === 'tactics') {
             const title =
@@ -599,28 +685,25 @@ export class MatchLiveScreen implements Screen {
             grid.put(6, 10, ROLE.textBright, t(`moment.${moment.def.id}.text` as Parameters<typeof t>[0], { player: playerName }));
             this.menu?.render(grid);
         }
-        if (this.phase === 'report' && this.outcome) {
-            const summary = this.outcome.summary;
-            grid.fillCells(10, 6, 56, 14, ROLE.panel);
-            grid.frame(10, 6, 56, 14, ROLE.border);
-            grid.put(12, 7, ROLE.header, t('report.final'));
-            grid.put(12, 9, ROLE.textBright, `${home.shortName} ${summary.homeScore} : ${summary.awayScore} ${away.shortName}`);
-            const quarters = summary.quarterScores.map(([h, a]) => `${h}:${a}`).join('  ');
-            grid.put(12, 10, ROLE.textDim, quarters);
-            let row = 12;
-            for (const log of this.outcome.momentLog.slice(0, 2)) {
-                grid.put(12, row, ROLE.accent, t(`moment.${log.momentId}.result.${log.choiceId}` as Parameters<typeof t>[0]));
-                row++;
+        if (this.phase === 'boxscoreLive' && this.boxLiveSummary && this.boxLiveTable) {
+            const home = teamDef(this.fixture.homeTeamId);
+            const away = teamDef(this.fixture.awayTeamId);
+            const summary = this.boxLiveSummary;
+            grid.fillCells(2, 6, 76, 18, ROLE.panel);
+            grid.frame(2, 6, 76, 18, ROLE.border);
+            grid.put(4, 7, ROLE.header, t('boxscore.title'));
+            grid.put(4, 8, ROLE.textBright,
+                `${home.shortName} ${summary.homeScore} : ${summary.awayScore} ${away.shortName}`);
+            const quarters = quarterScoreLine(summary);
+            if (quarters) {
+                grid.put(4, 9, ROLE.textDim, quarters);
             }
-            const injured = Object.keys(this.outcome.injuries)[0];
-            if (injured) {
-                const player = this.state.players[injured];
-                if (player) {
-                    grid.put(12, row, ROLE.danger, t('report.injury', { player: shortPlayerName(player), rounds: this.outcome.injuries[injured] ?? 1 }));
-                    row++;
-                }
-            }
-            grid.put(12, 18, ROLE.text, t('report.continue'));
+            const tabLabel = this.boxLiveViewingHome
+                ? `<< ${t('boxscore.home')}: ${home.abbr} >>`
+                : `<< ${t('boxscore.away')}: ${away.abbr} >>`;
+            grid.put(4, 10, ROLE.accent, tabLabel);
+            this.boxLiveTable.render(grid);
+            grid.put(4, 22, ROLE.textDim, `${t('hint.pages')}  ${t('live.resume')}`);
         }
     }
 }

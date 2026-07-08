@@ -1,6 +1,8 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { marketConfig } from '../../config/market';
+import { economyConfig } from '../../config/economy';
+import { facilityProjectRoundsLeft } from '../../core/economy';
 import { releaseYouth, signYouth } from '../../core/market';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
@@ -69,8 +71,14 @@ export class YouthIntakeScreen implements Screen {
             this.ctx.screens.push(
                 new ConfirmDialog(this.ctx, t('youth.confirmSign', { salary: formatMoney(marketConfig.youth.salary) }), (confirmed) => {
                     if (confirmed) {
-                        const ok = signYouth(state, picked, marketConfig);
-                        this.message = ok ? t('youth.signed', { player: playerName(prospect.player) }) : t('nego.rosterFull');
+                        const result = signYouth(state, picked, marketConfig, economyConfig);
+                        this.message = result === 'signed'
+                            ? t('youth.signed', { player: playerName(prospect.player) })
+                            : result === 'wageBudgetExceeded'
+                              ? t('market.wageBudgetExceeded')
+                              : result === 'projectedDeficit'
+                                ? t('market.projectedDeficit')
+                                : t('nego.rosterFull');
                     } else {
                         releaseYouth(state, picked);
                         this.message = t('youth.released', { player: playerName(prospect.player) });
@@ -85,7 +93,16 @@ export class YouthIntakeScreen implements Screen {
         const state = this.state;
         const grid = this.ctx.grid;
         drawChrome(this.ctx, t('youth.title'), [t('hint.navigate'), t('hint.select'), t('hint.back')]);
-        grid.put(3, 2, ROLE.textDim, t('youth.intro', { level: state.club.facilities.academy }));
+        const academyProject = state.club.facilityProjects.academy;
+        if (academyProject) {
+            grid.put(3, 2, ROLE.warning, t('youth.introUpgrading', {
+                level: state.club.facilities.academy,
+                target: academyProject.targetLevel,
+                rounds: facilityProjectRoundsLeft(state, 'academy') ?? 0,
+            }));
+        } else {
+            grid.put(3, 2, ROLE.textDim, `${t('youth.intro', { level: state.club.facilities.academy })} ${t('youth.leavesAfterSeasons', { n: marketConfig.youth.maxUnsignedSeasons })}`);
+        }
 
         if (state.market.youthProspects.length === 0) {
             grid.put(3, 5, ROLE.textDim, t('youth.empty'));

@@ -98,6 +98,7 @@ export class MatchEngine {
 
     private readonly rng: Rng;
     private readonly balance: BalanceConfig;
+    private readonly homeAdvantage: number;
     private readonly moments: MomentsConfig;
     // Story moments only fire for this team (the user's club); null disables.
     private readonly storyTeamId: TeamId | null;
@@ -129,10 +130,12 @@ export class MatchEngine {
         balance: BalanceConfig;
         moments: MomentsConfig;
         storyTeamId?: TeamId | null;
+        homeAdvantage?: number;
     }) {
         this.seed = input.seed;
         this.rng = createRng(input.seed);
         this.balance = input.balance;
+        this.homeAdvantage = input.homeAdvantage ?? input.balance.match.homeAdvantage;
         this.moments = input.moments;
         this.storyTeamId = input.storyTeamId ?? null;
         this.homeState = this.buildTeamState(input.home);
@@ -723,7 +726,7 @@ export class MatchEngine {
             playMod.makeBonus +
             (kind === 'inside' ? -scheme.insideDefBonus : kind === 'three' ? -scheme.threeDefBonus : 0);
         if (offense === this.homeState) {
-            makeProb += match.homeAdvantage;
+            makeProb += this.homeAdvantage;
         }
         if (fouled) {
             makeProb -= balance.fouls.contactMakePenalty;
@@ -852,6 +855,7 @@ export function simulateMatch(input: {
     seed: number;
     balance: BalanceConfig;
     moments: MomentsConfig;
+    homeAdvantage?: number;
 }): SimResult {
     const engine = new MatchEngine({ ...input, storyTeamId: null });
     const outcome = engine.finish();

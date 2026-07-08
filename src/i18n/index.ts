@@ -48,4 +48,9 @@ export function teamCityName(team: TeamDef): string {
     return team.city;
 }
 
+/** Home arena name for a configured team (real NBL hall names are not localized). */
+export function teamArenaName(team: TeamDef): string {
+    return team.arenaName;
+}
+
 export type { TranslationKey };

@@ -1,17 +1,20 @@
+import { bclConfig } from '../config/bcl';
 import { leagueConfig, type TeamDef } from '../config/league';
 import type { Fixture, Player } from '../core/model/types';
-import { teamDisplayName } from '../i18n';
+import { resolveTeamDef } from '../core/teams';
+import { teamDisplayName, t } from '../i18n';
 
 export function teamDef(teamId: string): TeamDef {
-    const def = leagueConfig.teams.find((t) => t.id === teamId);
-    if (!def) {
-        throw new Error(`teamDef: unknown team '${teamId}'`);
-    }
-    return def;
+    return resolveTeamDef(teamId) as TeamDef;
 }
 
 export function teamName(teamId: string): string {
-    return teamDisplayName(teamDef(teamId));
+    try {
+        return teamDisplayName(resolveTeamDef(teamId));
+    } catch {
+        const bcl = bclConfig.teams.find((t) => t.id === teamId || t.nblTeamId === teamId);
+        return bcl?.shortName ?? teamId;
+    }
 }
 
 export function playerName(player: Player): string {
@@ -30,8 +33,35 @@ export function formatMoney(amount: number): string {
     return `${Math.round(amount / 1000)}k`;
 }
 
+/** Human-readable sponsor ambition target from promised max NBL rank. */
+export function sponsorTargetLabel(promisedMaxRank: number): string {
+    if (promisedMaxRank <= 1) {
+        return t('sponsor.targetChampion');
+    }
+    if (promisedMaxRank === leagueConfig.playoffs.teams) {
+        return t('sponsor.targetPlayoffs');
+    }
+    return t('sponsor.targetTopN', { n: promisedMaxRank });
+}
+
 /** "PRG 84:79 BRN" or "PRG  -:-  BRN" for unplayed fixtures. */
 export function fixtureLine(fixture: Fixture): string {
     const score = fixture.result ? `${fixture.result.homeScore}:${fixture.result.awayScore}` : '-:-';
-    return `${teamDef(fixture.homeTeamId).abbr.padEnd(4)}${score.padStart(7)}  ${teamDef(fixture.awayTeamId).abbr}`;
+    let homeAbbr: string;
+    let awayAbbr: string;
+    try {
+        homeAbbr = teamDef(fixture.homeTeamId).abbr;
+        awayAbbr = teamDef(fixture.awayTeamId).abbr;
+    } catch {
+        homeAbbr = fixture.homeTeamId.slice(0, 4);
+        awayAbbr = fixture.awayTeamId.slice(0, 4);
+    }
+    return `${homeAbbr.padEnd(4)}${score.padStart(7)}  ${awayAbbr}`;
+}
+
+export function competitionLabel(competitionId?: string): string {
+    if (competitionId === 'bcl') {
+        return 'BCL';
+    }
+    return 'NBL';
 }

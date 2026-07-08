@@ -1,7 +1,8 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { marketConfig } from '../../config/market';
-import { canNegotiate, contractBuyout, isAcademyPlayer, listPlayer, releasePlayer, returnYouthToAcademy, unlistPlayer } from '../../core/market';
+import { economyConfig } from '../../config/economy';
+import { contractBuyout, isAcademyPlayer, listPlayer, releasePlayer, renewalStatus, returnYouthToAcademy, unlistPlayer } from '../../core/market';
 import type { Player } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
@@ -45,8 +46,24 @@ export class RosterScreen implements Screen {
         }
         const listed = state.market.listings.some((l) => l.playerId === player.id);
         const buyout = contractBuyout(player, marketConfig);
+        const renew = renewalStatus(state, player, marketConfig);
+        const renewItem =
+            renew.reason === 'notExpiring'
+                ? []
+                : renew.canRenew
+                  ? [{ id: 'renew', label: t('roster.actionRenew') }]
+                  : [
+                        {
+                            id: 'renew',
+                            label:
+                                renew.reason === 'locked'
+                                    ? t('roster.actionRenewLocked', { round: renew.lockedUntilRound ?? 0 })
+                                    : t('roster.actionRenewTooEarly', { round: marketConfig.contracts.renewalsOpenFromRound }),
+                            disabled: true,
+                        },
+                    ];
         const items = [
-            ...(canNegotiate(state, player, marketConfig) ? [{ id: 'renew', label: t('roster.actionRenew') }] : []),
+            ...renewItem,
             ...(listed
                 ? [{ id: 'unlist', label: t('roster.actionUnlist') }]
                 : [{ id: 'list', label: t('roster.actionList') }]),
@@ -72,7 +89,7 @@ export class RosterScreen implements Screen {
                     this.ctx.screens.push(
                         new ConfirmDialog(this.ctx, t('roster.confirmReturnYouth', { player: playerName(player) }), (confirmed) => {
                             if (confirmed) {
-                                const ok = returnYouthToAcademy(state, player.id, marketConfig);
+                                const ok = returnYouthToAcademy(state, player.id, marketConfig, economyConfig);
                                 this.message = ok ? t('roster.returnedMsg', { player: playerName(player) }) : t('market.rosterMin');
                             }
                         }),

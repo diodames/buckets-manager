@@ -1,5 +1,6 @@
 import type { EconomyConfig } from '../config/economy';
 import type { TrainingConfig, TrainingFocus } from '../config/training';
+import { trainingDevMultiplier } from './economy';
 import type { GameState, Player } from './model/types';
 import { ATTRIBUTE_KEYS } from './model/types';
 import type { Rng } from './rng';
@@ -14,8 +15,7 @@ export function weeklyTrainingTick(state: GameState, config: { training: Trainin
     for (const player of Object.values(state.players)) {
         const isUserPlayer = player.teamId === state.userTeamId;
         const focus: TrainingFocus = isUserPlayer ? state.club.trainingFocus : 'balanced';
-        const facilityLevel = isUserPlayer ? state.club.facilities.training : 1;
-        const devMult = config.economy.facilities.trainingDevMultiplier[facilityLevel - 1] ?? 1;
+        const devMult = isUserPlayer ? trainingDevMultiplier(state, config.economy) : 1;
 
         recoverFatigue(player, focus, training);
         tickInjury(player);
