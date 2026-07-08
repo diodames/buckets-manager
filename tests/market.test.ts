@@ -6,7 +6,7 @@ import { youthAcademyProspects } from '../src/config/youthAcademy';
 import { advanceRoundInstant, createNewGame } from '../src/core/game';
 import {
     acceptTransferOffer, bidOnPlayer, canNegotiate, contractBuyout, contractDemand, executePurchase,
-    isAcademyPlayer, listPlayer, marketTick, negotiateOffer, releasePlayer, renewalStatus, requiredSalary, returnYouthToAcademy, runYouthIntake,
+    isAcademyPlayer, listPlayer, marketTick, marketSalaryForPlayer, negotiateOffer, releasePlayer, renewalStatus, requiredSalary, resyncRosterContracts, returnYouthToAcademy, runYouthIntake,
     signYouth, teamNeeds, transferValue,
 } from '../src/core/market';
 import type { Player } from '../src/core/model/types';
@@ -20,6 +20,20 @@ function bestUserPlayer(state: ReturnType<typeof createNewGame>): Player {
     const team = state.teams[state.userTeamId];
     const players = (team?.playerIds ?? []).map((id) => state.players[id]).filter((p): p is Player => p !== undefined);
     return players.sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes))[0] as Player;
+}
+
+/** Frees wage-cap headroom so negotiation tests are not blocked by roster payroll. */
+function freeWageCapForNegotiation(state: ReturnType<typeof createNewGame>, exceptPlayerId: string): void {
+    const min = config.economy.salary.min;
+    for (const id of state.teams[state.userTeamId]?.playerIds ?? []) {
+        if (id === exceptPlayerId) {
+            continue;
+        }
+        const p = state.players[id];
+        if (p?.contract) {
+            p.contract.salary = min;
+        }
+    }
 }
 
 function advanceThroughRound12(state: ReturnType<typeof createNewGame>): void {
@@ -38,6 +52,16 @@ function completeSeason(state: ReturnType<typeof createNewGame>): void {
 }
 
 describe('contracts (M1-M5)', () => {
+    it('resyncRosterContracts rewrites stale salaries to the current market rate', () => {
+        const state = createNewGame(config, 898, 'NYM');
+        const player = bestUserPlayer(state);
+        const yearsLeft = player.contract?.yearsLeft ?? 1;
+        player.contract!.salary = 250_000;
+        resyncRosterContracts(state, config.economy, marketConfig);
+        expect(player.contract?.salary).toBe(marketSalaryForPlayer(player, config.economy, marketConfig));
+        expect(player.contract?.yearsLeft).toBe(yearsLeft);
+    });
+
     it('every rostered player starts with a contract; free agents exist unsigned', () => {
         const state = createNewGame(config, 900, 'NYM');
         for (const player of Object.values(state.players)) {
@@ -101,6 +125,7 @@ describe('contracts (M1-M5)', () => {
 
         // Generous: accept immediately.
         state.club.budget = 50_000_000;
+        freeWageCapForNegotiation(state, player.id);
         const generous = negotiateOffer(state, player.id, { salary: Math.round(demand * 1.3), years: 2 }, 'renew', marketConfig, config.economy);
         expect(generous.status).toBe('accepted');
         expect(player.contract?.yearsLeft).toBe(2);
@@ -134,6 +159,7 @@ describe('negotiation hints are truthful', () => {
                 player.contract.yearsLeft = 1;
             }
             state.club.budget = 50_000_000;
+            freeWageCapForNegotiation(state, player.id);
             const low = negotiateOffer(state, player.id, { salary: 300_000, years: 2 }, 'renew', marketConfig, config.economy);
             expect(low.status).toBe('rejected');
             expect(low.hintSalary).not.toBeNull();
@@ -154,6 +180,7 @@ describe('negotiation hints are truthful', () => {
             team.playerIds.pop();
         }
         state.club.budget = 50_000_000;
+        freeWageCapForNegotiation(state, freeAgent.id);
         const low = negotiateOffer(state, freeAgent.id, { salary: 100_000, years: 1 }, 'freeAgent', marketConfig, config.economy);
         expect(low.status).toBe('rejected');
         const follow = negotiateOffer(state, freeAgent.id, { salary: low.hintSalary ?? 0, years: 1 }, 'freeAgent', marketConfig, config.economy);
@@ -170,20 +197,22 @@ describe('transferTerms negotiation', () => {
         if (!aiPlayer) {
             return;
         }
-        const fee = transferValue(aiPlayer, marketConfig, config.economy);
+        const fee = Math.round(transferValue(aiPlayer, marketConfig, config.economy, state) * 1.1);
         const withoutFee = requiredSalary(state, aiPlayer, 2, 'transferTerms', marketConfig, config.economy);
         const withFee = requiredSalary(state, aiPlayer, 2, 'transferTerms', marketConfig, config.economy, { agreedTransferFee: fee });
+        expect(withFee).toBeLessThanOrEqual(withoutFee);
         expect(withFee).toBeLessThan(withoutFee);
     });
 
     it('accepts at the hinted salary when fee meets transfer value', () => {
         const state = createNewGame(config, 921, 'NYM');
-        state.club.budget = 50_000_000;
         const aiPlayer = Object.values(state.players).find((p) => p.teamId && p.teamId !== 'NYM' && p.contract);
         expect(aiPlayer).toBeDefined();
         if (!aiPlayer) {
             return;
         }
+        state.club.budget = 50_000_000;
+        freeWageCapForNegotiation(state, aiPlayer.id);
         const fee = transferValue(aiPlayer, marketConfig, config.economy);
         const salary = requiredSalary(state, aiPlayer, 2, 'transferTerms', marketConfig, config.economy, { agreedTransferFee: fee });
         const result = negotiateOffer(
@@ -257,17 +286,42 @@ describe('transfers (M6-M9)', () => {
         expect(state.market.incomingOffers.length).toBe(before);
     });
 
-    it('bids respect the transfer window deadline', () => {
+    it('closes paid transfers after round 12; free agents remain available', () => {
         const state = createNewGame(config, 912, 'NYM');
-        state.currentRound = marketConfig.transfers.deadlineRound + 1;
-        const target = Object.values(state.players).find((p) => p.teamId && p.teamId !== state.userTeamId) as Player;
-        const result = bidOnPlayer(state, target.id, 10_000_000, marketConfig, config.economy);
+        state.currentRound = 13;
+        state.club.budget = 50_000_000;
+        const target = Object.values(state.players)
+            .filter((p): p is Player => p.teamId !== null && p.teamId !== state.userTeamId)
+            .sort((a, b) => overallRating(a.attributes) - overallRating(b.attributes))[0] as Player;
+        const fee = transferValue(target, marketConfig, config.economy, state) * 3;
+        const result = bidOnPlayer(state, target.id, fee, marketConfig, config.economy);
         expect(result.status).toBe('marketClosed');
     });
 
-    it('bids stay closed once the regular season ends and playoffs begin', () => {
+    it('allows bids during the mid-season transfer window', () => {
+        const state = createNewGame(config, 9121, 'NYM');
+        state.currentRound = 10;
+        state.club.budget = 50_000_000;
+        const target = Object.values(state.players)
+            .filter((p): p is Player => p.teamId !== null && p.teamId !== state.userTeamId)
+            .sort((a, b) => overallRating(a.attributes) - overallRating(b.attributes))[0] as Player;
+        const fee = transferValue(target, marketConfig, config.economy, state) * 3;
+        const result = bidOnPlayer(state, target.id, fee, marketConfig, config.economy);
+        expect(['agreed', 'counter', 'rejected', 'notForSale']).toContain(result.status);
+        expect(result.status).not.toBe('marketClosed');
+    });
+
+    it('bids stay closed once NBL playoffs begin', () => {
         const state = createNewGame(config, 914, 'NYM');
         state.currentRound = 23;
+        state.playoffs = {
+            stage: 0,
+            seeds: {},
+            series: [],
+            championTeamId: null,
+            thirdPlaceSeries: null,
+            thirdPlaceTeamId: null,
+        };
         const target = Object.values(state.players).find((p) => p.teamId && p.teamId !== state.userTeamId) as Player;
         const result = bidOnPlayer(state, target.id, 10_000_000, marketConfig, config.economy);
         expect(result.status).toBe('marketClosed');
@@ -523,5 +577,61 @@ describe('youth intake (M11-M13)', () => {
             }
             expect(reserved.has(`${prospect.player.firstName} ${prospect.player.lastName}`)).toBe(false);
         }
+    });
+});
+
+describe('Czech market salary premium', () => {
+    function czechForeignTwins(state: ReturnType<typeof createNewGame>): { czech: Player; foreign: Player } {
+        const template = bestUserPlayer(state);
+        const czech: Player = {
+            ...template,
+            id: 'TEST-CZE',
+            nationality: 'CZE',
+            morale: 50,
+            teamId: null,
+            contract: { salary: 0, yearsLeft: 1 },
+        };
+        const foreign: Player = {
+            ...template,
+            id: 'TEST-USA',
+            nationality: 'USA',
+            morale: 50,
+            teamId: null,
+            contract: { salary: 0, yearsLeft: 1 },
+        };
+        state.players[czech.id] = czech;
+        state.players[foreign.id] = foreign;
+        return { czech, foreign };
+    }
+
+    it('pays Czech players more than foreign peers at the same overall', () => {
+        const state = createNewGame(config, 950, 'NYM');
+        const { czech, foreign } = czechForeignTwins(state);
+        const czechSalary = marketSalaryForPlayer(czech, config.economy, marketConfig);
+        const foreignSalary = marketSalaryForPlayer(foreign, config.economy, marketConfig);
+        expect(czechSalary).toBeGreaterThan(foreignSalary);
+        expect(czechSalary).toBe(Math.round(foreignSalary * marketConfig.contracts.czechMarketSalaryMult));
+    });
+
+    it('raises contract demand and transfer value for Czech players', () => {
+        const state = createNewGame(config, 951, 'NYM');
+        const { czech, foreign } = czechForeignTwins(state);
+        expect(contractDemand(state, czech, marketConfig, config.economy)).toBeGreaterThan(
+            contractDemand(state, foreign, marketConfig, config.economy),
+        );
+        expect(transferValue(czech, marketConfig, config.economy, state)).toBeGreaterThan(
+            transferValue(foreign, marketConfig, config.economy, state),
+        );
+    });
+
+    it('keeps youth academy deals at the flat youth salary', () => {
+        const state = createNewGame(config, 952, 'NYM');
+        const prospect = state.market.youthProspects[0];
+        if (!prospect) {
+            throw new Error('no seeded prospects');
+        }
+        expect(prospect.player.nationality).toBe('CZE');
+        expect(signYouth(state, prospect.player.id, marketConfig, economyConfig)).toBe('signed');
+        expect(marketSalaryForPlayer(prospect.player, config.economy, marketConfig)).toBe(marketConfig.youth.salary);
     });
 });

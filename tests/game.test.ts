@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { validateAllConfigs } from '../src/config';
 import { leagueConfig } from '../src/config/league';
 import { startingBudgetForTeam } from '../src/core/economy';
-import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver, seasonRounds } from '../src/core/game';
+import { advanceRoundInstant, createNewGame, isCampaignOver, isSeasonOver, seasonRounds, upcomingUserFixtures } from '../src/core/game';
 import { computeNblStandings } from '../src/core/league/standings';
 import { POSITIONS } from '../src/core/model/types';
 import { testConfig as config } from './helpers';
@@ -49,7 +49,7 @@ describe('createNewGame (real NBL rosters)', () => {
     it('tier-5 clubs start with the highest budget', () => {
         const nym = leagueConfig.teams.find((t) => t.id === 'NYM')!;
         expect(nym.tier).toBe(5);
-        expect(state.club.budget).toBe(12_000_000);
+        expect(state.club.budget).toBe(13_500_000);
     });
 
     it('is deterministic per seed and club state starts clean', () => {
@@ -119,5 +119,51 @@ describe('full season (instant rounds)', () => {
         expect(isCampaignOver(state, config)).toBe(true);
         expect(state.playoffs?.championTeamId).toBeTruthy();
         expect(() => advanceRoundInstant(state, config)).toThrow();
+    });
+});
+
+describe('upcomingUserFixtures', () => {
+    it('returns BCL and FEC user fixtures in the same week', () => {
+        const state = createNewGame(config, 8801, 'NYM');
+        state.calendarWeek = 4;
+        state.bclQualified = true;
+        state.fecQualified = true;
+        state.competitions.bcl = {
+            id: 'bcl',
+            phase: 'regularSeason',
+            fixtures: [
+                { id: 'bcl-user', homeTeamId: 'NYM', awayTeamId: 'BCL-RYT', result: null, round: 2, week: 4, competitionId: 'bcl' },
+            ],
+            groups: [],
+            playoffs: null,
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: null,
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+        state.competitions.fec = {
+            id: 'fec',
+            phase: 'regularSeason',
+            fixtures: [
+                { id: 'fec-user', homeTeamId: 'FEC-ABC', awayTeamId: 'NYM', result: null, round: 2, week: 4, competitionId: 'fec' },
+            ],
+            groups: [],
+            playoffs: null,
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: null,
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+
+        const upcoming = upcomingUserFixtures(state, config, 2);
+        expect(upcoming.map((f) => f.id)).toEqual(['bcl-user', 'fec-user']);
     });
 });

@@ -4,6 +4,7 @@ import type { UiInputFrame } from '../../app/UiInput';
 import { courtConfig } from '../../config/court';
 import { balanceConfig } from '../../config/balance';
 import { completeRound, type RoundResult } from '../../core/game';
+import { buildMatchBriefing } from '../../core/matchBriefing';
 import type { Fixture, MatchSummary, PlayerId } from '../../core/model/types';
 import { createRng } from '../../core/rng';
 import type { MatchEvent } from '../../core/sim/events';
@@ -232,7 +233,11 @@ export class MatchLiveScreen implements Screen {
             return;
         }
         if (!this.roundResult && this.outcome) {
-            this.roundResult = completeRound(this.state, this.ctx.config, { fixture: this.fixture, outcome: this.outcome });
+            this.roundResult = completeRound(this.state, this.ctx.config, {
+                fixture: this.fixture,
+                outcome: this.outcome,
+                playedLive: true,
+            });
             const session = this.ctx.session;
             if (session) {
                 session.lastRound = this.roundResult;
@@ -240,7 +245,7 @@ export class MatchLiveScreen implements Screen {
         }
         const context = buildPressContext(state, summary, this.fixture.homeTeamId, this.roundResult?.userInjuredId ?? null);
         const rng = createRng(state.masterSeed).fork(`press:${this.fixture.id}`);
-        const questions = generatePressConference(context, this.ctx.config.press, rng);
+        const questions = generatePressConference(context, this.ctx.config.press, rng, this.ctx.session?.state);
         if (questions.length > 0) {
             this.ctx.screens.reset(new PressConferenceScreen(this.ctx, questions));
         } else {
@@ -636,14 +641,31 @@ export class MatchLiveScreen implements Screen {
 
         // Phase overlays.
         if (this.phase === 'pregame') {
-            const boxCol = Math.floor(grid.cols / 2) - 22;
-            const boxRow = Math.floor(grid.rows / 2) - 6;
-            const boxW = 48;
-            const boxH = 13;
+            const briefing = buildMatchBriefing(this.state, this.fixture, this.ctx.config);
+            const boxCol = Math.floor(grid.cols / 2) - 24;
+            const boxRow = Math.floor(grid.rows / 2) - 9;
+            const boxW = 52;
+            const boxH = 17;
             grid.fillCells(boxCol, boxRow, boxW, boxH, ROLE.panel);
             grid.frame(boxCol, boxRow, boxW, boxH, ROLE.border);
-            grid.putCenter(boxRow + 1, ROLE.header, t('live.tipoff', { home: home.shortName, away: away.shortName }));
-            grid.putCenter(boxRow + 3, ROLE.accent, t('talk.title'));
+            grid.putCenter(boxRow + 1, ROLE.header, t('briefing.title'));
+            grid.putCenter(boxRow + 2, ROLE.accent, t('briefing.opponent', { team: briefing.opponentName }));
+            grid.putCenter(boxRow + 3, ROLE.textDim, t('briefing.tactics', {
+                pace: t(`tactics.pace.${briefing.pace}` as Parameters<typeof t>[0]),
+                focus: t(`tactics.focus.${briefing.offenseFocus}` as Parameters<typeof t>[0]),
+                defense: t(`tactics.defense.${briefing.defenseScheme}` as Parameters<typeof t>[0]),
+            }));
+            let threatRow = boxRow + 4;
+            for (const threat of briefing.threats.slice(0, 2)) {
+                grid.putCenter(threatRow, ROLE.text, t('briefing.threat', {
+                    name: threat.name.split(' ').pop() ?? threat.name,
+                    ovr: threat.overall,
+                    ppg: threat.pointsPerGame.toFixed(1),
+                }));
+                threatRow++;
+            }
+            grid.putCenter(threatRow, ROLE.textDim, `${t('briefing.injured', { n: briefing.injuredCount })}  ${t('briefing.tired', { n: briefing.tiredCount })}`);
+            grid.putCenter(boxRow + boxH - 4, ROLE.accent, t('talk.title'));
             this.menu?.render(grid);
             grid.putCenter(boxRow + boxH - 2, ROLE.textDim, t('live.pressStart'));
         }

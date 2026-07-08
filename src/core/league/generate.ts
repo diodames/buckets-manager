@@ -1,11 +1,14 @@
 import type { BalanceConfig } from '../../config/balance';
 import type { BclConfig, BclTeamDef } from '../../config/bcl';
+import type { FecConfig } from '../../config/fec';
 import type { LeagueConfig, RealPlayerDef, TeamDef } from '../../config/league';
 import type { NamePools } from '../../config/names';
 import { generateName } from '../namegen';
-import type { Attributes, Player, Position, Tactics, Team } from '../model/types';
+import type { Attributes, Player, Position, Team } from '../model/types';
 import { ATTRIBUTE_KEYS, overallRating, POSITIONS } from '../model/types';
 import { hashString, type Rng } from '../rng';
+import { pickStarters } from '../roster';
+import { personalityForTeam } from '../personality';
 
 export interface GeneratedLeague {
     teams: Record<string, Team>;
@@ -110,26 +113,6 @@ function generateYouthPlayer(
     };
 }
 
-function pickStarters(players: readonly Player[]): Tactics['starters'] {
-    const starters = {} as Tactics['starters'];
-    const taken = new Set<string>();
-    for (const position of POSITIONS) {
-        const best = players
-            .filter((p) => !taken.has(p.id))
-            .sort(
-                (a, b) =>
-                    (b.position === position ? 1000 : 0) + overallRating(b.attributes) -
-                    ((a.position === position ? 1000 : 0) + overallRating(a.attributes)),
-            )[0];
-        if (!best) {
-            throw new Error(`pickStarters: cannot fill position ${position}`);
-        }
-        taken.add(best.id);
-        starters[position] = best.id;
-    }
-    return starters;
-}
-
 function missingPositions(roster: readonly RealPlayerDef[]): Position[] {
     const covered = new Set(roster.map((r) => r.position));
     return POSITIONS.filter((pos) => !covered.has(pos));
@@ -203,6 +186,8 @@ export function generateLeague(rng: Rng, league: LeagueConfig, balance: BalanceC
             },
             colorSlotPrimary: 16 + teamIndex * 2,
             colorSlotSecondary: 16 + teamIndex * 2 + 1,
+            aiPersonality: personalityForTeam(teamDef.id),
+            aiListings: [],
         };
     });
 
@@ -255,6 +240,8 @@ export function generateBclClubs(
             },
             colorSlotPrimary: 16 + teamIndex * 2,
             colorSlotSecondary: 16 + teamIndex * 2 + 1,
+            aiPersonality: personalityForTeam(teamDef.id),
+            aiListings: [],
         };
         teamIndex++;
     }
@@ -262,4 +249,57 @@ export function generateBclClubs(
 
 export function bclTeamDefById(id: string, bcl: BclConfig): BclTeamDef | undefined {
     return bcl.teams.find((t) => t.id === id || t.nblTeamId === id);
+}
+
+/** Adds FIBA Europe Cup-only clubs and players to an existing game state. */
+export function generateFecClubs(
+    state: { teams: Record<string, Team>; players: Record<string, Player> },
+    fec: FecConfig,
+    balance: BalanceConfig,
+    pools: NamePools,
+    seasonYear: number,
+    rng: Rng,
+): void {
+    const usedNames = new Set(Object.values(state.players).map((p) => `${p.firstName} ${p.lastName}`));
+    let teamIndex = Object.keys(state.teams).length;
+    for (const teamDef of fec.teams) {
+        if (teamDef.nblTeamId) {
+            continue;
+        }
+        if (state.teams[teamDef.id]) {
+            continue;
+        }
+        const teamRng = rng.fork(`fec:${teamDef.id}`);
+        const teamPlayers: Player[] = teamDef.roster.map((def, i) =>
+            playerFromReal(teamRng.fork(`p${i}`), `${teamDef.id}-P${i + 1}`, teamDef.id, def, seasonYear, balance),
+        );
+        const toFill = Math.max(0, 12 - teamPlayers.length);
+        const fillPositions = [...missingPositions(teamDef.roster)];
+        for (let i = 0; i < toFill; i++) {
+            const position = fillPositions.shift() ?? teamRng.pick(POSITIONS);
+            teamPlayers.push(
+                generateYouthPlayer(teamRng, `${teamDef.id}-Y${i + 1}`, teamDef.id, position, pools, usedNames, balance),
+            );
+        }
+        for (const player of teamPlayers) {
+            player.contract = { salary: 0, yearsLeft: 99 };
+            state.players[player.id] = player;
+        }
+        const schemes = ['man', 'man', 'zone', 'press'] as const;
+        state.teams[teamDef.id] = {
+            id: teamDef.id,
+            playerIds: teamPlayers.map((pl) => pl.id),
+            tactics: {
+                starters: pickStarters(teamPlayers),
+                pace: 'normal',
+                offenseFocus: 'balanced',
+                defenseScheme: teamRng.pick(schemes),
+            },
+            colorSlotPrimary: 16 + teamIndex * 2,
+            colorSlotSecondary: 16 + teamIndex * 2 + 1,
+            aiPersonality: personalityForTeam(teamDef.id),
+            aiListings: [],
+        };
+        teamIndex++;
+    }
 }

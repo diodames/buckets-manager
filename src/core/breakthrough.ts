@@ -28,6 +28,7 @@ function roundTo(value: number, step: number): number {
 }
 
 export function computeTransferFee(
+    state: GameState,
     player: Player,
     tier: ExternalOfferTier,
     ratio: number,
@@ -35,7 +36,7 @@ export function computeTransferFee(
     economy: EconomyConfig,
     cfg: ExternalOffersConfig,
 ): number {
-    const baseFee = transferValue(player, market, economy);
+    const baseFee = transferValue(player, market, economy, state);
     const severity = clamp(ratio - cfg.fee.severityBase, 0, cfg.fee.severityMax);
     const mult = tier === 'euroleague'
         ? cfg.fee.euroBase + severity * cfg.fee.euroSeverityScale
@@ -107,7 +108,7 @@ function buildOffer(
         tier,
         clubName: club.name,
         clubCity: club.city,
-        transferFee: computeTransferFee(player, tier, ratio, config.market, config.economy, config.externalOffers),
+        transferFee: computeTransferFee(state, player, tier, ratio, config.market, config.economy, config.externalOffers),
         salaryOffer: computeSalaryOffer(state, player, tier, config.market, config.economy, config.externalOffers),
         contractYears,
         breakthroughRatio: ratio,

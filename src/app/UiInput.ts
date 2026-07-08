@@ -11,6 +11,8 @@ export interface UiInputFrame {
     right: boolean;
     confirm: boolean;
     cancel: boolean;
+    /** Toggle dashboard inbox focus. */
+    inbox: boolean;
     pointer: { x: number; y: number } | null;
     click: boolean;
 }
@@ -29,6 +31,7 @@ export function buildInputFrame(): UiInputFrame {
         right: BT.isPressed(BT.BTN_RIGHT, BT.PLAYER_ONE, repeat) || BT.isKeyPressed('ArrowRight', repeat),
         confirm: BT.isKeyPressed('Enter') || BT.isKeyPressed('NumpadEnter') || BT.isPressed(BT.BTN_A, BT.PLAYER_ONE),
         cancel: BT.isKeyPressed('Escape') || BT.isPressed(BT.BTN_B, BT.PLAYER_ONE),
+        inbox: BT.isKeyPressed('KeyI'),
         pointer: pos ? { x: pos.x, y: pos.y } : null,
         click: BT.isPressed(BT.BTN_POINTER_A, BT.PLAYER_ONE),
     };

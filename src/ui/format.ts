@@ -1,4 +1,5 @@
 import { bclConfig } from '../config/bcl';
+import { fecConfig } from '../config/fec';
 import { leagueConfig, type TeamDef } from '../config/league';
 import type { Fixture, Player } from '../core/model/types';
 import { resolveTeamDef } from '../core/teams';
@@ -13,7 +14,8 @@ export function teamName(teamId: string): string {
         return teamDisplayName(resolveTeamDef(teamId));
     } catch {
         const bcl = bclConfig.teams.find((t) => t.id === teamId || t.nblTeamId === teamId);
-        return bcl?.shortName ?? teamId;
+        const fec = fecConfig.teams.find((t) => t.id === teamId || t.nblTeamId === teamId);
+        return bcl?.shortName ?? fec?.shortName ?? teamId;
     }
 }
 
@@ -31,6 +33,12 @@ export function formatMoney(amount: number): string {
         return `${millions.toFixed(1)}M`;
     }
     return `${Math.round(amount / 1000)}k`;
+}
+
+/** Season salary with implied monthly NBL pay (÷9). */
+export function formatSalaryWithMonthly(seasonSalary: number): string {
+    const monthly = Math.round(seasonSalary / 9);
+    return `${formatMoney(seasonSalary)} (${formatMoney(monthly)}/mo)`;
 }
 
 /** Human-readable sponsor ambition target from promised max NBL rank. */
@@ -62,6 +70,9 @@ export function fixtureLine(fixture: Fixture): string {
 export function competitionLabel(competitionId?: string): string {
     if (competitionId === 'bcl') {
         return 'BCL';
+    }
+    if (competitionId === 'fec') {
+        return 'FEC';
     }
     return 'NBL';
 }

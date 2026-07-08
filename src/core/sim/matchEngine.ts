@@ -4,6 +4,7 @@ import type { Attributes, MatchSummary, PlayerId, Position, TeamId } from '../mo
 import { POSITIONS } from '../model/types';
 import { createRng, type Rng } from '../rng';
 import { foldEvents } from './boxscore';
+import { moraleSkillMultiplier } from './morale';
 import type { CourtSpot, EventClock, MatchEvent, ShotKind } from './events';
 
 // Plain-data snapshot of one team entering the sim. Built by the caller from
@@ -14,6 +15,8 @@ export interface SimPlayer {
     attributes: Attributes;
     // Pre-match accumulated fatigue 0..100 (reduces starting energy).
     fatigue: number;
+    // Pre-match morale 0..100 (modifies effective skill).
+    morale: number;
 }
 
 export interface TeamSimInput {
@@ -102,6 +105,8 @@ export class MatchEngine {
     private readonly moments: MomentsConfig;
     // Story moments only fire for this team (the user's club); null disables.
     private readonly storyTeamId: TeamId | null;
+    private readonly userTeamId: TeamId | null;
+    private readonly userInjuryMult: number;
 
     private period = 1;
     private secondsLeft: number;
@@ -131,6 +136,8 @@ export class MatchEngine {
         moments: MomentsConfig;
         storyTeamId?: TeamId | null;
         homeAdvantage?: number;
+        userTeamId?: TeamId | null;
+        userInjuryMult?: number;
     }) {
         this.seed = input.seed;
         this.rng = createRng(input.seed);
@@ -138,6 +145,8 @@ export class MatchEngine {
         this.homeAdvantage = input.homeAdvantage ?? input.balance.match.homeAdvantage;
         this.moments = input.moments;
         this.storyTeamId = input.storyTeamId ?? null;
+        this.userTeamId = input.userTeamId ?? input.storyTeamId ?? null;
+        this.userInjuryMult = input.userInjuryMult ?? 1;
         this.homeState = this.buildTeamState(input.home);
         this.awayState = this.buildTeamState(input.away);
         const match = this.balance.match;
@@ -380,6 +389,10 @@ export class MatchEngine {
         const cfg = this.balance.energy;
         const energy = team.energy.get(playerId) ?? 100;
         let mult = cfg.minSkillMult + (1 - cfg.minSkillMult) * (energy / 100);
+        const player = team.input.players.find((p) => p.id === playerId);
+        if (player) {
+            mult *= moraleSkillMultiplier(player.morale, this.balance);
+        }
         for (const buff of this.buffs) {
             if (buff.teamId === team.input.teamId && buff.possessionsLeft > 0) {
                 mult *= buff.multiplier;
@@ -447,6 +460,31 @@ export class MatchEngine {
         }
     }
 
+    private adaptAiTactics(): void {
+        if (!this.userTeamId) {
+            return;
+        }
+        const isLastPeriod = this.period >= this.periodLengths.length;
+        const q4Late = isLastPeriod && this.secondsLeft <= 300;
+        if (!q4Late) {
+            return;
+        }
+        for (const team of [this.homeState, this.awayState]) {
+            if (team.input.teamId === this.userTeamId) {
+                continue;
+            }
+            const isHome = team === this.homeState;
+            const margin = isHome ? this.homeScore - this.awayScore : this.awayScore - this.homeScore;
+            if (margin <= -8) {
+                team.input.pace = 'fast';
+                team.input.defenseScheme = 'press';
+            } else if (margin >= 12) {
+                team.input.pace = 'slow';
+                team.input.defenseScheme = 'zone';
+            }
+        }
+    }
+
     private maybeInjury(team: TeamState, clock: EventClock): void {
         const cfg = this.balance.injuries;
         for (const p of team.active.values()) {
@@ -454,6 +492,9 @@ export class MatchEngine {
             let chance = cfg.basePerPossession * (this.injuryRisk.get(p.id) ?? 1);
             if (energy < cfg.lowEnergyThreshold) {
                 chance *= cfg.lowEnergyMultiplier;
+            }
+            if (this.userTeamId && team.input.teamId === this.userTeamId) {
+                chance *= this.userInjuryMult;
             }
             if (this.rng.chance(chance)) {
                 this.injuries[p.id] = this.rng.int(1, cfg.maxRoundsOut);
@@ -615,6 +656,7 @@ export class MatchEngine {
 
     /** Plays one possession; returns a stop condition or null. */
     private playPossession(): EngineStop | null {
+        this.adaptAiTactics();
         const balance = this.balance;
         const match = balance.match;
         const offense = this.offense;
@@ -806,6 +848,33 @@ export class MatchEngine {
         return { x: Number(x.toFixed(3)), y: Number(y.toFixed(3)) };
     }
 
+    /** Swap the most tired starters for fresh bench players at quarter breaks. */
+    private quarterBreakRotations(): void {
+        const swapCount = this.balance.lineup.quarterSwapCount;
+        if (swapCount <= 0 || this.period > this.balance.match.quarters) {
+            return;
+        }
+        for (const team of [this.homeState, this.awayState]) {
+            const active = [...team.active.values()];
+            const tired = active
+                .sort((a, b) => (team.energy.get(a.id) ?? 100) - (team.energy.get(b.id) ?? 100))
+                .slice(0, swapCount);
+            for (const out of tired) {
+                const bench = this.benchPlayers(team.input.teamId)
+                    .filter((p) => !tired.some((t) => t.id === p.id))
+                    .sort(
+                        (a, b) =>
+                            (team.energy.get(b.id) ?? 0) + (b.position === out.position ? 20 : 0) -
+                            ((team.energy.get(a.id) ?? 0) + (a.position === out.position ? 20 : 0)),
+                    );
+                const sub = bench[0];
+                if (sub) {
+                    this.substitute(team, out.id, sub.id);
+                }
+            }
+        }
+    }
+
     private endOfPossession(clock: EventClock): EngineStop | null {
         this.maybeInjury(this.homeState, clock);
         this.maybeInjury(this.awayState, clock);
@@ -822,6 +891,7 @@ export class MatchEngine {
             if (this.period < this.periodLengths.length) {
                 this.period++;
                 this.secondsLeft = this.periodLengths[this.period - 1] as number;
+                this.quarterBreakRotations();
                 return { kind: 'periodEnd', period: this.period - 1 };
             }
             this.ended = true;
@@ -856,8 +926,15 @@ export function simulateMatch(input: {
     balance: BalanceConfig;
     moments: MomentsConfig;
     homeAdvantage?: number;
+    userTeamId?: TeamId | null;
+    userInjuryMult?: number;
 }): SimResult {
-    const engine = new MatchEngine({ ...input, storyTeamId: null });
+    const engine = new MatchEngine({
+        ...input,
+        storyTeamId: null,
+        userTeamId: input.userTeamId ?? null,
+        userInjuryMult: input.userInjuryMult ?? 1,
+    });
     const outcome = engine.finish();
     return { events: engine.events, summary: outcome.summary, outcome };
 }

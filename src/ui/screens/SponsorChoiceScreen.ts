@@ -72,12 +72,23 @@ export class SponsorChoiceScreen implements Screen {
             const brand = t(`sponsor.${selected.brandKey}` as TranslationKey);
             grid.put(4, row, ROLE.header, brand);
             row++;
+            const riskKey = selected.ambitionId === 'bold'
+                ? 'sponsorChoice.riskHigh'
+                : selected.ambitionId === 'standard'
+                  ? 'sponsorChoice.riskMid'
+                  : 'sponsorChoice.riskLow';
+            grid.put(4, row, ROLE.textDim, t('sponsorChoice.risk', { level: t(riskKey as TranslationKey) }));
+            row++;
+            grid.put(4, row, ROLE.text, t('sponsorChoice.weeklyIncome', { amount: formatMoney(selected.perRound) }));
+            row++;
             if (selected.signingBonus > 0) {
                 grid.put(4, row, ROLE.success, t('sponsorChoice.signing', { amount: formatMoney(selected.signingBonus) }));
                 row++;
             }
-            grid.put(4, row, ROLE.text, t('sponsorChoice.pay', { amount: formatMoney(selected.perRound) }));
-            row++;
+            if (selected.ambitionId === 'bold') {
+                grid.put(4, row, ROLE.textDim, t('sponsorChoice.boldNote'));
+                row++;
+            }
             grid.put(4, row, ROLE.accent, sponsorTargetLabel(selected.promisedMaxRank));
             row++;
             grid.put(4, row, ROLE.success, t('sponsor.bonusIfMet', { amount: formatMoney(selected.bonusAmount) }));

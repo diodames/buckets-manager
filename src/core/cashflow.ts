@@ -4,10 +4,15 @@ import {
     arenaCapacity,
     computeGateReceipts,
     derbyGateIncomeMult,
+    facilityMaintenancePerRound,
+    leagueSharePerRound,
+    nblLeaguePrizeAmount,
     nblPlayoffPrizeAmount,
     playerSalary,
     realArenaCapacity,
+    startingBudgetForTeam,
 } from './economy';
+import { computeNblStandings } from './league/standings';
 import { totalRounds } from './league/schedule';
 import type { GameState, PlayerId, TeamId } from './model/types';
 import { seriesDecided, winsNeeded } from './playoffs';
@@ -81,6 +86,20 @@ function userFixtures(
             });
         }
     }
+    const fec = state.competitions.fec;
+    if (fec && state.fecQualified) {
+        for (const fixture of fec.fixtures) {
+            if (fixture.homeTeamId !== userId && fixture.awayTeamId !== userId) {
+                continue;
+            }
+            entries.push({
+                playedHome: fixture.homeTeamId === userId,
+                played: fixture.result !== null,
+                opponentTeamId: fixture.homeTeamId === userId ? fixture.awayTeamId : fixture.homeTeamId,
+                isNbl: false,
+            });
+        }
+    }
     if (state.playoffs) {
         for (const series of state.playoffs.series) {
             if (series.homeTeamId !== userId && series.awayTeamId !== userId) {
@@ -125,8 +144,7 @@ export function seasonWageBill(state: GameState, economy: EconomyConfig, playerI
 export function weeklyPayroll(state: GameState, economy: EconomyConfig, league: LeagueConfig): WeeklyPayroll {
     const payrollWeeks = payrollWeeksForSeason(state, league);
     const salaries = Math.round(seasonWageBill(state, economy) / payrollWeeks);
-    const levels = Object.values(state.club.facilities).reduce((a, b) => a + b, 0);
-    const maintenance = levels * economy.facilities.maintenancePerLevelPerRound;
+    const maintenance = facilityMaintenancePerRound(state.club.facilities, economy);
     return { salaries, maintenance, total: salaries + maintenance };
 }
 
@@ -138,6 +156,43 @@ function sponsorIncomePerWeek(state: GameState, economy: EconomyConfig): number 
         income += Math.round(deal.perRound * mult);
     }
     return income;
+}
+
+function projectedEuropeanNet(state: GameState, economy: EconomyConfig): number {
+    const userId = state.userTeamId;
+    const ee = economy.european;
+    let net = 0;
+    const bcl = state.competitions.bcl;
+    if (bcl && state.bclQualified) {
+        for (const fixture of bcl.fixtures) {
+            if (fixture.result !== null) {
+                continue;
+            }
+            if (fixture.homeTeamId !== userId && fixture.awayTeamId !== userId) {
+                continue;
+            }
+            net += ee.weeklyParticipation.bcl + ee.matchFee.bcl;
+            if (fixture.awayTeamId === userId) {
+                net -= ee.travelCost.bcl;
+            }
+        }
+    }
+    const fec = state.competitions.fec;
+    if (fec && state.fecQualified) {
+        for (const fixture of fec.fixtures) {
+            if (fixture.result !== null) {
+                continue;
+            }
+            if (fixture.homeTeamId !== userId && fixture.awayTeamId !== userId) {
+                continue;
+            }
+            net += ee.weeklyParticipation.fec + ee.matchFee.fec;
+            if (fixture.awayTeamId === userId) {
+                net -= ee.travelCost.fec;
+            }
+        }
+    }
+    return net;
 }
 
 function projectedSeasonIncome(state: GameState, economy: EconomyConfig, league: LeagueConfig): number {
@@ -162,19 +217,29 @@ function projectedSeasonIncome(state: GameState, economy: EconomyConfig, league:
     }
 
     const sponsorIncome = remainingWeeks * sponsorIncomePerWeek(state, economy);
+    const leagueShareIncome = remainingWeeks * leagueSharePerRound(userId, economy, league);
+    const standings = computeNblStandings(state);
+    const rankIndex = standings.findIndex((row) => row.teamId === userId);
+    const estimatedRank = rankIndex >= 0 ? rankIndex + 1 : Math.ceil(league.teams.length / 2);
+    const leagueTablePrize = nblLeaguePrizeAmount(estimatedRank, economy);
     const conservativePrize = state.nblPrizePaid ? 0 : nblPlayoffPrizeAmount('playoffs', economy);
-    return ticketIncome + sponsorIncome + conservativePrize;
+    const europeanNet = projectedEuropeanNet(state, economy);
+    return ticketIncome + sponsorIncome + leagueShareIncome + leagueTablePrize + conservativePrize + europeanNet;
 }
 
 export function maxAllowedWageBill(state: GameState, economy: EconomyConfig, league: LeagueConfig): number {
     const payroll = weeklyPayroll(state, economy, league);
     const remainingEconomyWeeks = userFixtures(state, state.userTeamId, league).filter((f) => !f.played).length;
+    const projectedIncome = projectedSeasonIncome(state, economy, league);
     const projectedEndBalance = state.club.budget
-        + projectedSeasonIncome(state, economy, league)
+        + projectedIncome
         - remainingEconomyWeeks * payroll.total;
     const current = seasonWageBill(state, economy);
     const headroom = Math.max(0, projectedEndBalance - economy.financial.minEndBalance);
-    return current + headroom;
+    const teamDef = league.teams.find((t) => t.id === state.userTeamId);
+    const starting = teamDef ? startingBudgetForTeam(teamDef, economy) : economy.startingBudget;
+    const pctCap = (starting + projectedIncome) * economy.financial.wageBudgetPct;
+    return Math.min(current + headroom, pctCap);
 }
 
 export function projectSeasonCashflow(
@@ -190,11 +255,13 @@ export function projectSeasonCashflow(
     const projectedIncome = projectedSeasonIncome(state, economy, league);
     const projectedExpenses = remainingEconomyWeeks * payroll.total;
     const projectedEndBalance = state.club.budget + projectedIncome - projectedExpenses;
-    const netAwayBurn = Math.max(1, payroll.total - sponsorIncomePerWeek(state, economy));
+    const netAwayBurn = Math.max(
+        1,
+        payroll.total - sponsorIncomePerWeek(state, economy) - leagueSharePerRound(userId, economy, league),
+    );
     const runwayWeeks = state.club.budget / netAwayBurn;
     const seasonWage = seasonWageBill(state, economy);
-    const headroom = Math.max(0, projectedEndBalance - economy.financial.minEndBalance);
-    const maxWageBill = seasonWage + headroom;
+    const maxWageBill = maxAllowedWageBill(state, economy, league);
 
     return {
         weeklyBurn: payroll.total,

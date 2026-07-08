@@ -3,11 +3,14 @@ import type { UiInputFrame } from '../../app/UiInput';
 import { marketConfig } from '../../config/market';
 import { economyConfig } from '../../config/economy';
 import { contractBuyout, isAcademyPlayer, listPlayer, releasePlayer, renewalStatus, returnYouthToAcademy, unlistPlayer } from '../../core/market';
+import { aggregatePlayerSeasonStats } from '../../core/playerStats';
+import { playerHasAward } from '../../core/awards';
+import { foreignCapStatus, formTrend, playerRoleKey } from '../../core/roster';
 import type { Player } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
-import { formatMoney, playerName, teamName } from '../format';
+import { formatMoney, formatSalaryWithMonthly, playerName, teamName } from '../format';
 import { ROLE } from '../theme';
 import { ActionDialog } from './ActionDialog';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -138,6 +141,8 @@ export class RosterScreen implements Screen {
         const state = session.state;
         const players = this.userPlayers();
         const starters = new Set(Object.values(state.teams[state.userTeamId]?.tactics.starters ?? {}));
+        const cap = foreignCapStatus(state, state.userTeamId);
+        const awards = state.lastSeasonAwards;
         this.table.setData(
             [
                 { header: t('col.name'), width: 20 },
@@ -157,13 +162,17 @@ export class RosterScreen implements Screen {
             players.map((p) => {
                 const listed = state.market.listings.some((l) => l.playerId === p.id);
                 const expiring = (p.contract?.yearsLeft ?? 0) <= 1;
+                const stats = aggregatePlayerSeasonStats(state, p.id);
+                const form = stats.games >= 3 ? formTrend(state, p.id, stats.ppg) : 'steady';
+                const role = t(playerRoleKey(p) as Parameters<typeof t>[0]);
+                const awardBadge = playerHasAward(awards, p.id, 'mvp') ? ' MVP' : '';
                 const status = p.injury
                     ? t('training.injured', { rounds: p.injury.roundsOut })
                     : listed
                       ? t('market.listed')
                       : starters.has(p.id)
-                        ? t('roster.starter')
-                        : '';
+                        ? `${t('roster.starter')} ${role}${awardBadge}`
+                        : `${role} ${t(`form.${form}` as Parameters<typeof t>[0])}${awardBadge}`;
                 return {
                     cells: [
                         playerName(p),
@@ -171,7 +180,7 @@ export class RosterScreen implements Screen {
                         String(p.age),
                         String(overallRating(p.attributes)),
                         String(p.potential),
-                        p.contract ? formatMoney(p.contract.salary) : '-',
+                        p.contract ? formatSalaryWithMonthly(p.contract.salary) : '-',
                         p.contract ? String(p.contract.yearsLeft) : '-',
                         String(p.attributes.shooting2),
                         String(p.attributes.shooting3),
@@ -190,6 +199,7 @@ export class RosterScreen implements Screen {
             t('hint.back'),
         ]);
         this.ctx.grid.put(2, 2, ROLE.textDim, t('roster.contractLegend'));
+        this.ctx.grid.put(2, 3, ROLE.textDim, t('roster.foreignCap', { count: cap.count, max: cap.max }));
         this.table.render(this.ctx.grid);
         if (this.message) {
             this.ctx.grid.put(2, this.ctx.grid.rows - 3, ROLE.success, this.message);

@@ -11,7 +11,7 @@ export interface PressChoiceDef {
 export interface PressQuestionDef {
     id: string;
     // When the question is eligible.
-    context: 'bigWin' | 'closeWin' | 'bigLoss' | 'closeLoss' | 'starPerformance' | 'injury' | 'streak';
+    context: 'bigWin' | 'closeWin' | 'bigLoss' | 'closeLoss' | 'starPerformance' | 'injury' | 'streak' | 'transfer';
     choices: PressChoiceDef[];
 }
 
@@ -92,6 +92,33 @@ export const pressConfig = Object.freeze({
                 { id: 'calm', teamMorale: 2, fanSupport: -1 },
                 { id: 'crisis', teamMorale: -4, fanSupport: 2, sponsorRelation: 1 },
                 { id: 'protect', teamMorale: 3, sponsorRelation: -2 },
+            ],
+        },
+        {
+            id: 'soldCaptain',
+            context: 'transfer',
+            choices: [
+                { id: 'business', teamMorale: -3, fanSupport: -2, sponsorRelation: 2 },
+                { id: 'rebuild', teamMorale: 1, fanSupport: 1 },
+                { id: 'deny', teamMorale: 2, fanSupport: 3, sponsorRelation: -1 },
+            ],
+        },
+        {
+            id: 'rejectedBid',
+            context: 'transfer',
+            choices: [
+                { id: 'loyalty', teamMorale: 3, starMorale: 4, fanSupport: 2 },
+                { id: 'money', starMorale: -5, fanSupport: -2, sponsorRelation: 2 },
+                { id: 'future', teamMorale: 1, starMorale: 1 },
+            ],
+        },
+        {
+            id: 'deadlineSigning',
+            context: 'transfer',
+            choices: [
+                { id: 'excited', teamMorale: 3, fanSupport: 2 },
+                { id: 'cautious', teamMorale: 1, sponsorRelation: 1 },
+                { id: 'pressure', teamMorale: -2, fanSupport: 1, sponsorRelation: 2 },
             ],
         },
     ]),

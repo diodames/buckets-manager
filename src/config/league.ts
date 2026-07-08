@@ -54,6 +54,7 @@ export const leagueConfig = Object.freeze({
     playoffs: Object.freeze({
         teams: 8,
         winsNeeded: Object.freeze([2, 2, 3]),
+        thirdPlaceWinsNeeded: 2,
     }),
     teams: Object.freeze<TeamDef[]>([
         {

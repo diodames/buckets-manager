@@ -1,15 +1,18 @@
 // Club economy tuning: all amounts in CZK. The user manages one club's
-// books; AI clubs do not keep ledgers.
+// books; AI NBL clubs keep a lightweight budget in GameState.nblFinances.
 export const economyConfig = Object.freeze({
-    startingBudget: 9_000_000,
+    startingBudget: 9_500_000,
     // Starting cash by club tier 1..5 (weaker clubs begin with less).
-    startingBudgetByTier: Object.freeze([6_500_000, 8_000_000, 9_000_000, 10_500_000, 12_000_000]),
-    // Player salary per season derived from overall rating:
+    startingBudgetByTier: Object.freeze([8_000_000, 9_500_000, 10_500_000, 12_000_000, 13_500_000]),
+    // Player salary per season (CZK). Real NBL contracts are ~9 months; monthly ≈ season / 9.
     // base + (overall - 50) * perPoint (floored at min).
     salary: Object.freeze({
-        base: 600_000,
-        perPoint: 40_000,
-        min: 300_000,
+        base: 400_000,
+        // OVR 50-70: perPoint | 71-80: perPointMid | 81+: perPointElite.
+        perPoint: 48_000,
+        perPointMid: 60_000,
+        perPointElite: 75_000,
+        min: 340_000,
     }),
     tickets: Object.freeze({
         defaultPrice: 220,
@@ -17,7 +20,7 @@ export const economyConfig = Object.freeze({
         maxPrice: 600,
         priceStep: 10,
         referencePrice: 220,
-        incomeScale: 0.35,
+        incomeScale: 0.82,
         plateauMin: 0.75,
         plateauMax: 1.25,
         fairPriceBase: 0.90,
@@ -34,8 +37,10 @@ export const economyConfig = Object.freeze({
         minAttendance: 0.15,
         maxAttendance: 1.0,
         // Weakest crowd still gives this share of full home-court shooting boost.
-        homeAdvantageMinMult: 0.2,
+        homeAdvantageMinMult: 0.35,
         homeAdvantageFromPrice: false,
+        /** Multiplier on attendance-scaled home-court shooting boost. */
+        homeAdvantageAttendanceScale: 1.35,
     }),
     // Regional derby home gates: +25% ticket income when hosting a listed rival (NBL only).
     derbies: Object.freeze({
@@ -67,8 +72,8 @@ export const economyConfig = Object.freeze({
             // Academy ~50% pricier: best long-term value, should not be trivial early.
             academy: Object.freeze([0, 2_500_000, 5_500_000, 10_500_000, 18_000_000]),
         }),
-        // Per-round maintenance per facility level (sum of levels * this).
-        maintenancePerLevelPerRound: 25_000,
+        // Per-round maintenance by facility level index 1..5 (summed across arena/training/academy).
+        maintenancePerLevelPerRound: Object.freeze([0, 10_000, 10_000, 12_000, 16_000, 20_000]),
         // Rounds until upgrade benefits fully apply (index = target level 1..5).
         upgradeRounds: Object.freeze({
             arena: Object.freeze([0, 5, 6, 7, 9]),
@@ -78,25 +83,34 @@ export const economyConfig = Object.freeze({
     }),
     // NBL playoff prize money (CZK), paid once at season end.
     playoffPrizes: Object.freeze({
-        champion: 800_000,
-        finalist: 400_000,
-        semifinal: 200_000,
-        quarterfinal: 100_000,
-        playoffs: 50_000,
+        champion: 1_000_000,
+        finalist: 500_000,
+        thirdPlace: 320_000,
+        fourthPlace: 200_000,
+        semifinal: 260_000,
+        quarterfinal: 130_000,
+        playoffs: 65_000,
     }),
     // NBL regular-season table prize money (CZK), paid once at season end (in addition to playoff prizes).
     leaguePrizesByRank: Object.freeze([
-        { maxRank: 1, prize: 1_200_000 },
-        { maxRank: 3, prize: 800_000 },
-        { maxRank: 6, prize: 500_000 },
-        { maxRank: 9, prize: 300_000 },
-        { maxRank: 11, prize: 150_000 },
-        { maxRank: 12, prize: 100_000 },
+        { maxRank: 1, prize: 1_500_000 },
+        { maxRank: 2, prize: 1_100_000 },
+        { maxRank: 3, prize: 900_000 },
+        { maxRank: 6, prize: 650_000 },
+        { maxRank: 9, prize: 400_000 },
+        { maxRank: 11, prize: 200_000 },
+        { maxRank: 12, prize: 130_000 },
     ]),
+    // Weekly NBL central income (TV / league pool) by club tier 1..5.
+    leagueSharePerRoundByTier: Object.freeze([70_000, 100_000, 130_000, 165_000, 210_000]),
+    /** Bonus multiplier for clubs currently in the NBL top four (e.g. 0.15 = +15%). */
+    leagueShareTop4Bonus: 0.15,
+    // AI weekly gate-income estimate by club tier (replaces flat 45k heuristic).
+    aiGateEstimatePerRoundByTier: Object.freeze([35_000, 42_000, 52_000, 58_000, 68_000]),
     sponsors: Object.freeze({
         slots: 1,
         // Per-round base payment range by deal tier 1..5 (success bonuses are separate).
-        perRoundByTier: Object.freeze([35_000, 60_000, 90_000, 130_000, 180_000]),
+        perRoundByTier: Object.freeze([85_000, 145_000, 210_000, 300_000, 420_000]),
         // Relationship 0..100 scales payment [minMult..maxMult].
         relationMinMult: 0.8,
         relationMaxMult: 1.25,
@@ -108,9 +122,9 @@ export const economyConfig = Object.freeze({
         terminateBelow: 20,
         // Ambition sponsor profiles shown at game start and each offseason.
         ambitionProfiles: Object.freeze([
-            { id: 'safe', promisedMaxRank: 10, tier: 1, signingBonus: 850_000, bonusAmount: 350_000 },
+            { id: 'safe', promisedMaxRank: 10, tier: 1, signingBonus: 450_000, bonusAmount: 350_000 },
             { id: 'standard', promisedMaxRank: 8, tier: 2, signingBonus: 425_000, bonusAmount: 1_000_000 },
-            { id: 'bold', promisedMaxRank: 1, tier: 3, signingBonus: 125_000, bonusAmount: 2_500_000 },
+            { id: 'bold', promisedMaxRank: 1, tier: 3, signingBonus: 250_000, bonusAmount: 2_500_000 },
         ]),
         // signingBonus on ambition profiles is scaled by club tier at offer time:
         // paid = round25k(profile.signingBonus * (0.85 + 0.03 * tier)).
@@ -130,6 +144,10 @@ export const economyConfig = Object.freeze({
         ]),
         // BCL participation bumps sponsor tier interest by this amount.
         bclTierBonus: 1,
+        // FEC participation bumps sponsor tier interest (capped in offer generation).
+        fecTierBonus: 1,
+        // Multiplier on per-round payment for European-qualified clubs.
+        europePerRoundMult: 1.1,
         // Fictional sponsor brand name keys (i18n: sponsor.<key>).
         brands: Object.freeze([
             'pivovar', 'kolonial', 'drogerie', 'strojirny', 'banka',
@@ -145,10 +163,24 @@ export const economyConfig = Object.freeze({
         max: 100,
     }),
     ledgerCapacity: 60,
+    european: Object.freeze({
+        travelCost: Object.freeze({ bcl: 120_000, fec: 80_000 }),
+        matchFee: Object.freeze({ bcl: 150_000, fec: 100_000 }),
+        weeklyParticipation: Object.freeze({ bcl: 80_000, fec: 50_000 }),
+    }),
+    scouting: Object.freeze({
+        baseBudgetByTier: Object.freeze([300_000, 350_000, 450_000, 550_000, 650_000]),
+        bclBonus: 150_000,
+        fecBonus: 75_000,
+        quickReportCost: 40_000,
+        deepReportCost: 90_000,
+        workoutCost: 120_000,
+        academyDiscountPerLevel: 10_000,
+    }),
     // Board wage budget and cashflow warning thresholds (Football Manager-style).
     financial: Object.freeze({
-        wageBudgetPct: 0.65,
-        minEndBalance: 0,
+        wageBudgetPct: 0.68,
+        minEndBalance: 500_000,
         lowCashRunwayWeeks: 2,
     }),
 });

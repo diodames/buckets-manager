@@ -4,6 +4,10 @@ export const marketConfig = Object.freeze({
     contracts: Object.freeze({
         yearsMin: 1,
         yearsMax: 3,
+        // Agent fee on signing/renewal (M4).
+        agentFeePct: 0.08,
+        agentFeeElitePct: 0.10,
+        agentFeeEliteOverall: 85,
         // Demand multipliers (M2).
         ageFactor: Object.freeze([
             { maxAge: 23, factor: 0.9 },
@@ -27,8 +31,24 @@ export const marketConfig = Object.freeze({
         lockRounds: 5,
         lockMoralePenalty: 10,
         renewalsOpenFromRound: 12,
-        // Free agents demand leverage mid-season (M5).
-        freeAgentDemandMult: 1.15,
+        // Free agents demand leverage by season phase (M5).
+        freeAgentDemandByRound: Object.freeze([
+            { maxRound: 7, mult: 1.05 },
+            { maxRound: 12, mult: 1.15 },
+            { maxRound: 99, mult: 1.25 },
+        ]),
+        // Performance form factor on demand (M2): hot/cold streak from season game score.
+        formFactorMin: 0.92,
+        formFactorMax: 1.10,
+        formRatioHot: 1.08,
+        formRatioCold: 0.95,
+        // Position scarcity on demand and transfer value.
+        scarcePositionBonus: 1.08,
+        surplusPositionDiscount: 0.92,
+        scarcePositions: Object.freeze(['PG', 'C'] as const),
+        scarceOverallOffset: 8,
+        // Czech players command a modest premium (limited foreign slots, domestic value).
+        czechMarketSalaryMult: 1.10,
         // Salary stepper granularity in the UI.
         salaryStep: 50_000,
         // Terminating a contract costs this share of the remaining salary.
@@ -47,10 +67,15 @@ export const marketConfig = Object.freeze({
             { maxAge: 99, factor: 0.35 },
         ]),
         potentialCap: 1.6,
-        contractValue: Object.freeze({ multi: 1.0, finalYear: 0.55 }),
-        // Window: market open through this round (deadline), FA always open (M9).
-        // Closes before playoffs (regular season is 22 rounds with 12 teams).
+        contractValue: Object.freeze({ multi: 1.0, finalYear: 0.55, expiringSoon: 0.35 }),
+        expiringSoonRounds: 6,
+        // Transfer market (M9): open all season; closes when NBL playoffs start. FA always open.
+        preseasonWindowRound: 1,
+        midWindowStartRound: 8,
+        midWindowEndRound: 12,
         deadlineRound: 22,
+        deadlineOfferBurstCount: 3,
+        forcedSellFactor: 0.70,
         // AI offers for listed players (M7).
         listingMoralePenalty: 5,
         offerChancePerRound: 0.5,
@@ -61,21 +86,21 @@ export const marketConfig = Object.freeze({
         offerTtlRounds: 2,
         // Bidding on AI players (M8).
         sellFactorSurplus: 0.85,
-        sellFactorNormal: 1.28,
-        sellFactorCore: 1.85,
-        sellFactorCzechCore: 2.2,
+        sellFactorNormal: 1.10,
+        sellFactorCore: 1.45,
+        sellFactorCzechCore: 1.50,
         // Unsolicited bids for stars (M10) — rare; at most one per season.
         unsolicitedChancePerRound: 0.005,
         unsolicitedFactorMin: 1.2,
         unsolicitedFactorMax: 1.4,
         rejectedBigBidMorale: 8,
         // Personal terms after a transfer (M8).
-        postTransferDemandMult: 1.0,
+        postTransferDemandMult: 1.05,
         // Extra acceptance score once a fee is agreed — player is ready to move.
         transferTermsAcceptBonus: 5,
         // When fee >= transfer value, demand scales by this (serious buyer signal).
         transferFeeCommitmentMult: 0.96,
-        bidStep: 250_000,
+        bidStep: 200_000,
     }),
     youth: Object.freeze({
         // Intake after this round (M11).
@@ -109,12 +134,15 @@ export const marketConfig = Object.freeze({
         // Real Kooperativa NBL limits.
         maxPlayers: 14,
         minPlayers: 10,
+        maxForeigners: 6,
     }),
     // AI team-needs evaluation (M14-M15).
     ai: Object.freeze({
         evaluateEveryRounds: 2,
         depthOverallOffset: 5,
         surplusDepth: 3,
+        maxTransferSpendPct: 0.60,
+        forcedSellPayrollWeeks: 2,
     }),
     /** AI contract renewals, walk-aways, and elite signing gates. */
     aiRenewal: Object.freeze({

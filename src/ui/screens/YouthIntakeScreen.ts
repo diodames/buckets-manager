@@ -78,7 +78,9 @@ export class YouthIntakeScreen implements Screen {
                               ? t('market.wageBudgetExceeded')
                               : result === 'projectedDeficit'
                                 ? t('market.projectedDeficit')
-                                : t('nego.rosterFull');
+                                : result === 'foreignCapFull'
+                                  ? t('youth.foreignCapFull')
+                                  : t('nego.rosterFull');
                     } else {
                         releaseYouth(state, picked);
                         this.message = t('youth.released', { player: playerName(prospect.player) });

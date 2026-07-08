@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { economyConfig } from '../src/config/economy';
 import { advanceRoundInstant, createNewGame, SAVE_FORMAT_VERSION } from '../src/core/game';
+import { baseSalary } from '../src/core/market';
+import { overallRating } from '../src/core/model/types';
 import { deserializeSave, SaveError, serializeSave } from '../src/core/save/save';
 import { MemoryStorageAdapter } from '../src/services/storage';
 import { testConfig as config } from './helpers';
@@ -74,6 +77,24 @@ describe('save round-trip', () => {
             expect(error).toBeInstanceOf(SaveError);
             expect((error as SaveError).kind).toBe('tooNew');
         }
+    });
+
+    it('migrates v27 saves: resyncs contracts to the real-NBL salary scale', () => {
+        const state = createNewGame(config, 557, 'DEC');
+        const player = Object.values(state.players).find((p) => p.teamId === 'DEC' && p.contract);
+        expect(player).toBeDefined();
+        player!.contract!.salary = 600_000;
+        const expected = baseSalary(overallRating(player!.attributes), economyConfig);
+
+        const v27 = {
+            formatVersion: 27,
+            name: 'v27',
+            savedAtIso: '2026-07-04T00:00:00.000Z',
+            state: { ...state, version: 27 },
+        };
+        const migrated = deserializeSave(JSON.stringify(v27));
+        expect(migrated.formatVersion).toBe(SAVE_FORMAT_VERSION);
+        expect(migrated.state.players[player!.id]?.contract?.salary).toBe(expected);
     });
 });
 

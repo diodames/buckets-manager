@@ -33,9 +33,9 @@ describe('economy', () => {
     it('home rounds book ticket income, away rounds do not', () => {
         const state = createNewGame(config, 101, 'NYM');
         const rng = createRng(1);
-        const home = roundEconomyTick(state, { playedHome: true, won: true, margin: 5, realArenaCapacity: 1500, totalRounds: 22, opponentTeamId: 'PCE' }, economyConfig, rng);
+        const home = roundEconomyTick(state, { playedHome: true, won: true, margin: 5, realArenaCapacity: 1500, totalRounds: 22, opponentTeamId: 'PCE' }, economyConfig, leagueConfig, rng);
         expect(home.ticketIncome).toBeGreaterThan(0);
-        const away = roundEconomyTick(state, { playedHome: false, won: false, margin: 5, realArenaCapacity: 1500, totalRounds: 22, opponentTeamId: 'PCE' }, economyConfig, rng);
+        const away = roundEconomyTick(state, { playedHome: false, won: false, margin: 5, realArenaCapacity: 1500, totalRounds: 22, opponentTeamId: 'PCE' }, economyConfig, leagueConfig, rng);
         expect(away.ticketIncome).toBe(0);
     });
 
@@ -50,12 +50,14 @@ describe('economy', () => {
             normalState,
             { playedHome: true, won: true, margin: 5, realArenaCapacity: 1065, totalRounds: 22, opponentTeamId: 'NYM' },
             economyConfig,
+            leagueConfig,
             createRng(2),
         );
         const derby = roundEconomyTick(
             derbyState,
             { playedHome: true, won: true, margin: 5, realArenaCapacity: 1065, totalRounds: 22, opponentTeamId: 'SLA' },
             economyConfig,
+            leagueConfig,
             createRng(3),
         );
         expect(derby.ticketIncome).toBe(Math.round(normal.ticketIncome * economyConfig.derbies.incomeMult));
@@ -118,7 +120,7 @@ describe('economy', () => {
     it('sponsor offers can be accepted into deals up to the slot cap', () => {
         const state = createNewGame(config, 104, 'NYM');
         state.club.sponsorOffers = [
-            { id: 'o1', brandKey: 'pivovar', tier: 2, perRound: 60_000, seasons: 1, expiresRound: 99, promisedMaxRank: 8, bonusAmount: 1_000_000, signingBonus: 0, ambitionId: 'standard' },
+            { id: 'o1', brandKey: 'pivovar', tier: 2, perRound: 130_000, seasons: 1, expiresRound: 99, promisedMaxRank: 8, bonusAmount: 1_000_000, signingBonus: 0, ambitionId: 'standard' },
         ];
         expect(acceptSponsorOffer(state, 'o1', economyConfig)).toBe(true);
         expect(state.club.sponsors).toHaveLength(1);
@@ -126,13 +128,13 @@ describe('economy', () => {
     });
 
     it('default ticket price yields realistic home gate for NYM', () => {
-        const state = createNewGame(config, 105, 'NYM');
+        const state = createNewGame(config, 105, 'NYM', 'normal');
         const capacity = arenaCapacity(state, economyConfig, 1500);
         const gate = computeGateReceipts(state.club.fanSupport, state.club.ticketPrice, capacity, economyConfig);
-        expect(gate.ticketIncome).toBeGreaterThan(55_000);
-        expect(gate.ticketIncome).toBeLessThan(85_000);
+        expect(gate.ticketIncome).toBeGreaterThan(115_000);
+        expect(gate.ticketIncome).toBeLessThan(175_000);
         const rng = createRng(2);
-        const home = roundEconomyTick(state, { playedHome: true, won: true, margin: 5, realArenaCapacity: 1500, totalRounds: 22 }, economyConfig, rng);
+        const home = roundEconomyTick(state, { playedHome: true, won: true, margin: 5, realArenaCapacity: 1500, totalRounds: 22 }, economyConfig, leagueConfig, rng);
         expect(home.ticketIncome).toBe(gate.ticketIncome);
     });
 
@@ -176,7 +178,7 @@ describe('economy', () => {
         const state = createNewGame(config, 107, 'NYM');
         state.club.ticketPrice = 600;
         const rng = createRng(3);
-        const away = roundEconomyTick(state, { playedHome: false, won: true, margin: 10, realArenaCapacity: 1500, totalRounds: 22 }, economyConfig, rng);
+        const away = roundEconomyTick(state, { playedHome: false, won: true, margin: 10, realArenaCapacity: 1500, totalRounds: 22 }, economyConfig, leagueConfig, rng);
         expect(away.ticketIncome).toBe(0);
     });
 
@@ -201,7 +203,7 @@ describe('economy', () => {
         state.club.fanSupport = economyConfig.fanSupport.max;
         const highFanBoost = homeCourtAdvantage(state, 'NYM', economyConfig, leagueConfig, base);
         expect(highFanBoost).toBeGreaterThan(defaultBoost);
-        expect(highFanBoost).toBeLessThanOrEqual(base);
+        expect(highFanBoost).toBeLessThanOrEqual(base * (economyConfig.tickets.homeAdvantageAttendanceScale ?? 1));
     });
 
     it('AI home games keep full base home advantage', () => {
@@ -227,6 +229,8 @@ describe('economy', () => {
             stage: 0,
             seeds: { NYM: 1 },
             championTeamId: null,
+            thirdPlaceSeries: null,
+            thirdPlaceTeamId: null,
             series: [{
                 id: 'PO0-0',
                 stage: 0,
@@ -247,6 +251,8 @@ describe('economy', () => {
             stage: 0,
             seeds: { NYM: 1 },
             championTeamId: null,
+            thirdPlaceSeries: null,
+            thirdPlaceTeamId: null,
             series: [{
                 id: 'PO0-0',
                 stage: 0,
@@ -267,6 +273,7 @@ describe('economy', () => {
                 state,
                 { playedHome: false, won: false, margin: 0, realArenaCapacity: 1500, totalRounds: payrollWeeks },
                 economyConfig,
+                leagueConfig,
                 rng,
             );
             charged += tick.salaries;
@@ -402,7 +409,7 @@ describe('press conference', () => {
 
     it('press sponsor effects shift active deal relationships', () => {
         const state = createNewGame(config, 301, 'NYM');
-        state.club.sponsors.push({ id: 'd1', brandKey: 'banka', tier: 2, perRound: 60_000, seasonsRemaining: 1, relationship: 50, promisedMaxRank: 6, bonusAmount: 0, signingBonus: 0 });
+        state.club.sponsors.push({ id: 'd1', brandKey: 'banka', tier: 2, perRound: 130_000, seasonsRemaining: 1, relationship: 50, promisedMaxRank: 6, bonusAmount: 0, signingBonus: 0 });
         advanceRoundInstant(state, config);
         const fixture = state.fixtures.find((f) => f.result && (f.homeTeamId === 'NYM' || f.awayTeamId === 'NYM'));
         if (!fixture?.result) {

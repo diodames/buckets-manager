@@ -38,6 +38,11 @@ export function drawChrome(ctx: AppContext, title: string, hints: string[]): voi
         grid.putRight(grid.cols - 1, 0, budgetRole, rightParts.join('  '));
     }
 
+    drawChromeFooter(grid, hints);
+}
+
+/** Bottom hint bar; call again after screen content so the footer stays visible. */
+export function drawChromeFooter(grid: TextGrid, hints: string[]): void {
     grid.fillCells(0, grid.rows - 1, grid.cols, 1, ROLE.panel);
     grid.put(1, grid.rows - 1, ROLE.textDim, hints.join('   '));
 }

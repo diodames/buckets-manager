@@ -45,6 +45,7 @@ export class BclScheduleScreen implements Screen {
         const grid = this.ctx.grid;
         const bcl = state.competitions.bcl;
         drawChrome(this.ctx, t('bcl.schedule'), [t('hint.pages'), t('hint.back')]);
+        this.ctx.grid.put(2, 2, ROLE.textDim, t('hint.bclPhases'));
 
         if (!bcl) {
             grid.put(3, 5, ROLE.textDim, '-');

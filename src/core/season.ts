@@ -1,9 +1,13 @@
 import { payBclPrize } from './bcl/prizes';
-import { assignNblBclQualifiers, startBclSeason } from './bcl/index';
-import { generateBclClubs } from './league/generate';
+import { assignNblBclQualifiers, simBclQualifyingSeries, startBclSeason } from './bcl/index';
+import { payFecPrize } from './fec/prizes';
+import { startFecSeason } from './fec/index';
+import { generateBclClubs, generateFecClubs } from './league/generate';
 import { createSchedule } from './league/schedule';
 import { computeNblStandings } from './league/standings';
-import type { GameConfig } from './game';
+import { fixtureSeed, isCampaignOver, toSimInput, type GameConfig } from './game';
+import { simulateMatch } from './sim/matchEngine';
+import { evaluateBoardObjective, createBoardObjective } from './board';
 import { evaluateBreakthroughOffers, removePlayerAbroad } from './breakthrough';
 import type { GameState, OffseasonReviewSummary, OffseasonSummary, Player, PlayerId } from './model/types';
 import { sortMovements, stageMovement, type StagedMovement } from './offseasonMovements';
@@ -25,15 +29,14 @@ import {
 import { evaluateUserContractWalkaways } from './contracts';
 import { evaluateCareerRetirements } from './retirement';
 import { initializeSeasonMarket } from './seasonMarket';
+import { initializeScouting } from './scouting';
+import { computeSeasonAwards } from './awards';
 import type { Rng } from './rng';
 
 const FA_TARGET = 18;
 
 export function canStartNextSeason(state: GameState, config: GameConfig): boolean {
-    const seasonRounds = (config.league.teams.length - 1) * config.league.roundRobinLegs;
-    const seasonDone = state.currentRound > seasonRounds;
-    const champion = state.playoffs?.championTeamId != null;
-    return seasonDone && champion;
+    return isCampaignOver(state, config);
 }
 
 /** User roster players whose contracts expire at the upcoming offseason rollover. */
@@ -69,9 +72,13 @@ export function prepareOffseasonReview(state: GameState, config: GameConfig, _rn
     const nblPrize = payNblPlayoffPrize(state, config.economy);
     const nblFinish = userNblPlayoffFinish(state);
     const bclPrize = payBclPrize(state, config.bcl, config.economy);
-    const bclFinish = state.competitions.bcl?.userFinish ?? null;
+    const bclFinish = (state.competitions.bcl?.userFinish ?? null) as import('./model/types').BclUserFinish | null;
+    const fecPrize = payFecPrize(state, config.fec, config.economy);
+    const fecFinish = state.competitions.fec?.userFinish ?? null;
 
-    const totalIncome = nblPrize + nblLeague.amount + bclPrize + sponsorSeasonEnd.bonusPaid;
+    const totalIncome = nblPrize + nblLeague.amount + bclPrize + fecPrize + sponsorSeasonEnd.bonusPaid;
+
+    state.lastSeasonAwards = computeSeasonAwards(state);
 
     return {
         nblFinish,
@@ -81,6 +88,9 @@ export function prepareOffseasonReview(state: GameState, config: GameConfig, _rn
         bclQualified: state.bclQualified,
         bclFinish,
         bclPrize,
+        fecQualified: state.fecQualified,
+        fecFinish: fecFinish as import('./model/types').FecUserFinish | null,
+        fecPrize,
         sponsorBonus: sponsorSeasonEnd.bonusPaid,
         sponsorTargetMet: sponsorSeasonEnd.targetMet,
         sponsorPromisedRank: sponsorSeasonEnd.promisedMaxRank,
@@ -96,7 +106,19 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     }
 
     const nblFinish = userNblPlayoffFinish(state);
-    const bclFinishBeforeReset = state.competitions.bcl?.userFinish ?? null;
+    const bclFinishBeforeReset = (state.competitions.bcl?.userFinish ?? null) as import('./model/types').BclUserFinish | null;
+    const fecFinishBeforeReset = (state.competitions.fec?.userFinish ?? null) as import('./model/types').FecUserFinish | null;
+
+    evaluateBoardObjective(state, config.league, config.economy);
+
+    const scoringAward = state.lastSeasonAwards?.awards.find((a) => a.kind === 'scoring');
+    state.careerHistory.push({
+        seasonYear: state.seasonYear,
+        nblFinish,
+        nblLeagueRank: state.lastSeasonStandings[state.userTeamId] ?? null,
+        awards: state.lastSeasonAwards,
+        topScorerName: scoringAward?.playerName ?? null,
+    });
 
     const breakthroughOffers = evaluateBreakthroughOffers(state, config, rng.fork('breakthrough'));
     const aiRenewals = runAiContractRenewals(state, config.market, config.economy, rng.fork('ai-renew'));
@@ -147,6 +169,12 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     state.market.youthArrivalsThisSeason = 0;
     state.market.pendingFixedYouthArrivals = [];
     state.market.unsolicitedBidUsed = false;
+    state.market.scoutingComplete = false;
+    state.market.scoutedFreeAgents = {};
+    state.market.scoutingBudget = 0;
+    state.market.scoutingBudgetTotal = 0;
+    state.market.watchlist = [];
+    state.market.pendingPressHooks = [];
 
     scheduleFixedYouthProspects(
         state,
@@ -157,7 +185,6 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     );
 
     initializeSeasonMarket(state, config, rng.fork('season-market'));
-
     const newFreeAgents = replenishFreeAgents(
         state,
         FA_TARGET,
@@ -165,6 +192,7 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
         config.balance,
         rng.fork('fa-replenish'),
     );
+    initializeScouting(state, config, rng.fork('scouting'));
 
     const nblTeamIds = config.league.teams.map((t) => t.id);
     state.fixtures = createSchedule(nblTeamIds, config.league.roundRobinLegs);
@@ -180,8 +208,32 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     state.seasonYear++;
 
     generateAmbitionSponsorOffers(state, config.economy, rng.fork('sponsors'));
+    state.boardObjective = createBoardObjective(state, config.league);
+    state.club.transferEmbargo = false;
     generateBclClubs(state, config.bcl, config.balance, config.names, state.seasonYear, rng.fork('bcl-gen'));
     startBclSeason(state, config.bcl, config.league, rng.fork('bcl-start'));
+    if (state.competitions.bcl?.phase === 'qualifying'
+        && state.bclQualifyingEntrantId
+        && state.bclQualifyingEntrantId !== state.userTeamId) {
+        simBclQualifyingSeries(state, config.bcl, config.league, rng.fork('bcl-quali-sim'), (fixture) => {
+            const { summary, outcome } = simulateMatch({
+                home: toSimInput(state, fixture.homeTeamId),
+                away: toSimInput(state, fixture.awayTeamId),
+                seed: fixtureSeed(state, fixture.id),
+                balance: config.balance,
+                moments: config.moments,
+            });
+            fixture.result = summary;
+            for (const [playerId, roundsOut] of Object.entries(outcome.injuries)) {
+                const player = state.players[playerId];
+                if (player) {
+                    player.injury = { roundsOut };
+                }
+            }
+        });
+    }
+    generateFecClubs(state, config.fec, config.balance, config.names, state.seasonYear, rng.fork('fec-gen'));
+    startFecSeason(state, config.fec, rng.fork('fec-start'));
 
     const allStaged: StagedMovement[] = [
         ...retirements.staged,
@@ -199,6 +251,9 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
         bclQualified: state.bclQualified,
         bclFinish: bclFinishBeforeReset,
         bclPrize: 0,
+        fecQualified: state.fecQualified,
+        fecFinish: fecFinishBeforeReset as import('./model/types').FecUserFinish | null,
+        fecPrize: 0,
         contractsExpired,
         newFreeAgents,
         youthGraduated,
@@ -226,6 +281,7 @@ export function startNextSeason(state: GameState, config: GameConfig, rng: Rng):
         nblLeagueRank: review.nblLeagueRank,
         nblLeaguePrize: review.nblLeaguePrize,
         bclPrize: review.bclPrize,
+        fecPrize: review.fecPrize,
         sponsorBonus: review.sponsorBonus,
         sponsorTargetMet: review.sponsorTargetMet,
         sponsorPromisedRank: review.sponsorPromisedRank,

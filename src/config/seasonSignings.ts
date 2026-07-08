@@ -6,6 +6,8 @@ export interface SeasonSigningDef extends RealPlayerDef {
     availableFromRound: number;
     /** Club that signed this player in real life; nudges AI interest. */
     likelyTeamId?: string;
+    /** Optional scout presentation tier for marquee summer targets. */
+    scoutTier?: 'headline' | 'veteran' | 'journeyman';
 }
 
 /** A rostered player who leaves mid-season and returns to the FA pool. */

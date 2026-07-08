@@ -4,11 +4,11 @@ import { marketConfig } from '../../config/market';
 import { leagueConfig } from '../../config/league';
 import { contractCashflowPreview } from '../../core/cashflow';
 import type { ExternalOffersConfig } from '../../config/externalOffers';
-import { clubBclPrestigeMessageKey, negotiateOffer, negotiationDemand, type NegotiationResult } from '../../core/market';
+import { clubBclPrestigeMessageKey, agentFeeAmount, negotiateOffer, negotiationDemand, type NegotiationResult } from '../../core/market';
 import type { GameState, NegotiationState, Player, PlayerId } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
 import { t } from '../../i18n';
-import { formatMoney, playerName } from '../format';
+import { formatMoney, formatSalaryWithMonthly, playerName } from '../format';
 import { ROLE } from '../theme';
 import { MenuList } from '../widgets/MenuList';
 
@@ -169,7 +169,10 @@ export class NegotiationScreen implements Screen {
         grid.put(14, 8, ROLE.textBright, `${playerName(player)}  (${player.position}, ${player.age}, ${t('col.ovr')} ${overallRating(player.attributes)})`);
         const current = player.contract;
         if (current) {
-            grid.put(14, 9, ROLE.textDim, t('nego.current', { salary: formatMoney(current.salary), years: current.yearsLeft }));
+            grid.put(14, 9, ROLE.textDim, t('nego.current', {
+                salary: formatSalaryWithMonthly(current.salary),
+                years: current.yearsLeft,
+            }));
         }
         if (this.mode === 'externalRetention' && this.foreignBenchmark) {
             grid.put(14, 10, ROLE.gold, t('nego.foreignBenchmark', { amount: formatMoney(this.foreignBenchmark) }));
@@ -196,8 +199,13 @@ export class NegotiationScreen implements Screen {
         if (preview.affordability.ok) {
             const endRole = preview.projectedEndBalance >= 0 ? ROLE.textDim : ROLE.danger;
             grid.put(14, detailRow, endRole, t('nego.projectedEnd', { amount: formatMoney(preview.projectedEndBalance) }));
+            detailRow++;
         } else {
             grid.put(14, detailRow, ROLE.danger, t(preview.affordability.reason === 'wageBudgetExceeded' ? 'nego.wageBudgetExceeded' : 'nego.projectedDeficit'));
+            detailRow++;
+        }
+        if (this.mode !== 'externalRetention') {
+            grid.put(14, detailRow, ROLE.textDim, t('nego.agentFee', { amount: formatMoney(agentFeeAmount(player, this.salary, marketConfig)) }));
         }
 
         const first = this.menu.items[0];
@@ -228,6 +236,10 @@ export class NegotiationScreen implements Screen {
                     break;
                 case 'rosterFull':
                     grid.put(14, resultRow, ROLE.danger, t('nego.rosterFull'));
+                    break;
+                case 'foreignCapFull':
+                    grid.put(14, resultRow, ROLE.danger, t('nego.foreignCapFull'));
+                    break;
                     break;
                 case 'wageBudgetExceeded':
                     grid.put(14, resultRow, ROLE.danger, t('nego.wageBudgetExceeded'));
