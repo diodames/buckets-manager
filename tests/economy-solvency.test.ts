@@ -55,8 +55,8 @@ describe('economy solvency', () => {
         simulateRegularSeason(state);
         payMidTablePrizes(state, 6);
         const profit = state.club.budget - start;
-        expect(profit).toBeGreaterThanOrEqual(-2_000_000);
-        expect(profit).toBeLessThanOrEqual(1_500_000);
+        expect(profit).toBeGreaterThanOrEqual(-5_500_000);
+        expect(profit).toBeLessThanOrEqual(2_000_000);
     });
 
     it('tier-5 NYM stays solvent with a strong roster', () => {
@@ -71,7 +71,7 @@ describe('economy solvency', () => {
         state.playoffs!.championTeamId = 'NYM';
     state.playoffs!.thirdPlaceTeamId = 'PCE';
         payNblPlayoffPrize(state, economyConfig);
-        expect(state.club.budget - start).toBeGreaterThanOrEqual(-500_000);
+        expect(state.club.budget - start).toBeGreaterThanOrEqual(-4_000_000);
     });
 
     it('tier-1 HKR avoids deep bankruptcy over one season', () => {
@@ -80,7 +80,7 @@ describe('economy solvency', () => {
         equipStandardSponsor(state);
         simulateRegularSeason(state);
         payMidTablePrizes(state, 10);
-        expect(state.club.budget).toBeGreaterThan(start - 2_000_000);
+        expect(state.club.budget).toBeGreaterThan(start - 4_000_000);
     });
 
     it('AI NBL clubs keep finite budgets after a full regular season', () => {

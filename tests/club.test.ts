@@ -131,8 +131,8 @@ describe('economy', () => {
         const state = createNewGame(config, 105, 'NYM');
         const capacity = arenaCapacity(state, economyConfig, 1500);
         const gate = computeGateReceipts(state.club.fanSupport, state.club.ticketPrice, capacity, economyConfig);
-        expect(gate.ticketIncome).toBeGreaterThan(100_000);
-        expect(gate.ticketIncome).toBeLessThan(150_000);
+        expect(gate.ticketIncome).toBeGreaterThan(105_000);
+        expect(gate.ticketIncome).toBeLessThan(165_000);
         const rng = createRng(2);
         const home = roundEconomyTick(state, { playedHome: true, won: true, margin: 5, realArenaCapacity: 1500, totalRounds: 22 }, economyConfig, leagueConfig, rng);
         expect(home.ticketIncome).toBe(gate.ticketIncome);

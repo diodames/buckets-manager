@@ -28,9 +28,9 @@ export const marketConfig = Object.freeze({
         lockMoralePenalty: 10,
         renewalsOpenFromRound: 12,
         // Free agents demand leverage mid-season (M5).
-        freeAgentDemandMult: 1.22,
+        freeAgentDemandMult: 1.28,
         // Salary stepper granularity in the UI.
-        salaryStep: 50_000,
+        salaryStep: 100_000,
         // Terminating a contract costs this share of the remaining salary.
         buyoutFactor: 0.5,
         // Locker-room morale hit when a teammate is cut.
@@ -38,7 +38,7 @@ export const marketConfig = Object.freeze({
     }),
     transfers: Object.freeze({
         // Transfer value TV = salary * base * ageV * potV * contractV (M6).
-        salaryMult: 3.2,
+        salaryMult: 4.0,
         ageValue: Object.freeze([
             { maxAge: 22, factor: 1.5 },
             { maxAge: 26, factor: 1.2 },
@@ -60,22 +60,22 @@ export const marketConfig = Object.freeze({
         aiCounterCeiling: 1.1,
         offerTtlRounds: 2,
         // Bidding on AI players (M8).
-        sellFactorSurplus: 0.95,
-        sellFactorNormal: 1.45,
-        sellFactorCore: 2.05,
-        sellFactorCzechCore: 2.55,
+        sellFactorSurplus: 1.05,
+        sellFactorNormal: 1.58,
+        sellFactorCore: 2.25,
+        sellFactorCzechCore: 2.85,
         // Unsolicited bids for stars (M10) — rare; at most one per season.
         unsolicitedChancePerRound: 0.005,
         unsolicitedFactorMin: 1.2,
         unsolicitedFactorMax: 1.4,
         rejectedBigBidMorale: 8,
         // Personal terms after a transfer (M8).
-        postTransferDemandMult: 1.12,
+        postTransferDemandMult: 1.18,
         // Extra acceptance score once a fee is agreed — player is ready to move.
         transferTermsAcceptBonus: 5,
         // When fee >= transfer value, demand scales by this (serious buyer signal).
         transferFeeCommitmentMult: 0.96,
-        bidStep: 300_000,
+        bidStep: 350_000,
     }),
     youth: Object.freeze({
         // Intake after this round (M11).
@@ -88,7 +88,7 @@ export const marketConfig = Object.freeze({
         overallShareMin: 0.45,
         overallShareMax: 0.65,
         // Youth deal (M13).
-        salary: 200_000,
+        salary: 300_000,
         years: 2,
         decisionRounds: 3,
         // Star presentation (M12): band width in stars by academy level 1..5.

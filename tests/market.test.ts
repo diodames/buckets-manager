@@ -6,7 +6,7 @@ import { youthAcademyProspects } from '../src/config/youthAcademy';
 import { advanceRoundInstant, createNewGame } from '../src/core/game';
 import {
     acceptTransferOffer, bidOnPlayer, canNegotiate, contractBuyout, contractDemand, executePurchase,
-    isAcademyPlayer, listPlayer, marketTick, negotiateOffer, releasePlayer, renewalStatus, requiredSalary, returnYouthToAcademy, runYouthIntake,
+    isAcademyPlayer, listPlayer, marketTick, marketSalaryForPlayer, negotiateOffer, releasePlayer, renewalStatus, requiredSalary, resyncRosterContracts, returnYouthToAcademy, runYouthIntake,
     signYouth, teamNeeds, transferValue,
 } from '../src/core/market';
 import type { Player } from '../src/core/model/types';
@@ -52,6 +52,16 @@ function completeSeason(state: ReturnType<typeof createNewGame>): void {
 }
 
 describe('contracts (M1-M5)', () => {
+    it('resyncRosterContracts rewrites stale salaries to the current market rate', () => {
+        const state = createNewGame(config, 898, 'NYM');
+        const player = bestUserPlayer(state);
+        const yearsLeft = player.contract?.yearsLeft ?? 1;
+        player.contract!.salary = 250_000;
+        resyncRosterContracts(state, config.economy, marketConfig);
+        expect(player.contract?.salary).toBe(marketSalaryForPlayer(player, config.economy, marketConfig));
+        expect(player.contract?.yearsLeft).toBe(yearsLeft);
+    });
+
     it('every rostered player starts with a contract; free agents exist unsigned', () => {
         const state = createNewGame(config, 900, 'NYM');
         for (const player of Object.values(state.players)) {

@@ -1,6 +1,8 @@
 import { economyConfig } from '../../config/economy';
 import { leagueConfig } from '../../config/league';
+import { marketConfig } from '../../config/market';
 import { SAVE_FORMAT_VERSION } from '../game';
+import { resyncRosterContracts } from '../market';
 import type { GameState } from '../model/types';
 
 export interface SaveFile {
@@ -406,6 +408,13 @@ const migrations: Record<number, (old: unknown) => unknown> = {
         }
         state.version = 26;
         return { ...file, formatVersion: 26 };
+    },
+    // v26 -> v27: resync all player contracts to the current salary / transfer scale.
+    26: (old) => {
+        const file = old as { formatVersion: number; state: GameState };
+        resyncRosterContracts(file.state, economyConfig, marketConfig);
+        file.state.version = 27;
+        return { ...file, formatVersion: 27 };
     },
 };
 

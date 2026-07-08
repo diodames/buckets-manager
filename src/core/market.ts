@@ -50,6 +50,42 @@ export function baseSalary(overall: number, economy: EconomyConfig): number {
     return Math.max(economy.salary.min, Math.round(economy.salary.base + (overall - 50) * economy.salary.perPoint));
 }
 
+function isYouthContract(player: Player, market: MarketConfig): boolean {
+    return player.id.startsWith('YTH-') && player.age <= market.youth.ageMax + 1;
+}
+
+/** Current fair salary for a player under economy rules (youth deals use the youth rate). */
+export function marketSalaryForPlayer(player: Player, economy: EconomyConfig, market: MarketConfig): number {
+    if (isYouthContract(player, market)) {
+        return market.youth.salary;
+    }
+    return baseSalary(overallRating(player.attributes), economy);
+}
+
+/** Salary used for transfer value and wage math; never below the current market rate. */
+export function effectiveContractSalary(player: Player, economy: EconomyConfig, market: MarketConfig): number {
+    const marketRate = marketSalaryForPlayer(player, economy, market);
+    const stored = player.contract?.salary;
+    if (stored === undefined || stored === 0) {
+        return marketRate;
+    }
+    return Math.max(stored, marketRate);
+}
+
+/** Rewrites every stored contract to the current salary scale (preserves yearsLeft). */
+export function resyncRosterContracts(state: GameState, economy: EconomyConfig, market: MarketConfig): void {
+    const players = state.players;
+    if (!players) {
+        return;
+    }
+    for (const player of Object.values(players)) {
+        if (!player.contract || player.contract.salary === 0) {
+            continue;
+        }
+        player.contract.salary = marketSalaryForPlayer(player, economy, market);
+    }
+}
+
 function factorByAge(table: readonly { maxAge: number; factor: number }[], age: number): number {
     return table.find((row) => age <= row.maxAge)?.factor ?? 1;
 }
@@ -87,7 +123,7 @@ export function contractDemand(_state: GameState, player: Player, market: Market
 export function transferValue(player: Player, market: MarketConfig, economy: EconomyConfig): number {
     const tCfg = market.transfers;
     const overall = overallRating(player.attributes);
-    const salary = player.contract?.salary ?? baseSalary(overall, economy);
+    const salary = effectiveContractSalary(player, economy, market);
     const ageV = factorByAge(tCfg.ageValue, player.age);
     const potV = Math.min(tCfg.potentialCap, 1 + (player.potential - overall) / 50);
     const contractV = (player.contract?.yearsLeft ?? 1) >= 2 ? tCfg.contractValue.multi : tCfg.contractValue.finalYear;

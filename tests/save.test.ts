@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { economyConfig } from '../src/config/economy';
 import { advanceRoundInstant, createNewGame, SAVE_FORMAT_VERSION } from '../src/core/game';
+import { baseSalary } from '../src/core/market';
+import { overallRating } from '../src/core/model/types';
 import { deserializeSave, SaveError, serializeSave } from '../src/core/save/save';
 import { MemoryStorageAdapter } from '../src/services/storage';
 import { testConfig as config } from './helpers';
@@ -74,6 +77,26 @@ describe('save round-trip', () => {
             expect(error).toBeInstanceOf(SaveError);
             expect((error as SaveError).kind).toBe('tooNew');
         }
+    });
+
+    it('migrates v26 saves: resyncs stale contracts to the current salary scale', () => {
+        const state = createNewGame(config, 556, 'DEC');
+        const player = Object.values(state.players).find((p) => p.teamId === 'DEC' && p.contract);
+        expect(player).toBeDefined();
+        player!.contract!.salary = 280_000;
+        const expected = baseSalary(overallRating(player!.attributes), economyConfig);
+        expect(expected).toBeGreaterThan(280_000);
+
+        const v26 = {
+            formatVersion: 26,
+            name: 'v26',
+            savedAtIso: '2026-07-04T00:00:00.000Z',
+            state: { ...state, version: 26 },
+        };
+        const migrated = deserializeSave(JSON.stringify(v26));
+        expect(migrated.formatVersion).toBe(SAVE_FORMAT_VERSION);
+        expect(migrated.state.players[player!.id]?.contract?.salary).toBe(expected);
+        expect(migrated.state.players[player!.id]?.contract?.yearsLeft).toBe(player!.contract!.yearsLeft);
     });
 });
 
