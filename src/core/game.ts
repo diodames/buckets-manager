@@ -71,7 +71,7 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
     for (const player of Object.values(players)) {
         player.contract = {
             salary: baseSalary(overallRating(player.attributes), config.economy),
-            yearsLeft: contractRng.int(1, 3),
+            yearsLeft: contractRng.int(config.market.contracts.yearsMin, config.market.contracts.yearsMax),
         };
     }
     const teamIds = config.league.teams.map((t) => t.id);

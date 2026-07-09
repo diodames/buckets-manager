@@ -32,8 +32,6 @@ import { initializeSeasonMarket } from './seasonMarket';
 import { computeSeasonAwards } from './awards';
 import type { Rng } from './rng';
 
-const FA_TARGET = 18;
-
 export function canStartNextSeason(state: GameState, config: GameConfig): boolean {
     return isCampaignOver(state, config);
 }
@@ -182,7 +180,7 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     initializeSeasonMarket(state, config, rng.fork('season-market'));
     const newFreeAgents = replenishFreeAgents(
         state,
-        FA_TARGET,
+        config.market.offseason.faPoolTarget,
         config.names,
         config.balance,
         rng.fork('fa-replenish'),

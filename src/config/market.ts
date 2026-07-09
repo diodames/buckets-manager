@@ -2,8 +2,8 @@
 // Formulas follow docs/design/transfers-contracts-youth-brief.md.
 export const marketConfig = Object.freeze({
     contracts: Object.freeze({
-        yearsMin: 1,
-        yearsMax: 3,
+        yearsMin: 2,
+        yearsMax: 4,
         // Agent fee on signing/renewal (M4).
         agentFeePct: 0.08,
         agentFeeElitePct: 0.10,
@@ -149,15 +149,20 @@ export const marketConfig = Object.freeze({
         maxTransferSpendPct: 0.60,
         forcedSellPayrollWeeks: 2,
     }),
+    /** Minimum unsigned free-agent pool after offseason rollover. */
+    offseason: Object.freeze({
+        faPoolTarget: 18,
+    }),
     /** AI contract renewals, walk-aways, and elite signing gates. */
     aiRenewal: Object.freeze({
-        baseRenewChance: 0.55,
+        baseRenewChance: 0.72,
         czechBonus: 0.22,
         coreBonus: 0.28,
+        depthPlayerBonus: 0.14,
         starSalaryPremium: 0.10,
         coreYearsMin: 2,
         coreYearsMax: 3,
-        walkAwayIntentThreshold: 0.35,
+        walkAwayIntentThreshold: 0.42,
         foreignAbroadWalkChance: 0.55,
         userForeignAbroadWalkChance: 0.25,
         minGames: 12,

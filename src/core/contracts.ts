@@ -427,6 +427,23 @@ export interface AiRenewalResult {
     nonRenewalPlayerIds: PlayerId[];
 }
 
+function isProactiveRenewalCandidate(state: GameState, player: Player, teamId: TeamId): boolean {
+    return isCorePlayer(state, player, teamId)
+        || (isCzech(player) && isStarterOnTeam(state, player, teamId));
+}
+
+function renewalContractYears(
+    rng: Rng,
+    cfg: MarketConfig['aiRenewal'],
+    core: boolean,
+    czech: boolean,
+): number {
+    if (czech && core) {
+        return rng.int(cfg.coreYearsMin, cfg.coreYearsMax);
+    }
+    return rng.int(2, 3);
+}
+
 /** Smart AI retention: Czech cores renewed, overperformers on bad teams walk away. */
 export function runSmartAiContractRenewals(
     state: GameState,
@@ -449,14 +466,20 @@ export function runSmartAiContractRenewals(
         if (!player.teamId || player.teamId === state.userTeamId || !player.contract) {
             continue;
         }
-        if (player.contract.yearsLeft > 1) {
+
+        const yearsLeft = player.contract.yearsLeft;
+        if (yearsLeft > 2) {
+            continue;
+        }
+        if (yearsLeft === 2 && !isProactiveRenewalCandidate(state, player, player.teamId)) {
             continue;
         }
 
         const teamId = player.teamId;
         const intent = walkAwayIntent(state, player, teamId, market, externalOffers);
+        const proactive = yearsLeft === 2;
 
-        if (intent >= cfg.walkAwayIntentThreshold) {
+        if (!proactive && intent >= cfg.walkAwayIntentThreshold) {
             if (!isCzech(player) && rng.chance(cfg.foreignAbroadWalkChance)) {
                 result.abroadStaged.push(stageMovement(state, player, 'leftAbroad'));
                 removePlayerAbroadNoFee(state, player);
@@ -469,6 +492,7 @@ export function runSmartAiContractRenewals(
         }
 
         const core = isCorePlayer(state, player, teamId);
+        const { games } = playerSeasonBreakthrough(state, player.id, externalOffers);
         let pAccept: number = cfg.baseRenewChance;
         if (isCzech(player)) {
             pAccept += cfg.czechBonus;
@@ -476,26 +500,26 @@ export function runSmartAiContractRenewals(
         if (core) {
             pAccept += cfg.coreBonus;
         }
+        if (!core && games >= cfg.minGames && playerImportance(state, player, teamId) < 0.5) {
+            pAccept += cfg.depthPlayerBonus;
+        }
         pAccept += aiRenewPrestigeBonus(state, teamId, player, market, externalOffers);
         pAccept -= intent * 0.5;
         pAccept = clamp(pAccept, cfg.renewAcceptMin, cfg.renewAcceptMax);
 
         if (!rng.chance(pAccept)) {
-            result.nonRenewalPlayerIds.push(player.id);
-            result.walkedToFa++;
+            if (!proactive) {
+                result.nonRenewalPlayerIds.push(player.id);
+                result.walkedToFa++;
+            }
             continue;
         }
 
         const demand = contractDemand(state, player, market, economy);
         const salaryPremium = core ? cfg.starSalaryPremium : 0;
         const salary = Math.round((demand * (1 + salaryPremium)) / 10_000) * 10_000;
-        let yearsLeft: number;
-        if (isCzech(player) && core) {
-            yearsLeft = rng.int(cfg.coreYearsMin, cfg.coreYearsMax);
-        } else {
-            yearsLeft = rng.int(1, 2);
-        }
-        player.contract = { salary, yearsLeft };
+        const renewedYears = renewalContractYears(rng, cfg, core, isCzech(player));
+        player.contract = { salary, yearsLeft: renewedYears };
         result.renewed++;
     }
 

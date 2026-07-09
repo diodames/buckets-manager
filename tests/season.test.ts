@@ -165,6 +165,27 @@ describe('season rollover', () => {
         )).toBe(true);
     });
 
+    it('keeps roster-to-FA departures in a moderate band after full season rollover', () => {
+        const state = createNewGame(config, 5020, 'NYM');
+        let rosterIndex = 0;
+        for (const player of Object.values(state.players)) {
+            if (!player.teamId || player.teamId === state.userTeamId || !player.contract) {
+                continue;
+            }
+            if (rosterIndex % 3 === 0) {
+                player.contract.yearsLeft = 1;
+            }
+            rosterIndex++;
+        }
+        endSeason(state);
+        const summary = startNextSeason(state, config, createRng(5020));
+        const rosterDepartures = summary.playerMovements.filter(
+            (m) => m.kind === 'freeAgent' && (m.reason === 'expired' || m.reason === 'nonRenewal'),
+        );
+        expect(rosterDepartures.length).toBeGreaterThanOrEqual(2);
+        expect(rosterDepartures.length).toBeLessThanOrEqual(18);
+    });
+
     it('includes playerMovements array in offseason summary', () => {
         const state = createNewGame(config, 5007, 'NYM');
         endSeason(state);

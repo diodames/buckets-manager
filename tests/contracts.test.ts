@@ -144,6 +144,20 @@ describe('smart AI contract renewals', () => {
         runAiContractRenewals(state, marketConfig, config.economy, mockRng());
         expect(player.contract?.yearsLeft).toBeGreaterThanOrEqual(2);
     });
+
+    it('proactively renews core players one year before expiry', () => {
+        const state = createNewGame(config, 11005, 'DEC');
+        state.lastSeasonStandings['NYM'] = 1;
+        const player = czechStarter(state, 'NYM');
+        if (player.contract) {
+            player.contract.yearsLeft = 2;
+        }
+        expect(isCorePlayer(state, player, 'NYM')).toBe(true);
+
+        runSmartAiContractRenewals(state, marketConfig, config.economy, externalOffersConfig, contractDemand, mockRng());
+        expect(player.contract?.yearsLeft).toBeGreaterThanOrEqual(2);
+        expect(player.teamId).toBe('NYM');
+    });
 });
 
 describe('BCL elite signing gate', () => {
