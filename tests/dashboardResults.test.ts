@@ -53,9 +53,10 @@ describe('dashboardResults', () => {
         expect(activeResultGroups(grouped)).toEqual(['bcl', 'fec']);
     });
 
-    it('derives column starts from grid width', () => {
-        expect(resultColumnStarts(80, ['nbl', 'bcl', 'fec'])).toEqual([3, 28, 53]);
-        expect(resultColumnStarts(80, ['nbl'])).toEqual([3]);
+    it('derives column starts within the left panel boundary', () => {
+        expect(resultColumnStarts(3, 40, ['nbl', 'bcl', 'fec'])).toBeNull();
+        expect(resultColumnStarts(3, 40, ['bcl', 'fec'])).toEqual([3, 21]);
+        expect(resultColumnStarts(3, 40, ['nbl'])).toEqual([3]);
     });
 
     it('truncates long result lists and reports hidden count', () => {

@@ -27,14 +27,26 @@ export function groupResultsByCompetition(
     return grouped;
 }
 
-/** Column starts for a multi-competition scoreboard on the character grid. */
-export function resultColumnStarts(gridCols: number, activeGroups: CompetitionGroup[]): number[] {
+/** Minimum column width for a fixture result line (see fixtureLine). */
+export const RESULT_MIN_COL_WIDTH = 17;
+
+/**
+ * Column starts for a multi-competition scoreboard within [startCol, maxCol).
+ * Returns null when groups cannot fit side-by-side (caller should stack vertically).
+ */
+export function resultColumnStarts(
+    startCol: number,
+    maxCol: number,
+    activeGroups: CompetitionGroup[],
+): number[] | null {
     if (activeGroups.length <= 1) {
-        return [3];
+        return [startCol];
     }
-    const startCol = 3;
-    const available = gridCols - startCol - 2;
-    const colWidth = Math.max(18, Math.floor(available / activeGroups.length));
+    const available = maxCol - startCol;
+    const colWidth = Math.max(RESULT_MIN_COL_WIDTH, Math.floor(available / activeGroups.length));
+    if (colWidth * activeGroups.length > available) {
+        return null;
+    }
     return activeGroups.map((_, index) => startCol + index * colWidth);
 }
 

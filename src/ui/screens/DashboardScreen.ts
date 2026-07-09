@@ -364,18 +364,40 @@ export class DashboardScreen implements Screen {
         }
         this.clearLeftResultsBand(grid, resultsRow);
         const maxVisible = Math.max(2, maxRow - resultsRow - 1);
-        const columns = resultColumnStarts(grid.cols, activeGroups);
+        const columns = resultColumnStarts(DashboardScreen.NBL_RESULTS_COL, infoCol, activeGroups);
 
         grid.put(DashboardScreen.NBL_RESULTS_COL, resultsRow, ROLE.header, header);
         if (activeGroups.length > 1) {
+            const groupLabel = (group: (typeof activeGroups)[number]) =>
+                group === 'nbl' ? competitionLabel('nbl') : group === 'bcl' ? t('bcl.title') : t('fec.title');
+
+            if (columns === null) {
+                let row = resultsRow + 1;
+                for (const group of activeGroups) {
+                    if (row >= maxRow) {
+                        break;
+                    }
+                    row = this.renderResultColumn(
+                        grid,
+                        DashboardScreen.NBL_RESULTS_COL,
+                        row,
+                        groupLabel(group),
+                        grouped[group],
+                        userTeamId,
+                        Math.max(2, maxRow - row),
+                        maxRow,
+                    );
+                }
+                return rightPanelRow;
+            }
+
             activeGroups.forEach((group, index) => {
                 const col = columns[index] ?? DashboardScreen.NBL_RESULTS_COL;
-                const label = group === 'nbl' ? competitionLabel('nbl') : group === 'bcl' ? t('bcl.title') : t('fec.title');
                 this.renderResultColumn(
                     grid,
                     col,
                     resultsRow + 1,
-                    label,
+                    groupLabel(group),
                     grouped[group],
                     userTeamId,
                     maxVisible,
