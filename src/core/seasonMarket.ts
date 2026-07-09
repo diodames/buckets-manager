@@ -1,5 +1,6 @@
 import type { BalanceConfig } from '../config/balance';
 import { leagueConfig } from '../config/league';
+import { normalizePlayerNameKey } from '../config/rosterAdjustments';
 import type { SeasonDepartureDef, SeasonMarketConfig, SeasonSigningDef } from '../config/seasonSignings';
 import { seasonMarketForYear } from '../config/seasonSignings';
 import type { GameConfig } from './game';
@@ -155,7 +156,11 @@ function findRosterPlayer(
     }
     for (const playerId of team.playerIds) {
         const player = state.players[playerId];
-        if (player && player.firstName === firstName && player.lastName === lastName) {
+        if (
+            player
+            && normalizePlayerNameKey(player.firstName, player.lastName)
+                === normalizePlayerNameKey(firstName, lastName)
+        ) {
             return player;
         }
     }

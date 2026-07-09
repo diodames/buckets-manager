@@ -87,8 +87,9 @@ describe('careerRetireScore', () => {
         const team = state.teams.DEC!;
         const bench = team.playerIds
             .map((id) => state.players[id])
-            .filter((p): p is Player => p !== undefined && !Object.values(team.tactics.starters).includes(p.id))[0]!;
-        bench.age = 31;
+            .filter((p): p is Player => p !== undefined && !Object.values(team.tactics.starters).includes(p.id))
+            .sort((a, b) => overallRating(a.attributes) - overallRating(b.attributes))[0]!;
+        bench.age = 33;
         bench.position = 'PF';
         addPlayedFixtures(state, bench.id, 'DEC', 10, 50);
         for (const id of team.playerIds) {

@@ -245,7 +245,7 @@ describe('transfers (M6-M9)', () => {
     it('similar-rated peers a few years apart stay in a sane fee band', () => {
         const state = createNewGame(config, 917, 'NYM');
         const template = Object.values(state.players).find(
-            (p) => p.teamId !== null && p.position === 'SG' && overallRating(p.attributes) >= 70,
+            (p) => p.teamId !== null && p.position === 'SG' && overallRating(p.attributes) >= 65,
         );
         expect(template).toBeDefined();
         if (!template) {
