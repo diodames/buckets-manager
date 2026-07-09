@@ -215,7 +215,6 @@ export const en = {
     'bcl.bracket.qf': 'Quarter-finals',
     'bcl.bracket.sf': 'Final Four - semi-finals',
     'bcl.bracket.final': 'Final',
-    'bcl.bracket.third': 'Third-place game',
     'bcl.phase.qualifying': 'Qualifying',
     'bcl.phase.regularSeason': 'Group stage',
     'bcl.phase.playIn': 'Play-ins',

@@ -75,6 +75,7 @@ export const leagueConfig = Object.freeze({
         teams: 8,
         winsNeeded: Object.freeze([2, 3, 4]),
         thirdPlaceWinsNeeded: 2,
+        includeThirdPlace: true,
     }),
     teams: Object.freeze<TeamDef[]>([
         nblTeam('NYM', 'NYM', 'ERA Basketball Nymburk', 'Nymburk', 'Nymburk', hex('#1D1D1B'), hex('#E30613'), 'Sportovní centrum Nymburk', 1500, 5),

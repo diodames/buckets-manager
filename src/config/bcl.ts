@@ -24,7 +24,6 @@ export const bclConfig = Object.freeze({
         playoffWin: 175_000,
         finalFour: 3_150_000,
         championBonus: 2_100_000,
-        thirdPlace: 1_050_000,
     }),
     // Playoff wins needed per BCL knockout stage (QF Bo3, F4 SF Bo1, F4 Final Bo1).
     knockoutWinsNeeded: Object.freeze([2, 1, 1]),

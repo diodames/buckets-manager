@@ -51,6 +51,10 @@ export function thirdPlaceWinsNeeded(league: LeagueConfig): number {
     return league.playoffs.thirdPlaceWinsNeeded ?? 2;
 }
 
+export function includeThirdPlace(league: LeagueConfig): boolean {
+    return league.playoffs.includeThirdPlace ?? true;
+}
+
 function seriesLosers(series: PlayoffSeries, league: LeagueConfig): TeamId | null {
     const winner = seriesWinner(series, league);
     if (!winner) {
@@ -111,7 +115,11 @@ export function activeSeries(state: GameState, league: LeagueConfig): PlayoffSer
             ...playoffs.series.filter((s) => s.stage === playoffs.stage && !seriesDecided(s, league)),
         );
     }
-    if (playoffs.thirdPlaceSeries && !thirdPlaceSeriesDecided(playoffs, league)) {
+    if (
+        includeThirdPlace(league)
+        && playoffs.thirdPlaceSeries
+        && !thirdPlaceSeriesDecided(playoffs, league)
+    ) {
         active.push(playoffs.thirdPlaceSeries);
     }
     return active;
@@ -148,6 +156,9 @@ export function recordSeriesGame(series: PlayoffSeries, fixture: Fixture): void 
 
 /** Creates the bronze series from decided semifinals when it was skipped earlier. */
 export function ensureThirdPlaceSeries(playoffs: PlayoffState, league: LeagueConfig): void {
+    if (!includeThirdPlace(league)) {
+        return;
+    }
     if (playoffs.thirdPlaceSeries || playoffs.thirdPlaceTeamId) {
         return;
     }
@@ -181,6 +192,9 @@ export function ensureThirdPlaceSeries(playoffs: PlayoffState, league: LeagueCon
 }
 
 function maybeStartThirdPlaceSeries(playoffs: PlayoffState, stageSeries: PlayoffSeries[], league: LeagueConfig): void {
+    if (!includeThirdPlace(league)) {
+        return;
+    }
     if (stageSeries[0]?.stage !== 1) {
         return;
     }
@@ -198,6 +212,9 @@ function maybeResolveThirdPlace(playoffs: PlayoffState, league: LeagueConfig): v
 
 /** Ensures a bronze series exists and records the winner when already decided. */
 export function repairPlayoffThirdPlace(playoffs: PlayoffState, league: LeagueConfig): void {
+    if (!includeThirdPlace(league)) {
+        return;
+    }
     ensureThirdPlaceSeries(playoffs, league);
     maybeResolveThirdPlace(playoffs, league);
 }

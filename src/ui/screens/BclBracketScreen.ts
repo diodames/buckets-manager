@@ -85,18 +85,6 @@ export class BclBracketScreen implements Screen {
                     row++;
                 }
             }
-            if (bcl.playoffs.thirdPlaceSeries) {
-                grid.put(3, row, ROLE.accent, t('bcl.bracket.third'));
-                row++;
-                const series = bcl.playoffs.thirdPlaceSeries;
-                const winner = series.homeWins > series.awayWins
-                    ? series.homeTeamId
-                    : series.awayWins > series.homeWins
-                      ? series.awayTeamId
-                      : null;
-                grid.put(3, row, winner ? ROLE.success : ROLE.text, this.renderSeriesLine(series));
-                row++;
-            }
         }
 
         if (bcl.championTeamId) {

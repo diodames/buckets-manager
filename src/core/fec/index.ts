@@ -111,6 +111,7 @@ function fecKnockoutLeague(fec: FecConfig): LeagueConfig {
         playoffs: {
             ...leagueConfig.playoffs,
             winsNeeded: [...fec.knockoutWinsNeeded] as [number, number, number],
+            includeThirdPlace: false,
         },
     };
 }

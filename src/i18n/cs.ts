@@ -213,7 +213,6 @@ export const cs: Record<TranslationKey, string> = {
     'bcl.bracket.qf': 'Ctvrtfinale',
     'bcl.bracket.sf': 'Final Four - semifinale',
     'bcl.bracket.final': 'Finale',
-    'bcl.bracket.third': 'O zapas o 3. misto',
     'bcl.phase.qualifying': 'Kvalifikace',
     'bcl.phase.regularSeason': 'Základní skupina',
     'bcl.phase.playIn': 'Play-in',

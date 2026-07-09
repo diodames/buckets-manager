@@ -606,7 +606,7 @@ export function bclKnockoutLeague(bcl: BclConfig): LeagueConfig {
         playoffs: {
             ...leagueConfig.playoffs,
             winsNeeded: [...bcl.knockoutWinsNeeded] as [number, number, number],
-            thirdPlaceWinsNeeded: 1,
+            includeThirdPlace: false,
         },
     };
 }
