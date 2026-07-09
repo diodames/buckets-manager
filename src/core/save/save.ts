@@ -465,6 +465,18 @@ const migrations: Record<number, (old: unknown) => unknown> = {
         file.state.version = 30;
         return { ...file, formatVersion: 30 };
     },
+    // v30 -> v31: remove pre-season scouting state from market.
+    30: (old) => {
+        const file = old as { formatVersion: number; state: GameState };
+        const state = file.state;
+        const market = state.market as unknown as Record<string, unknown>;
+        delete market.scoutingComplete;
+        delete market.scoutedFreeAgents;
+        delete market.scoutingBudget;
+        delete market.scoutingBudgetTotal;
+        file.state.version = 31;
+        return { ...file, formatVersion: 31 };
+    },
 };
 
 export function serializeSave(state: GameState, name: string, savedAtIso: string): string {

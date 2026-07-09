@@ -57,8 +57,6 @@ import { SaveLoadScreen } from './SaveLoadScreen';
 import { ScheduleScreen } from './ScheduleScreen';
 import { SettingsScreen } from './SettingsScreen';
 import { SponsorChoiceScreen } from './SponsorChoiceScreen';
-import { ensureScoutReportsForOpeningFreeAgents } from '../../core/scouting';
-import { ScoutingScreen } from './ScoutingScreen';
 import { StandingsScreen } from './StandingsScreen';
 import { TrainingScreen } from './TrainingScreen';
 import { YouthIntakeScreen } from './YouthIntakeScreen';
@@ -80,7 +78,6 @@ export class DashboardScreen implements Screen {
     onEnter(): void {
         this.rebuildMenu();
         this.rebuildNews();
-        this.maybeShowScoutingScreen();
         this.maybeShowContextualHint();
     }
 
@@ -159,21 +156,6 @@ export class DashboardScreen implements Screen {
         this.ctx.storage.set(AUTOSAVE_KEY, serializeSave(session.state, t('save.autosave'), new Date().toISOString()));
     }
 
-    /** Returns true when the pre-season scouting screen was pushed. */
-    private maybeShowScoutingScreen(): boolean {
-        const session = this.sessionOrThrow;
-        const state = session.state;
-        if (state.market.scoutingComplete || state.currentRound !== 1) {
-            return false;
-        }
-        const rng = createRng(state.masterSeed).fork(`scout-resume:${state.seasonYear}`);
-        ensureScoutReportsForOpeningFreeAgents(state, this.ctx.config, rng);
-        this.ctx.screens.push(new ScoutingScreen(this.ctx, () => {
-            this.afterOffseasonSummary();
-        }));
-        return true;
-    }
-
     private startNextSeasonFlow(): void {
         const session = this.sessionOrThrow;
         const rng = createRng(session.state.masterSeed).fork(`next-season:${session.state.seasonYear}`);
@@ -184,9 +166,7 @@ export class DashboardScreen implements Screen {
             const summary = completeOffseasonRollover(session.state, this.ctx.config, rng.fork('rollover'));
             this.autosave();
             this.ctx.screens.push(new OffseasonScreen(this.ctx, summary, () => {
-                if (!this.maybeShowScoutingScreen()) {
-                    this.afterOffseasonSummary();
-                }
+                this.afterOffseasonSummary();
             }));
         }));
     }

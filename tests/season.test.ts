@@ -12,7 +12,6 @@ import { createNewGame } from '../src/core/game';
 import { graduateUnsignedYouthProspects, releaseExpiredPlayer, replenishFreeAgents } from '../src/core/market';
 import { startPlayoffs } from '../src/core/playoffs';
 import { canStartNextSeason, startNextSeason } from '../src/core/season';
-import { canScoutPlayer, scoutedPlayerIds } from '../src/core/scouting';
 import { createRng } from '../src/core/rng';
 import { bclPrizeAmount } from '../src/core/bcl/prizes';
 import { assignNblBclQualifiers, czechBclQualifiers, nblPlayoffBclQualifiers, nblPlayoffBclQualifyingEntrant, nblPlayoffFecQualifiers, startBclSeason } from '../src/core/bcl/index';
@@ -95,24 +94,18 @@ describe('season rollover', () => {
         expect(summary.nblPrize).toBeGreaterThanOrEqual(0);
     });
 
-    it('seeds scout reports for replenished free agents after rollover', () => {
+    it('replenishes free agents after offseason rollover', () => {
         const state = createNewGame(config, 5010, 'NYM');
         simFullSeason(state);
         if (!canStartNextSeason(state, config)) {
             finishPlayoffs(state);
         }
         startNextSeason(state, config, createRng(5010));
-        expect(state.market.scoutingComplete).toBe(false);
         expect(state.currentRound).toBe(1);
         const freeAgents = Object.values(state.players).filter(
             (p) => p.teamId === null && p.contract === null && (p.id.startsWith('FA-') || p.id.startsWith('SM-')),
         );
         expect(freeAgents.length).toBeGreaterThan(0);
-        for (const player of freeAgents) {
-            expect(state.market.scoutedFreeAgents[player.id]).toBeDefined();
-            expect(canScoutPlayer(state, player.id)).toBe(true);
-        }
-        expect(scoutedPlayerIds(state).length).toBeGreaterThanOrEqual(freeAgents.length);
     });
 
     it('expires contracts and releases players to free agency', () => {

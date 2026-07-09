@@ -16,9 +16,9 @@ export const marketConfig = Object.freeze({
             { maxAge: 99, factor: 0.9 },
         ]),
         happinessMin: 0.9, // morale >= 80
-        happinessMax: 1.25, // morale <= 30
+        happinessMax: 1.32, // morale <= 30
         // Acceptance scoring (M3).
-        acceptThreshold: 60,
+        acceptThreshold: 65,
         moneyWeight: 40,
         playingTimeWeight: 10,
         topTableBonus: 8,
@@ -26,16 +26,16 @@ export const marketConfig = Object.freeze({
         longDealYoungBonus: 5,
         longDealOldPenalty: 5,
         // Negotiation flow.
-        maxRounds: 3,
+        maxRounds: 2,
         firmMinimumFactor: 0.97,
-        lockRounds: 5,
-        lockMoralePenalty: 10,
+        lockRounds: 7,
+        lockMoralePenalty: 12,
         renewalsOpenFromRound: 12,
         // Free agents demand leverage by season phase (M5).
         freeAgentDemandByRound: Object.freeze([
-            { maxRound: 7, mult: 1.05 },
-            { maxRound: 12, mult: 1.15 },
-            { maxRound: 99, mult: 1.25 },
+            { maxRound: 7, mult: 1.08 },
+            { maxRound: 12, mult: 1.20 },
+            { maxRound: 99, mult: 1.32 },
         ]),
         // Performance form factor on demand (M2): hot/cold streak from season game score.
         formFactorMin: 0.92,
@@ -48,7 +48,7 @@ export const marketConfig = Object.freeze({
         scarcePositions: Object.freeze(['PG', 'C'] as const),
         scarceOverallOffset: 8,
         // Czech players command a modest premium (limited foreign slots, domestic value).
-        czechMarketSalaryMult: 1.10,
+        czechMarketSalaryMult: 1.14,
         // Salary stepper granularity in the UI.
         salaryStep: 50_000,
         // Terminating a contract costs this share of the remaining salary.
@@ -98,11 +98,11 @@ export const marketConfig = Object.freeze({
         unsolicitedFactorMax: 1.4,
         rejectedBigBidMorale: 8,
         // Personal terms after a transfer (M8).
-        postTransferDemandMult: 1.05,
+        postTransferDemandMult: 1.10,
         // Extra acceptance score once a fee is agreed — player is ready to move.
-        transferTermsAcceptBonus: 5,
+        transferTermsAcceptBonus: 2,
         // When fee >= transfer value, demand scales by this (serious buyer signal).
-        transferFeeCommitmentMult: 0.96,
+        transferFeeCommitmentMult: 0.98,
         bidStep: 200_000,
         // Premium for buying a player under contract (rights fee on top of sell factor).
         clubRightsPremium: 1.1,
@@ -167,9 +167,9 @@ export const marketConfig = Object.freeze({
         walkAwayIntentCap: 0.65,
         renewAcceptMin: 0.15,
         renewAcceptMax: 0.98,
-        userRenewalIntentPenalty: 8,
-        userRenewalIntentThreshold: 0.2,
-        eliteTransferTermsMult: 1.15,
+        userRenewalIntentPenalty: 14,
+        userRenewalIntentThreshold: 0.15,
+        eliteTransferTermsMult: 1.20,
         /** Soft pull/push from Champions League project appeal (acceptance, walk-away, demand). */
         bclPrestige: Object.freeze({
             minGamesForProjection: 8,

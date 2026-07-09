@@ -43,7 +43,7 @@ import { refreshTeamStarters } from './roster';
 import { difficultyModifiers } from './difficulty';
 import type { Attributes, Difficulty } from './model/types';
 
-export const SAVE_FORMAT_VERSION = 30;
+export const SAVE_FORMAT_VERSION = 31;
 
 export interface GameConfig {
     league: LeagueConfig;
@@ -116,10 +116,6 @@ export function createNewGame(config: GameConfig, seed: number, userTeamId: Team
             signingHints: {},
             externalOffers: [],
             unsolicitedBidUsed: false,
-            scoutingComplete: true,
-            scoutedFreeAgents: {},
-            scoutingBudget: 0,
-            scoutingBudgetTotal: 0,
             watchlist: [],
             pendingPressHooks: [],
         },

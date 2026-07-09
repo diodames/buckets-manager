@@ -51,7 +51,7 @@ export const externalOffersConfig = Object.freeze({
     euroRejectForceDepartureChance: 0.3,
     /** Retention negotiation (vs foreign salary benchmark). */
     retention: Object.freeze({
-        acceptThreshold: 62,
+        acceptThreshold: 66,
         prestigePenaltyBcl: 10,
         prestigePenaltyEuro: 18,
         matchBonus: 8,

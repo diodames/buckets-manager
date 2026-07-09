@@ -341,14 +341,6 @@ export interface MarketState {
     externalOffers: ExternalOffer[];
     /** True after an unsolicited bid arrives this season (no market listing). */
     unsolicitedBidUsed: boolean;
-    /** Pre-season scouting phase finished for the current season year. */
-    scoutingComplete: boolean;
-    /** FA scout reports keyed by player id (opening pool). */
-    scoutedFreeAgents: Record<PlayerId, FreeAgentScoutReport>;
-    /** Remaining scouting budget this offseason (CZK). */
-    scoutingBudget: number;
-    /** Total scouting budget allocated at rollover. */
-    scoutingBudgetTotal: number;
     /** User watchlist of player ids (M18). */
     watchlist: PlayerId[];
     /** Transfer events queued for next press conference (M20). */
@@ -361,17 +353,6 @@ export interface TransferPressHook {
     kind: TransferPressHookKind;
     playerId: PlayerId;
     round: number;
-}
-
-export interface FreeAgentScoutReport {
-    playerId: PlayerId;
-    overallMin: number;
-    overallMax: number;
-    starMin: number;
-    starMax: number;
-    linkedTeamId?: TeamId;
-    revealed: boolean;
-    tier: 'rumour' | 'quick' | 'deep';
 }
 
 export interface PendingFreeAgent {

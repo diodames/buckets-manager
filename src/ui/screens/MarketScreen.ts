@@ -9,13 +9,6 @@ import {
 } from '../../core/market';
 import type { Player, PlayerId, GameState } from '../../core/model/types';
 import { overallRating } from '../../core/model/types';
-import {
-    canNegotiateScoutedFreeAgent,
-    canScoutPlayer,
-    displayedOverall,
-    requestDeepReport,
-    requestQuickReport,
-} from '../../core/scouting';
 import { t } from '../../i18n';
 import { drawChrome } from '../chrome';
 import { formatMoney, playerName, teamDef } from '../format';
@@ -169,16 +162,11 @@ export class MarketScreen implements Screen {
                 .slice(0, 80);
             for (const player of players) {
                 rows.push({ kind: 'player', playerId: player.id });
-                const ovrCell = this.tab === 'freeAgents' && state.market.scoutedFreeAgents[player.id]
-                    ? (state.market.scoutedFreeAgents[player.id]!.revealed
-                        ? String(displayedOverall(state, player))
-                        : `${state.market.scoutedFreeAgents[player.id]!.overallMin}-${state.market.scoutedFreeAgents[player.id]!.overallMax}`)
-                    : String(overallRating(player.attributes));
                 cells.push({
                     cells: [
                         playerName(player),
                         player.position,
-                        ovrCell,
+                        String(overallRating(player.attributes)),
                         player.teamId ? teamDef(player.teamId).abbr : t('market.freeAgent'),
                         formatMoney(this.listedCost(state, player)),
                         `${player.age}`,
@@ -228,47 +216,7 @@ export class MarketScreen implements Screen {
         );
     }
 
-    private tryNegotiateFreeAgent(player: Player): void {
-        const state = this.state;
-        if (!state.market.scoutingComplete
-            && canScoutPlayer(state, player.id)
-            && !canNegotiateScoutedFreeAgent(state, player.id)) {
-            this.say(t('scouting.needReport'), ROLE.warning);
-            return;
-        }
-        this.openFreeAgentNegotiation(player);
-    }
-
     private handleFreeAgentActivate(player: Player): void {
-        const state = this.state;
-        const economy = this.ctx.config.economy;
-        if (!state.market.scoutingComplete
-            && canScoutPlayer(state, player.id)
-            && !canNegotiateScoutedFreeAgent(state, player.id)) {
-            const report = state.market.scoutedFreeAgents[player.id];
-            if (!report) {
-                this.say(t('scouting.needReport'), ROLE.warning);
-                return;
-            }
-            if (report.tier === 'rumour') {
-                if (requestQuickReport(state, player.id, economy)) {
-                    this.say(t('scouting.quickDone', { player: playerName(player) }), ROLE.success);
-                } else {
-                    this.say(t('scouting.noBudget'), ROLE.warning);
-                }
-                return;
-            }
-            if (report.tier === 'quick') {
-                if (requestDeepReport(state, player.id, economy)) {
-                    this.say(t('scouting.deepDone', { player: playerName(player) }), ROLE.success);
-                } else {
-                    this.say(t('scouting.noBudget'), ROLE.warning);
-                }
-                return;
-            }
-            this.say(t('scouting.alreadyDeep'), ROLE.textDim);
-            return;
-        }
         this.openFreeAgentNegotiation(player);
     }
 
@@ -414,16 +362,6 @@ export class MarketScreen implements Screen {
             }
         }
         this.rebuild();
-        if (this.tab === 'freeAgents' && !this.state.market.scoutingComplete && BT.isKeyPressed('Space')) {
-            const row = this.rows[this.table.selected];
-            if (row?.kind === 'player') {
-                const player = this.state.players[row.playerId];
-                if (player?.teamId === null) {
-                    this.tryNegotiateFreeAgent(player);
-                    return;
-                }
-            }
-        }
         const activated = this.table.update(input, this.ctx.grid);
         if (activated !== null) {
             const row = this.rows[activated];
@@ -438,9 +376,6 @@ export class MarketScreen implements Screen {
         const grid = this.ctx.grid;
         this.rebuild();
         const hints = [t('hint.pages'), t('hint.select'), t('hint.back')];
-        if (this.tab === 'freeAgents' && !state.market.scoutingComplete) {
-            hints.splice(2, 0, t('market.hintScout'), t('market.hintSign'));
-        }
         drawChrome(this.ctx, t('market.title'), hints);
 
         let col = 2;

@@ -141,11 +141,10 @@ describe('contracts (M1-M5)', () => {
         const r1 = negotiateOffer(state2, target.id, low, 'renew', marketConfig, config.economy);
         expect(r1.status).toBe('rejected');
         expect(r1.hintSalary).not.toBeNull();
-        negotiateOffer(state2, target.id, low, 'renew', marketConfig, config.economy);
+        const r2 = negotiateOffer(state2, target.id, low, 'renew', marketConfig, config.economy);
+        expect(r2.status).toBe('finalRejected');
         const r3 = negotiateOffer(state2, target.id, low, 'renew', marketConfig, config.economy);
-        expect(r3.status).toBe('finalRejected');
-        const r4 = negotiateOffer(state2, target.id, low, 'renew', marketConfig, config.economy);
-        expect(r4.status).toBe('locked');
+        expect(r3.status).toBe('locked');
     });
 });
 

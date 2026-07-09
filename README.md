@@ -22,7 +22,7 @@ Open the address Vite prints (usually `http://localhost:5173`) in your browser.
   quarter-break rotations, energy and morale models, story moments, and an on-court panel for your starting five.
 - **Squad management** — lineup and pre-match tactics editor, auto-substitutions, player stats, contract negotiation
   and termination, NBL roster limits (10–14 players, max 6 foreigners).
-- **Transfer market** — potential-driven interest, scouting reports, watchlist, honest negotiations, real club colors.
+- **Transfer market** — potential-driven interest, watchlist, honest negotiations, real club colors.
 - **Youth academy** — seasonal intake with star-range potential reports; sign prospects to the first team or release them.
 - **Economy & press** — budgets, sponsor ambition deals, post-match press conferences, and individual season awards.
 - Czech and English localization, save/load, difficulty settings, and a software-renderer fallback (`?backend=software`)

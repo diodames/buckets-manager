@@ -1,9 +1,9 @@
 // Club economy tuning: all amounts in CZK. The user manages one club's
 // books; AI NBL clubs keep a lightweight budget in GameState.nblFinances.
 export const economyConfig = Object.freeze({
-    startingBudget: 9_500_000,
+    startingBudget: 7_600_000,
     // Starting cash by club tier 1..5 (weaker clubs begin with less).
-    startingBudgetByTier: Object.freeze([8_000_000, 9_500_000, 10_500_000, 12_000_000, 13_500_000]),
+    startingBudgetByTier: Object.freeze([6_400_000, 7_600_000, 8_400_000, 9_600_000, 13_500_000]),
     // Player salary per season (CZK). Real NBL contracts are ~9 months; monthly ≈ season / 9.
     // base + (overall - 50) * perPoint (floored at min).
     salary: Object.freeze({
@@ -168,18 +168,9 @@ export const economyConfig = Object.freeze({
         matchFee: Object.freeze({ bcl: 150_000, fec: 100_000 }),
         weeklyParticipation: Object.freeze({ bcl: 80_000, fec: 50_000 }),
     }),
-    scouting: Object.freeze({
-        baseBudgetByTier: Object.freeze([300_000, 350_000, 450_000, 550_000, 650_000]),
-        bclBonus: 150_000,
-        fecBonus: 75_000,
-        quickReportCost: 40_000,
-        deepReportCost: 90_000,
-        workoutCost: 120_000,
-        academyDiscountPerLevel: 10_000,
-    }),
     // Board wage budget and cashflow warning thresholds (Football Manager-style).
     financial: Object.freeze({
-        wageBudgetPct: 0.68,
+        wageBudgetPct: 0.64,
         minEndBalance: 500_000,
         lowCashRunwayWeeks: 2,
     }),

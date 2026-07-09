@@ -217,6 +217,7 @@ describe('economy', () => {
     it('projected cashflow stays solvent for a default NYM roster', () => {
         const state = createNewGame(config, 112, 'NYM');
         const projection = projectSeasonCashflow(state, economyConfig, leagueConfig);
+        expect(state.club.budget).toBe(13_500_000);
         expect(projection.seasonWageBill).toBeLessThanOrEqual(projection.maxWageBill);
         expect(projection.wageBudgetRemaining).toBeGreaterThanOrEqual(0);
     });

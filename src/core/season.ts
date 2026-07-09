@@ -29,7 +29,6 @@ import {
 import { evaluateUserContractWalkaways } from './contracts';
 import { evaluateCareerRetirements } from './retirement';
 import { initializeSeasonMarket } from './seasonMarket';
-import { initializeScouting } from './scouting';
 import { computeSeasonAwards } from './awards';
 import type { Rng } from './rng';
 
@@ -169,10 +168,6 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
     state.market.youthArrivalsThisSeason = 0;
     state.market.pendingFixedYouthArrivals = [];
     state.market.unsolicitedBidUsed = false;
-    state.market.scoutingComplete = false;
-    state.market.scoutedFreeAgents = {};
-    state.market.scoutingBudget = 0;
-    state.market.scoutingBudgetTotal = 0;
     state.market.watchlist = [];
     state.market.pendingPressHooks = [];
 
@@ -192,7 +187,6 @@ export function completeOffseasonRollover(state: GameState, config: GameConfig, 
         config.balance,
         rng.fork('fa-replenish'),
     );
-    initializeScouting(state, config, rng.fork('scouting'));
 
     const nblTeamIds = config.league.teams.map((t) => t.id);
     state.fixtures = createSchedule(nblTeamIds, config.league.roundRobinLegs);

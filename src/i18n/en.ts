@@ -108,7 +108,6 @@ export const en = {
     'dashboard.simEuropean': 'Sim European week',
     'dashboard.europeanPhase': 'European knockouts',
     'dashboard.europeanPhaseHint': 'NBL playoffs start after BCL and FEC finish.',
-    'dashboard.scoutingReminder': 'Pre-season scouting open — review free agents in Office.',
     'dashboard.homeGame': 'Home game',
     'dashboard.awayGame': 'Away game',
     'dashboard.weekEconomy': 'This week in the books',
@@ -512,23 +511,6 @@ export const en = {
     'ledger.fecWinBonus': 'FEC win bonus',
     'ledger.fecTravel': 'FEC travel',
     'ledger.europeanParticipation': 'European participation',
-    'scouting.title': 'PRE-SEASON SCOUTING',
-    'scouting.intro': 'Spend budget on reports before rivals sign opening free agents.',
-    'scouting.budget': 'Scouting budget: {remaining} / {total}',
-    'scouting.linked': 'Linked: {team}',
-    'scouting.continue': 'Continue to season',
-    'scouting.needReport': 'Request a scout report first.',
-    'scouting.quickDone': 'Shortlist report filed on {player}.',
-    'scouting.deepDone': 'Full report filed on {player}.',
-    'scouting.noBudget': 'Not enough scouting budget.',
-    'scouting.alreadyDeep': 'Full report already on file.',
-    'scouting.empty': 'No opening free agents left to scout.',
-    'scouting.tierRumour': '[rumour]',
-    'scouting.tierQuick': '[quick]',
-    'scouting.tierDeep': '[full]',
-    'scouting.hintScout': 'Enter: scout report',
-    'scouting.hintSign': 'Space: negotiate signing',
-    'scouting.hintContinue': 'Select Continue when ready',
 
     'market.title': 'TRANSFER MARKET',
     'market.tab.offers': 'Offers & listings',
@@ -561,8 +543,6 @@ export const en = {
     'market.bidRejected': 'Bid rejected.',
     'market.transferBreakdown': 'Base value {base} CZK | Club ask {ask} CZK (paid to {team})',
     'market.freeAgentBreakdown': 'No transfer fee | Expected salary ask {salary} CZK/yr (+ agent fee)',
-    'market.hintScout': 'Enter: scout report',
-    'market.hintSign': 'Space: negotiate signing',
     'market.rosterMin': 'Roster would fall below the league minimum.',
 
     'external.title': 'EUROPEAN INTEREST',
@@ -783,7 +763,6 @@ export const en = {
     'press.deadlineSigning.pressure': 'The board wanted action. He must deliver.',
 
     'hint.bclPhases': 'BCL: qualifying -> groups -> knockouts -> Final Four',
-    'hint.scoutingGate': 'Scout free agents (quick or deep report) before negotiating.',
     'hint.marketFilters': 'Use filters to narrow the player pool.',
 } as const;
 
