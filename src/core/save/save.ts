@@ -1,8 +1,11 @@
+import { bclConfig } from '../../config/bcl';
+import { fecConfig } from '../../config/fec';
 import { economyConfig } from '../../config/economy';
 import { leagueConfig } from '../../config/league';
 import { marketConfig } from '../../config/market';
 import { SAVE_FORMAT_VERSION } from '../game';
-import { relinkCompetitionGroups } from '../bcl/index';
+import { relinkCompetitionGroups, repairBclKnockout, bclParticipantTeamIds } from '../bcl/index';
+import { repairFecKnockout, removeTeamFromFec } from '../fec/index';
 import { resyncRosterContracts } from '../market';
 import type { GameState } from '../model/types';
 import { repairPlayoffThirdPlace } from '../playoffs';
@@ -515,9 +518,32 @@ export function deserializeSave(raw: string): SaveFile {
     const comps = complete.state.competitions;
     if (comps.bcl) {
         relinkCompetitionGroups(comps.bcl);
+        const bcl = comps.bcl;
+        if (bcl.playoffs?.championTeamId && bcl.phase !== 'complete') {
+            bcl.championTeamId = bcl.playoffs.championTeamId;
+            bcl.phase = 'complete';
+        }
+        repairBclKnockout(complete.state, bclConfig);
     }
     if (comps.fec) {
         relinkCompetitionGroups(comps.fec);
+        const fec = comps.fec;
+        if (fec.playoffs?.championTeamId && fec.phase !== 'complete') {
+            fec.championTeamId = fec.playoffs.championTeamId;
+            fec.phase = 'complete';
+        }
+        repairFecKnockout(complete.state, fecConfig);
+    }
+    if (comps.fec && comps.bcl) {
+        const blocked = bclParticipantTeamIds(complete.state);
+        for (const teamId of [...blocked]) {
+            if (comps.fec.qualifiedTeamIds.includes(teamId)) {
+                removeTeamFromFec(complete.state, teamId);
+            }
+        }
+        if (blocked.has(complete.state.userTeamId)) {
+            complete.state.fecQualified = false;
+        }
     }
     if (complete.state.playoffs?.championTeamId && !complete.state.playoffs.thirdPlaceTeamId) {
         repairPlayoffThirdPlace(complete.state.playoffs, leagueConfig);

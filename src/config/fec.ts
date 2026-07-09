@@ -89,7 +89,7 @@ export const fecConfig = Object.freeze({
         fecTeam('FEC-LUBL', 'LUBL', 'LUB Baskets', 'Lublin', 'Lublin', 'POL', 3, 3000),
         fecTeam('FEC-VAL', 'VAL', 'Valencia Basket', 'Valencia', 'Valencia', 'ESP', 4, 9000),
         fecTeam('FEC-KUT', 'KUT', 'Kutaisi', 'Kutaisi', 'Kutaisi', 'GEO', 2, 2500),
-        fecTeam('FEC-BRN', 'BRN', 'BK Decin', 'Decin', 'Decin', 'CZE', 3, 2000, 'BRN'),
+        fecTeam('FEC-BRN', 'BRN', 'BK Decin', 'Decin', 'Decin', 'CZE', 3, 2000, 'DEC'),
         fecTeam('FEC-ANO', 'ANO', 'Anorthosis Famagusta', 'Anorthosis', 'Nicosia', 'CYP', 2, 2000),
         fecTeam('FEC-BEARS', 'BEARS', 'Bears Academy', 'Bears', 'Tartu', 'EST', 2, 2000),
         fecTeam('FEC-KALEV', 'KALEV', 'Kalev/Cramo', 'Kalev', 'Tallinn', 'EST', 2, 2500),

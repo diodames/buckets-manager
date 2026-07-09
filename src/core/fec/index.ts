@@ -1,13 +1,14 @@
 import type { FecConfig } from '../../config/fec';
 import { fecConfig } from '../../config/fec';
 import {
+    bclParticipantTeamIds,
     createGroupFixtures as createBclGroupFixtures,
     drawGroupsWithCountryPreference,
     drawSeededGroups,
 } from '../bcl/index';
 import { computeStandings } from '../league/standings';
 import type {
-    BclGroup, CompetitionState, FecUserFinish, Fixture, GameState, TeamId,
+    BclGroup, CompetitionState, FecPhase, FecUserFinish, Fixture, GameState, TeamId,
 } from '../model/types';
 import type { Rng } from '../rng';
 import {
@@ -29,15 +30,24 @@ export function czechFecQualifiers(state: GameState): TeamId[] {
     return [];
 }
 
+function excludeBclParticipants(state: GameState, teamIds: TeamId[]): TeamId[] {
+    const blocked = bclParticipantTeamIds(state);
+    return teamIds.filter((id) => !blocked.has(id));
+}
+
 function directEntryTeams(state: GameState, fec: FecConfig): TeamId[] {
-    const czech = czechFecQualifiers(state);
+    const czech = excludeBclParticipants(state, czechFecQualifiers(state));
+    const blocked = bclParticipantTeamIds(state);
     const fixed = fec.teams
         .filter((t) => t.tier >= 3 && !t.nblTeamId)
         .slice(0, fec.regularSeasonTeams - czech.length - 12)
         .map((t) => t.id);
-    const entries = [...czech, ...fixed.map(resolveFecTeamId)];
+    const entries = excludeBclParticipants(state, [...czech, ...fixed.map(resolveFecTeamId)]);
     while (entries.length < fec.regularSeasonTeams - 12) {
-        const extra = fec.teams.find((t) => t.tier >= 3 && !entries.includes(t.nblTeamId ?? t.id));
+        const extra = fec.teams.find((t) => {
+            const id = t.nblTeamId ?? t.id;
+            return t.tier >= 3 && !entries.includes(id) && !blocked.has(id);
+        });
         if (!extra) {
             break;
         }
@@ -46,8 +56,11 @@ function directEntryTeams(state: GameState, fec: FecConfig): TeamId[] {
     return entries.slice(0, fec.regularSeasonTeams - 12);
 }
 
-function runFecQualifyingRound(fec: FecConfig, rng: Rng, count: number): TeamId[] {
-    const pool = fec.teams.filter((t) => t.tier <= 2 && !t.nblTeamId).map((t) => t.id);
+function runFecQualifyingRound(fec: FecConfig, rng: Rng, count: number, blocked: Set<TeamId>): TeamId[] {
+    const pool = fec.teams
+        .filter((t) => t.tier <= 2 && !t.nblTeamId)
+        .map((t) => t.id)
+        .filter((id) => !blocked.has(id));
     const shuffled = rng.shuffle([...pool]);
     const winners: TeamId[] = [];
     let current = shuffled;
@@ -102,21 +115,46 @@ function fecKnockoutLeague(fec: FecConfig): LeagueConfig {
     };
 }
 
+export function removeTeamFromFec(state: GameState, teamId: TeamId): void {
+    const fec = state.competitions.fec;
+    if (!fec) {
+        return;
+    }
+    fec.qualifiedTeamIds = fec.qualifiedTeamIds.filter((id) => id !== teamId);
+    for (const group of fec.groups) {
+        group.teamIds = group.teamIds.filter((id) => id !== teamId);
+        group.fixtures = group.fixtures.filter((f) => f.homeTeamId !== teamId && f.awayTeamId !== teamId);
+    }
+    fec.fixtures = fec.fixtures.filter((f) => f.homeTeamId !== teamId && f.awayTeamId !== teamId);
+    if (state.lastFecQualifierIds.includes(teamId)) {
+        state.lastFecQualifierIds = state.lastFecQualifierIds.filter((id) => id !== teamId);
+    }
+    if (state.userTeamId === teamId) {
+        state.fecQualified = false;
+    }
+}
+
 export function startFecSeason(state: GameState, fec: FecConfig, rng: Rng): CompetitionState | null {
-    const czech = czechFecQualifiers(state);
-    state.fecQualified = czech.includes(state.userTeamId);
+    const blocked = bclParticipantTeamIds(state);
+    const czech = excludeBclParticipants(state, czechFecQualifiers(state));
+    state.fecQualified = czech.includes(state.userTeamId) && !blocked.has(state.userTeamId);
 
     const direct = directEntryTeams(state, fec);
     const qualCount = fec.regularSeasonTeams - direct.length;
-    const qualifyingWinners = runFecQualifyingRound(fec, rng, qualCount);
-    const allTeams = [...direct, ...qualifyingWinners].slice(0, fec.regularSeasonTeams);
+    const qualifyingWinners = runFecQualifyingRound(fec, rng, qualCount, blocked);
+    const allTeams = excludeBclParticipants(state, [...direct, ...qualifyingWinners]).slice(0, fec.regularSeasonTeams);
     while (allTeams.length < fec.regularSeasonTeams) {
-        const extra = fec.teams.find((t) => !allTeams.includes(t.nblTeamId ?? t.id));
+        const extra = fec.teams.find((t) => {
+            const id = t.nblTeamId ?? t.id;
+            return !allTeams.includes(id) && !blocked.has(id);
+        });
         if (!extra) {
             break;
         }
         allTeams.push(extra.nblTeamId ?? extra.id);
     }
+
+    state.fecQualified = allTeams.includes(state.userTeamId);
 
     const groups = labelGroups(
         drawSeededGroups(allTeams, fec as unknown as import('../../config/bcl').BclConfig, rng, {
@@ -150,12 +188,23 @@ export function fecCompetition(state: GameState): CompetitionState | null {
     return state.competitions.fec ?? null;
 }
 
+const FEC_KNOCKOUT_PHASES = new Set<FecPhase>(['quarterFinals', 'semiFinals', 'finals', 'complete']);
+
 export function pendingFecFixtures(state: GameState, week: number): Fixture[] {
     const fec = fecCompetition(state);
-    if (!fec) {
+    if (!fec || FEC_KNOCKOUT_PHASES.has(fec.phase)) {
         return [];
     }
     return fec.fixtures.filter((f) => (f.week ?? f.round) === week && f.result === null);
+}
+
+/** All unplayed FEC group-stage fixtures (any week). */
+export function allPendingFecGroupFixtures(state: GameState): Fixture[] {
+    const fec = fecCompetition(state);
+    if (!fec || FEC_KNOCKOUT_PHASES.has(fec.phase)) {
+        return [];
+    }
+    return fec.fixtures.filter((f) => f.result === null);
 }
 
 function groupStandings(group: BclGroup) {
@@ -288,10 +337,55 @@ export function advanceFecKnockout(state: GameState, fec: FecConfig): void {
         comp.championTeamId = comp.playoffs.championTeamId;
         comp.phase = 'complete';
         comp.userFinish = resolveUserFecFinish(state, comp);
-    } else if (comp.playoffs.stage === 1) {
-        comp.phase = 'semiFinals';
     } else if (comp.playoffs.stage === 2) {
         comp.phase = 'finals';
+    } else if (comp.playoffs.stage === 1) {
+        comp.phase = 'semiFinals';
+    } else {
+        comp.phase = 'quarterFinals';
+    }
+}
+
+function allFecStageSeriesDecided(playoffs: NonNullable<CompetitionState['playoffs']>, league: LeagueConfig): boolean {
+    const stageSeries = playoffs.series.filter((s) => s.stage === playoffs.stage);
+    return stageSeries.length > 0 && stageSeries.every((s) => seriesDecided(s, league));
+}
+
+export function needsFecKnockoutAdvancement(state: GameState, fec: FecConfig): boolean {
+    const comp = state.competitions.fec;
+    if (!comp?.playoffs || comp.phase === 'complete') {
+        return false;
+    }
+    const league = fecKnockoutLeague(fec);
+    if (activeFecSeries(state, fec).length > 0) {
+        return true;
+    }
+    return allFecStageSeriesDecided(comp.playoffs, league);
+}
+
+export function repairFecKnockout(state: GameState, fec: FecConfig): void {
+    const comp = state.competitions.fec;
+    if (!comp?.playoffs || comp.phase === 'complete') {
+        return;
+    }
+    let guard = 0;
+    while (guard++ < 8) {
+        const beforeStage = comp.playoffs.stage;
+        const beforeChampion = comp.playoffs.championTeamId;
+        if (!needsFecKnockoutAdvancement(state, fec)) {
+            break;
+        }
+        if (activeFecSeries(state, fec).length === 0) {
+            advanceFecKnockout(state, fec);
+        } else {
+            break;
+        }
+        if (comp.playoffs.stage === beforeStage && comp.playoffs.championTeamId === beforeChampion) {
+            break;
+        }
+        if (comp.phase === 'complete') {
+            break;
+        }
     }
 }
 
@@ -346,12 +440,15 @@ export function recordFecSeriesGame(state: GameState, fixture: Fixture): void {
     if (!comp?.playoffs) {
         return;
     }
-    for (const series of comp.playoffs.series) {
-        const teams = new Set([series.homeTeamId, series.awayTeamId]);
-        if (teams.has(fixture.homeTeamId) && teams.has(fixture.awayTeamId)) {
-            recordSeriesGame(series, fixture);
-            break;
-        }
+    const league = fecKnockoutLeague(fecConfig);
+    const stage = comp.playoffs.stage;
+    const candidates = comp.playoffs.series.filter((s) => {
+        const teams = new Set([s.homeTeamId, s.awayTeamId]);
+        return s.stage === stage && teams.has(fixture.homeTeamId) && teams.has(fixture.awayTeamId);
+    });
+    const series = candidates.find((s) => !seriesDecided(s, league)) ?? candidates[0];
+    if (series) {
+        recordSeriesGame(series, fixture);
     }
 }
 

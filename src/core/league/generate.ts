@@ -47,11 +47,12 @@ export function playerFromDef(
     def: RealPlayerDef,
     seasonYear: number,
     balance: BalanceConfig,
+    tierMeanBonus = 0,
 ): Player {
     const gen = balance.playerGen;
     const personalRng = rng.fork(`real:${def.firstName} ${def.lastName}`);
     const tier = Math.max(1, Math.min(5, Math.round(def.tier)));
-    const mean = TIER_MEANS[tier - 1] as number;
+    const mean = (TIER_MEANS[tier - 1] as number) + tierMeanBonus;
     const attributes = generateAttributes(personalRng, def.position, mean, 9, balance);
     const age = def.born ? Math.max(16, seasonYear - def.born) : personalRng.int(20, 32);
     const heights = gen.heightRangeCm[def.position];
@@ -76,8 +77,16 @@ export function playerFromDef(
     };
 }
 
-function playerFromReal(rng: Rng, id: string, teamId: string, def: RealPlayerDef, seasonYear: number, balance: BalanceConfig): Player {
-    return playerFromDef(rng, id, teamId, def, seasonYear, balance);
+function playerFromReal(
+    rng: Rng,
+    id: string,
+    teamId: string,
+    def: RealPlayerDef,
+    seasonYear: number,
+    balance: BalanceConfig,
+    tierMeanBonus = 0,
+): Player {
+    return playerFromDef(rng, id, teamId, def, seasonYear, balance, tierMeanBonus);
 }
 
 /** Fictional youth fill-in for rosters shorter than the fill target. */
@@ -213,8 +222,9 @@ export function generateBclClubs(
             continue;
         }
         const teamRng = rng.fork(`bcl:${teamDef.id}`);
+        const tierMeanBonus = bcl.playerTierMeanBonus;
         const teamPlayers: Player[] = teamDef.roster.map((def, i) =>
-            playerFromReal(teamRng.fork(`p${i}`), `${teamDef.id}-P${i + 1}`, teamDef.id, def, seasonYear, balance),
+            playerFromReal(teamRng.fork(`p${i}`), `${teamDef.id}-P${i + 1}`, teamDef.id, def, seasonYear, balance, tierMeanBonus),
         );
         const toFill = Math.max(0, 12 - teamPlayers.length);
         const fillPositions = [...missingPositions(teamDef.roster)];

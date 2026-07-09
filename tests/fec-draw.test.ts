@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createNewGame } from '../src/core/game';
 import { assignNblBclQualifiers } from '../src/core/bcl/index';
-import { startFecSeason } from '../src/core/fec/index';
+import { activeFecSeries, repairFecKnockout, startFecSeason } from '../src/core/fec/index';
 import { startPlayoffs } from '../src/core/playoffs';
 import { createRng } from '../src/core/rng';
 import { testConfig as config } from './helpers';
@@ -28,5 +28,40 @@ describe('fec draw', () => {
         expect(comp!.qualifiedTeamIds).toContain('PCE');
         expect(comp!.groups).toHaveLength(10);
         expect(comp!.groups.every((g) => g.teamIds.length === 4)).toBe(true);
+    });
+
+    it('repairs stuck FEC knockouts when all QF series are decided', () => {
+        const state = createNewGame(config, 9002, 'PCE');
+        state.competitions.fec = {
+            id: 'fec',
+            phase: 'quarterFinals',
+            fixtures: [],
+            groups: [],
+            playoffs: {
+                stage: 0,
+                seeds: {},
+                series: [
+                    { id: 'FEC-QF-0', stage: 0, slot: 0, homeTeamId: 'FEC-SBB', awayTeamId: 'FEC-PBC', homeWins: 2, awayWins: 0, games: [] },
+                    { id: 'FEC-QF-1', stage: 0, slot: 1, homeTeamId: 'FEC-SZOM', awayTeamId: 'FEC-UCAM', homeWins: 2, awayWins: 1, games: [] },
+                    { id: 'FEC-QF-2', stage: 0, slot: 2, homeTeamId: 'FEC-REG', awayTeamId: 'FEC-BOSN', homeWins: 0, awayWins: 2, games: [] },
+                    { id: 'FEC-QF-3', stage: 0, slot: 3, homeTeamId: 'FEC-PTKM', awayTeamId: 'FEC-PERI', homeWins: 2, awayWins: 0, games: [] },
+                ],
+                championTeamId: null,
+                thirdPlaceSeries: null,
+                thirdPlaceTeamId: null,
+            },
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: null,
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+        expect(activeFecSeries(state, config.fec)).toHaveLength(0);
+        repairFecKnockout(state, config.fec);
+        expect(state.competitions.fec!.phase).toBe('semiFinals');
+        expect(state.competitions.fec!.playoffs!.stage).toBe(1);
     });
 });

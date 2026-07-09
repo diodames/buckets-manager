@@ -10,15 +10,15 @@ import type { TrainingConfig } from '../config/training';
 import type { ExternalOffersConfig } from '../config/externalOffers';
 import type { MarketConfig } from '../config/market';
 import {
-    allPendingFixturesForWeek, activeBclSeries, checkBclPhaseAdvancement,
+    allPendingFixturesForWeek, activeBclSeries, allPendingBclGroupFixtures, checkBclPhaseAdvancement,
     completeBclKnockoutRound, completeBclQualifyingRound, hasPendingBclKnockout,
-    nextBclQualifyingFixture,
+    needsBclKnockoutAdvancement, nextBclQualifyingFixture,
     nextBclSeriesFixture, pendingBclFixtures, recordBclQualifyingGame, recordBclSeriesGame,
-    userBclQualifyingSeries, userBclSeries,
+    repairBclKnockout, userBclQualifyingSeries, userBclSeries,
 } from './bcl/index';
 import {
-    activeFecSeries, checkFecPhaseAdvancement, completeFecKnockoutRound, nextFecSeriesFixture,
-    pendingFecFixtures, recordFecSeriesGame, userFecSeries,
+    activeFecSeries, allPendingFecGroupFixtures, checkFecPhaseAdvancement, completeFecKnockoutRound, needsFecKnockoutAdvancement,
+    nextFecSeriesFixture, pendingFecFixtures, recordFecSeriesGame, repairFecKnockout, userFecSeries,
 } from './fec/index';
 import { payrollWeeksForSeason } from './cashflow';
 import { homeCourtAdvantage, realArenaCapacity, roundEconomyTick, aiRoundEconomyTick, createNblFinances, europeanEconomyTicks, startingBudgetForTeam, tickFacilityProjects, type RoundEconomyResult } from './economy';
@@ -755,6 +755,35 @@ function simWeekBclFixtures(
     return hadBcl;
 }
 
+/** After NBL ends, sim any BCL group fixtures whose calendar week was skipped. */
+function simOrphanedBclGroupFixtures(
+    state: GameState,
+    config: GameConfig,
+    results: RoundResult['results'],
+    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
+): boolean {
+    if (!isSeasonOver(state, config)) {
+        return false;
+    }
+    const orphaned = allPendingBclGroupFixtures(state);
+    if (orphaned.length === 0) {
+        return false;
+    }
+    let hadBcl = false;
+    for (const fixture of orphaned) {
+        const isUser = fixture.homeTeamId === state.userTeamId || fixture.awayTeamId === state.userTeamId;
+        if (isUser && userMatch && userMatch.fixture.id === fixture.id) {
+            hadBcl = true;
+            continue;
+        }
+        simFixture(state, config, fixture, results);
+        hadBcl = true;
+    }
+    const rng = createRng(state.masterSeed).fork(`bcl-orphan:${state.calendarWeek}`);
+    checkBclPhaseAdvancement(state, config.bcl, config.league, rng);
+    return hadBcl;
+}
+
 function simWeekFecFixtures(
     state: GameState,
     config: GameConfig,
@@ -781,8 +810,39 @@ function simWeekFecFixtures(
     return hadFec;
 }
 
+/** After NBL ends, sim any FEC group fixtures whose calendar week was skipped. */
+function simOrphanedFecGroupFixtures(
+    state: GameState,
+    config: GameConfig,
+    results: RoundResult['results'],
+    userMatch: { fixture: Fixture; outcome: MatchOutcome } | null,
+): boolean {
+    if (!isSeasonOver(state, config)) {
+        return false;
+    }
+    const orphaned = allPendingFecGroupFixtures(state);
+    if (orphaned.length === 0) {
+        return false;
+    }
+    let hadFec = false;
+    for (const fixture of orphaned) {
+        const isUser = fixture.homeTeamId === state.userTeamId || fixture.awayTeamId === state.userTeamId;
+        if (isUser && userMatch && userMatch.fixture.id === fixture.id) {
+            hadFec = true;
+            continue;
+        }
+        simFixture(state, config, fixture, results);
+        hadFec = true;
+    }
+    const rng = createRng(state.masterSeed).fork(`fec-orphan:${state.calendarWeek}`);
+    checkFecPhaseAdvancement(state, config.fec, rng);
+    return hadFec;
+}
+
 /** Advance BCL/FEC phases when all fixtures are played but phase was not updated. */
 function nudgeEuropeanPhaseAdvancement(state: GameState, config: GameConfig): void {
+    repairBclKnockout(state, config.bcl);
+    repairFecKnockout(state, config.fec);
     for (let i = 0; i < 5; i++) {
         if (isEuropeanCalendarComplete(state, config) || hasPendingEuropeanSimulation(state, config)) {
             break;
@@ -790,6 +850,8 @@ function nudgeEuropeanPhaseAdvancement(state: GameState, config: GameConfig): vo
         const rng = createRng(state.masterSeed).fork(`europe-advance:${state.calendarWeek}:${i}`);
         checkBclPhaseAdvancement(state, config.bcl, config.league, rng);
         checkFecPhaseAdvancement(state, config.fec, rng);
+        repairBclKnockout(state, config.bcl);
+        repairFecKnockout(state, config.fec);
     }
 }
 
@@ -904,13 +966,15 @@ export function completeRound(
     }
     // BCL knockout series games — sim all active series each round.
     const bclKnockoutSeries = activeBclSeries(state, config.bcl);
+    let userBclKnockoutRecorded = false;
     if (bclKnockoutSeries.length > 0) {
         for (const series of bclKnockoutSeries) {
             const isUserSeries = series.homeTeamId === state.userTeamId || series.awayTeamId === state.userTeamId;
             if (isUserSeries && userMatch?.fixture.competitionId === 'bcl') {
-                if (!isBcl) {
+                if (!userBclKnockoutRecorded) {
                     userInjuredId = bookUserMatch(state, userMatch, results);
                     recordBclSeriesGame(state, userMatch.fixture);
+                    userBclKnockoutRecorded = true;
                 }
             } else {
                 const fixture = nextSeriesFixture(series);
@@ -919,19 +983,24 @@ export function completeRound(
                 recordBclSeriesGame(state, fixture);
             }
         }
+        isBcl = true;
+    }
+    if (needsBclKnockoutAdvancement(state, config.bcl)) {
         completeBclKnockoutRound(state, config.bcl);
         isBcl = true;
     }
 
     // FEC knockout series games — sim all active series each round.
     const fecKnockoutSeries = activeFecSeries(state, config.fec);
+    let userFecKnockoutRecorded = false;
     if (fecKnockoutSeries.length > 0) {
         for (const series of fecKnockoutSeries) {
             const isUserSeries = series.homeTeamId === state.userTeamId || series.awayTeamId === state.userTeamId;
             if (isUserSeries && userMatch?.fixture.competitionId === 'fec') {
-                if (!isFec) {
+                if (!userFecKnockoutRecorded) {
                     userInjuredId = bookUserMatch(state, userMatch, results);
                     recordFecSeriesGame(state, userMatch.fixture);
+                    userFecKnockoutRecorded = true;
                 }
             } else {
                 const fixture = nextSeriesFixture(series);
@@ -940,6 +1009,9 @@ export function completeRound(
                 recordFecSeriesGame(state, fixture);
             }
         }
+        isFec = true;
+    }
+    if (needsFecKnockoutAdvancement(state, config.fec)) {
         completeFecKnockoutRound(state, config.fec);
         isFec = true;
     }
@@ -957,9 +1029,15 @@ export function completeRound(
     if (simWeekBclFixtures(state, config, week, results, userMatch)) {
         isBcl = true;
     }
+    if (simOrphanedBclGroupFixtures(state, config, results, userMatch)) {
+        isBcl = true;
+    }
 
     // FEC group/week fixtures.
     if (simWeekFecFixtures(state, config, week, results, userMatch)) {
+        isFec = true;
+    }
+    if (simOrphanedFecGroupFixtures(state, config, results, userMatch)) {
         isFec = true;
     }
 

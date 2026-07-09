@@ -26,10 +26,12 @@ export const bclConfig = Object.freeze({
         championBonus: 2_100_000,
         thirdPlace: 1_050_000,
     }),
-    // Playoff wins needed per BCL knockout stage (QF, SF, Final).
-    knockoutWinsNeeded: Object.freeze([2, 2, 1]),
+    // Playoff wins needed per BCL knockout stage (QF Bo3, F4 SF Bo1, F4 Final Bo1).
+    knockoutWinsNeeded: Object.freeze([2, 1, 1]),
     // Best-of-N for Czech 3rd-place entrant in BCL qualifying.
     qualifyingWinsNeeded: 2,
+    /** Extra attribute mean applied to BCL-only European rosters (not Czech NBL entrants). */
+    playerTierMeanBonus: 6,
     teams: Object.freeze<BclTeamDef[]>([
         // Tier 5 elite clubs
         bclTeam('BCL-RYT', 'RYT', 'BC Rytas Vilnius', 'Rytas', 'Vilnius', 'LTU', 5, 5000),

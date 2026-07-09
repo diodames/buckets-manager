@@ -140,11 +140,11 @@ describe('full season (instant rounds)', () => {
 });
 
 describe('upcomingUserFixtures', () => {
-    it('returns BCL and FEC user fixtures in the same week', () => {
+    it('returns only BCL fixtures when the user is BCL-qualified', () => {
         const state = createNewGame(config, 8801, 'NYM');
         state.calendarWeek = 4;
         state.bclQualified = true;
-        state.fecQualified = true;
+        state.fecQualified = false;
         state.competitions.bcl = {
             id: 'bcl',
             phase: 'regularSeason',
@@ -156,31 +156,45 @@ describe('upcomingUserFixtures', () => {
             qualifyingSeries: null,
             qualifyingEntrantId: null,
             qualifyingOpponentId: null,
-            qualifiedTeamIds: [],
-            championTeamId: null,
-            prizePaid: false,
-            weeklyPrizePaidTotal: 0,
-            userFinish: null,
-        };
-        state.competitions.fec = {
-            id: 'fec',
-            phase: 'regularSeason',
-            fixtures: [
-                { id: 'fec-user', homeTeamId: 'FEC-ABC', awayTeamId: 'NYM', result: null, round: 2, week: 4, competitionId: 'fec' },
-            ],
-            groups: [],
-            playoffs: null,
-            qualifyingSeries: null,
-            qualifyingEntrantId: null,
-            qualifyingOpponentId: null,
-            qualifiedTeamIds: [],
+            qualifiedTeamIds: ['NYM'],
             championTeamId: null,
             prizePaid: false,
             weeklyPrizePaidTotal: 0,
             userFinish: null,
         };
 
-        const upcoming = upcomingUserFixtures(state, config, 2);
-        expect(upcoming.map((f) => f.id)).toEqual(['bcl-user', 'fec-user']);
+        const upcoming = upcomingUserFixtures(state, config, 5);
+        const european = upcoming.filter((f) => f.competitionId === 'bcl' || f.competitionId === 'fec');
+        expect(european.map((f) => f.id)).toEqual(['bcl-user']);
+        expect(european.some((f) => f.competitionId === 'fec')).toBe(false);
+    });
+
+    it('returns only FEC fixtures when the user is FEC-qualified but not in BCL', () => {
+        const state = createNewGame(config, 8802, 'PCE');
+        state.calendarWeek = 4;
+        state.bclQualified = false;
+        state.fecQualified = true;
+        state.competitions.fec = {
+            id: 'fec',
+            phase: 'regularSeason',
+            fixtures: [
+                { id: 'fec-user', homeTeamId: 'FEC-ABC', awayTeamId: 'PCE', result: null, round: 2, week: 4, competitionId: 'fec' },
+            ],
+            groups: [],
+            playoffs: null,
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: ['PCE'],
+            championTeamId: null,
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+
+        const upcoming = upcomingUserFixtures(state, config, 5);
+        const european = upcoming.filter((f) => f.competitionId === 'bcl' || f.competitionId === 'fec');
+        expect(european.map((f) => f.id)).toEqual(['fec-user']);
+        expect(european.some((f) => f.competitionId === 'bcl')).toBe(false);
     });
 });

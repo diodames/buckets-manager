@@ -3,7 +3,7 @@ import type { BclConfig } from '../../config/bcl';
 import { createSchedule } from '../league/schedule';
 import { computeStandings, nblFixtures } from '../league/standings';
 import type {
-    BclGroup, BclUserFinish, CompetitionState, Fixture, GameState, PlayoffSeries, TeamId,
+    BclGroup, BclPhase, BclUserFinish, CompetitionState, Fixture, GameState, PlayoffSeries, TeamId,
 } from '../model/types';
 import type { Rng } from '../rng';
 import { activeSeries, maybeAdvanceStage, nextSeriesFixture, recordSeriesGame, seriesDecided, seriesWinner } from '../playoffs';
@@ -89,9 +89,58 @@ export function assignNblEuropeanQualifiers(state: GameState, bclCount: number, 
     state.lastBclQualifierIds = direct;
     state.bclDirectQualified = direct.includes(state.userTeamId);
     state.bclQualifyingEntrantId = nblPlayoffBclQualifyingEntrant(state);
-    state.lastFecQualifierIds = nblPlayoffFecQualifiers(state);
+    const bclCommitted = new Set<TeamId>([
+        ...direct,
+        ...(state.bclQualifyingEntrantId ? [state.bclQualifyingEntrantId] : []),
+    ]);
+    state.lastFecQualifierIds = nblPlayoffFecQualifiers(state).filter((id) => !bclCommitted.has(id));
     state.fecQualified = state.lastFecQualifierIds.includes(state.userTeamId);
     state.bclQualified = state.bclDirectQualified;
+    if (state.bclQualified) {
+        state.fecQualified = false;
+    }
+}
+
+/** Every NBL-level team id committed to BCL this season (direct, quali, or full field). */
+export function bclParticipantTeamIds(state: GameState): Set<TeamId> {
+    const ids = new Set<TeamId>();
+    for (const id of state.lastBclQualifierIds) {
+        ids.add(id);
+    }
+    if (state.bclQualifyingEntrantId) {
+        ids.add(state.bclQualifyingEntrantId);
+    }
+    const bcl = state.competitions.bcl;
+    if (bcl?.qualifyingSeries) {
+        ids.add(bcl.qualifyingSeries.homeTeamId);
+        ids.add(bcl.qualifyingSeries.awayTeamId);
+    }
+    if (bcl?.qualifiedTeamIds) {
+        for (const id of bcl.qualifiedTeamIds) {
+            ids.add(id);
+        }
+    }
+    return ids;
+}
+
+/** Remove a team from FEC without importing fec module (avoids circular dependency). */
+function stripTeamFromFecCompetition(state: GameState, teamId: TeamId): void {
+    const fec = state.competitions.fec;
+    if (!fec) {
+        return;
+    }
+    fec.qualifiedTeamIds = fec.qualifiedTeamIds.filter((id) => id !== teamId);
+    for (const group of fec.groups) {
+        group.teamIds = group.teamIds.filter((id) => id !== teamId);
+        group.fixtures = group.fixtures.filter((f) => f.homeTeamId !== teamId && f.awayTeamId !== teamId);
+    }
+    fec.fixtures = fec.fixtures.filter((f) => f.homeTeamId !== teamId && f.awayTeamId !== teamId);
+    if (state.lastFecQualifierIds.includes(teamId)) {
+        state.lastFecQualifierIds = state.lastFecQualifierIds.filter((id) => id !== teamId);
+    }
+    if (state.userTeamId === teamId) {
+        state.fecQualified = false;
+    }
 }
 
 /** Persist Czech BCL entrants from the playoffs that just ended. */
@@ -557,16 +606,28 @@ export function bclKnockoutLeague(bcl: BclConfig): LeagueConfig {
         playoffs: {
             ...leagueConfig.playoffs,
             winsNeeded: [...bcl.knockoutWinsNeeded] as [number, number, number],
+            thirdPlaceWinsNeeded: 1,
         },
     };
 }
 
+const BCL_KNOCKOUT_PHASES = new Set<BclPhase>(['quarterFinals', 'finalFour', 'complete']);
+
 export function pendingBclFixtures(state: GameState, week: number): Fixture[] {
     const bcl = bclCompetition(state);
-    if (!bcl) {
+    if (!bcl || BCL_KNOCKOUT_PHASES.has(bcl.phase)) {
         return [];
     }
     return bcl.fixtures.filter((f) => (f.week ?? f.round) === week && f.result === null);
+}
+
+/** All unplayed BCL group-stage fixtures (any week). */
+export function allPendingBclGroupFixtures(state: GameState): Fixture[] {
+    const bcl = bclCompetition(state);
+    if (!bcl || BCL_KNOCKOUT_PHASES.has(bcl.phase)) {
+        return [];
+    }
+    return bcl.fixtures.filter((f) => f.result === null);
 }
 
 export function allPendingFixturesForWeek(state: GameState, week: number): Fixture[] {
@@ -667,6 +728,55 @@ export function advanceBclKnockout(state: GameState, bcl: BclConfig): void {
         comp.championTeamId = comp.playoffs.championTeamId;
         comp.phase = 'complete';
         comp.userFinish = resolveUserBclFinish(state, comp);
+    } else if (comp.playoffs.stage >= 1) {
+        comp.phase = 'finalFour';
+    } else {
+        comp.phase = 'quarterFinals';
+    }
+}
+
+function allStageSeriesDecided(playoffs: NonNullable<CompetitionState['playoffs']>, league: LeagueConfig): boolean {
+    const stageSeries = playoffs.series.filter((s) => s.stage === playoffs.stage);
+    return stageSeries.length > 0 && stageSeries.every((s) => seriesDecided(s, league));
+}
+
+/** True when BCL knockouts need sim or stage advancement. */
+export function needsBclKnockoutAdvancement(state: GameState, bcl: BclConfig): boolean {
+    const comp = state.competitions.bcl;
+    if (!comp?.playoffs || comp.phase === 'complete') {
+        return false;
+    }
+    const league = bclKnockoutLeague(bcl);
+    if (activeBclSeries(state, bcl).length > 0) {
+        return true;
+    }
+    return allStageSeriesDecided(comp.playoffs, league);
+}
+
+/** Advance stuck BCL knockout brackets until stable. */
+export function repairBclKnockout(state: GameState, bcl: BclConfig): void {
+    const comp = state.competitions.bcl;
+    if (!comp?.playoffs || comp.phase === 'complete') {
+        return;
+    }
+    let guard = 0;
+    while (guard++ < 8) {
+        const beforeStage = comp.playoffs.stage;
+        const beforeChampion = comp.playoffs.championTeamId;
+        if (!needsBclKnockoutAdvancement(state, bcl)) {
+            break;
+        }
+        if (activeBclSeries(state, bcl).length === 0) {
+            advanceBclKnockout(state, bcl);
+        } else {
+            break;
+        }
+        if (comp.playoffs.stage === beforeStage && comp.playoffs.championTeamId === beforeChampion) {
+            break;
+        }
+        if (comp.phase === 'complete') {
+            break;
+        }
     }
 }
 
@@ -703,6 +813,62 @@ function resolveUserBclFinish(state: GameState, comp: CompetitionState): BclUser
 }
 
 /** When R16 group stage ends, start quarter-final bracket. */
+export function drawBclQuarterFinals(
+    groups: BclGroup[],
+    comp: CompetitionState,
+    bcl: BclConfig,
+    rng: Rng,
+): { seeds: Record<TeamId, number>; series: PlayoffSeries[] } {
+    const pot1: Array<{ teamId: TeamId; groupId: string }> = [];
+    const pot2: Array<{ teamId: TeamId; groupId: string }> = [];
+    for (const group of groups) {
+        const standings = r16GroupStandings(comp, group, bcl);
+        if (standings[0]) {
+            pot1.push({ teamId: standings[0].teamId, groupId: group.id });
+        }
+        if (standings[1]) {
+            pot2.push({ teamId: standings[1].teamId, groupId: group.id });
+        }
+    }
+    const shuffledPot1 = rng.shuffle([...pot1]);
+    const availablePot2 = [...pot2];
+    const pairings: Array<{ first: TeamId; second: TeamId; slot: number }> = [];
+    for (let i = 0; i < shuffledPot1.length; i++) {
+        const first = shuffledPot1[i]!;
+        const validIdx = availablePot2.findIndex((t) => t.groupId !== first.groupId);
+        if (validIdx < 0) {
+            continue;
+        }
+        const second = availablePot2.splice(validIdx, 1)[0]!;
+        pairings.push({ first: first.teamId, second: second.teamId, slot: pairings.length });
+    }
+    while (pairings.length < 4 && availablePot2.length > 0 && shuffledPot1.length > pairings.length) {
+        const first = shuffledPot1[pairings.length];
+        const second = availablePot2.shift();
+        if (!first || !second) {
+            break;
+        }
+        pairings.push({ first: first.teamId, second: second.teamId, slot: pairings.length });
+    }
+    const seeds: Record<TeamId, number> = {};
+    let seedNum = 1;
+    for (const p of pairings) {
+        seeds[p.first] = seedNum++;
+        seeds[p.second] = seedNum++;
+    }
+    const series: PlayoffSeries[] = pairings.map((p) => ({
+        id: `BCL-QF-${p.slot}`,
+        stage: 0,
+        slot: p.slot,
+        homeTeamId: p.first,
+        awayTeamId: p.second,
+        homeWins: 0,
+        awayWins: 0,
+        games: [],
+    }));
+    return { seeds, series };
+}
+
 export function maybeStartBclKnockout(state: GameState, bcl: BclConfig, _league: LeagueConfig, rng: Rng): void {
     const comp = state.competitions.bcl;
     if (!comp || comp.phase !== 'roundOf16' || comp.playoffs) {
@@ -711,36 +877,38 @@ export function maybeStartBclKnockout(state: GameState, bcl: BclConfig, _league:
     if (!isBclR16Complete(comp, bcl)) {
         return;
     }
-    const qualifiers: TeamId[] = [];
-    for (const group of comp.groups) {
-        const standings = r16GroupStandings(comp, group, bcl);
-        if (standings[0]) {
-            qualifiers.push(standings[0].teamId);
+    let { seeds, series } = drawBclQuarterFinals(comp.groups, comp, bcl, rng);
+    if (series.length < 4) {
+        const qualifiers: TeamId[] = [];
+        for (const group of comp.groups) {
+            const standings = r16GroupStandings(comp, group, bcl);
+            if (standings[0]) {
+                qualifiers.push(standings[0].teamId);
+            }
+            if (standings[1]) {
+                qualifiers.push(standings[1].teamId);
+            }
         }
-        if (standings[1]) {
-            qualifiers.push(standings[1].teamId);
+        const top8 = qualifiers.slice(0, 8);
+        if (top8.length < 8) {
+            const filled = rng.shuffle([...comp.qualifiedTeamIds]).slice(0, 8);
+            top8.push(...filled.filter((t) => !top8.includes(t)));
         }
+        top8.forEach((id, i) => {
+            seeds[id] = i + 1;
+        });
+        const pairs: Array<[number, number]> = [[1, 8], [4, 5], [2, 7], [3, 6]];
+        series = pairs.map(([high, low], slot) => ({
+            id: `BCL-QF-${slot}`,
+            stage: 0,
+            slot,
+            homeTeamId: top8[high - 1] as TeamId,
+            awayTeamId: top8[low - 1] as TeamId,
+            homeWins: 0,
+            awayWins: 0,
+            games: [],
+        }));
     }
-    const top8 = qualifiers.slice(0, 8);
-    if (top8.length < 8) {
-        const filled = rng.shuffle([...comp.qualifiedTeamIds]).slice(0, 8);
-        top8.push(...filled.filter((t) => !top8.includes(t)));
-    }
-    const seeds: Record<TeamId, number> = {};
-    top8.forEach((id, i) => {
-        seeds[id] = i + 1;
-    });
-    const pairs: Array<[number, number]> = [[1, 8], [4, 5], [2, 7], [3, 6]];
-    const series = pairs.map(([high, low], slot) => ({
-        id: `BCL-QF-${slot}`,
-        stage: 0,
-        slot,
-        homeTeamId: top8[high - 1] as TeamId,
-        awayTeamId: top8[low - 1] as TeamId,
-        homeWins: 0,
-        awayWins: 0,
-        games: [],
-    }));
     comp.playoffs = { stage: 0, seeds, series, championTeamId: null, thirdPlaceSeries: null, thirdPlaceTeamId: null };
     comp.phase = 'quarterFinals';
 }
@@ -798,6 +966,10 @@ export function maybeAdvanceBclFromQualifying(
         extraWinners.push(comp.qualifyingEntrantId);
         if (comp.qualifyingEntrantId === state.userTeamId) {
             state.bclQualified = true;
+            state.fecQualified = false;
+        }
+        if (state.competitions.fec) {
+            stripTeamFromFecCompetition(state, comp.qualifyingEntrantId);
         }
     }
     const next = buildBclRegularSeason(state, bcl, league, rng, extraWinners);
@@ -856,12 +1028,15 @@ export function recordBclSeriesGame(state: GameState, fixture: Fixture): void {
     if (!comp?.playoffs) {
         return;
     }
-    for (const series of comp.playoffs.series) {
-        const teams = new Set([series.homeTeamId, series.awayTeamId]);
-        if (teams.has(fixture.homeTeamId) && teams.has(fixture.awayTeamId)) {
-            recordSeriesGame(series, fixture);
-            break;
-        }
+    const league = bclKnockoutLeague(bclConfig);
+    const stage = comp.playoffs.stage;
+    const candidates = comp.playoffs.series.filter((s) => {
+        const teams = new Set([s.homeTeamId, s.awayTeamId]);
+        return s.stage === stage && teams.has(fixture.homeTeamId) && teams.has(fixture.awayTeamId);
+    });
+    const series = candidates.find((s) => !seriesDecided(s, league)) ?? candidates[0];
+    if (series) {
+        recordSeriesGame(series, fixture);
     }
 }
 

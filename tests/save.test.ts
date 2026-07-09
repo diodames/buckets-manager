@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { economyConfig } from '../src/config/economy';
 import { advanceRoundInstant, createNewGame, SAVE_FORMAT_VERSION } from '../src/core/game';
-import { baseSalary } from '../src/core/market';
-import { overallRating } from '../src/core/model/types';
+import { marketConfig } from '../src/config/market';
+import { marketSalaryForPlayer } from '../src/core/market';
 import { deserializeSave, SaveError, serializeSave } from '../src/core/save/save';
 import { MemoryStorageAdapter } from '../src/services/storage';
 import { testConfig as config } from './helpers';
@@ -84,7 +84,7 @@ describe('save round-trip', () => {
         const player = Object.values(state.players).find((p) => p.teamId === 'DEC' && p.contract);
         expect(player).toBeDefined();
         player!.contract!.salary = 600_000;
-        const expected = baseSalary(overallRating(player!.attributes), economyConfig);
+        const expected = marketSalaryForPlayer(player!, economyConfig, marketConfig);
 
         const v27 = {
             formatVersion: 27,
