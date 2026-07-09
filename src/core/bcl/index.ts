@@ -1,5 +1,6 @@
 import { bclConfig } from '../../config/bcl';
 import type { BclConfig } from '../../config/bcl';
+import { createSchedule } from '../league/schedule';
 import { computeStandings, nblFixtures } from '../league/standings';
 import type {
     BclGroup, BclUserFinish, CompetitionState, Fixture, GameState, PlayoffSeries, TeamId,
@@ -356,6 +357,25 @@ export function createGroupFixtures(groups: BclGroup[], weeks: readonly number[]
     const fixtures: Fixture[] = [];
     for (const group of groups) {
         const ids = group.teamIds;
+        if (ids.length >= 2 && ids.length % 2 === 0) {
+            const groupFixtures = createSchedule(ids, 2);
+            for (const f of groupFixtures) {
+                const week = weeks[f.round - 1] ?? weeks[weeks.length - 1] ?? 2;
+                const fixture: Fixture = {
+                    id: `${group.id}-R${f.round}-${f.homeTeamId}-${f.awayTeamId}`,
+                    round: f.round,
+                    homeTeamId: f.homeTeamId,
+                    awayTeamId: f.awayTeamId,
+                    result: null,
+                    competitionId: 'bcl',
+                    week,
+                };
+                fixtures.push(fixture);
+                group.fixtures.push(fixture);
+            }
+            continue;
+        }
+        // Odd-sized groups (e.g. R16 with fewer than 16 qualifiers): one leg per week.
         const pairings: Array<[TeamId, TeamId]> = [];
         for (let i = 0; i < ids.length; i++) {
             for (let j = i + 1; j < ids.length; j++) {
@@ -365,7 +385,7 @@ export function createGroupFixtures(groups: BclGroup[], weeks: readonly number[]
         }
         for (let p = 0; p < pairings.length; p++) {
             const [home, away] = pairings[p] as [TeamId, TeamId];
-            const week = weeks[Math.floor(p / 2) % weeks.length] ?? 2;
+            const week = weeks[p % weeks.length] ?? 2;
             const fixture: Fixture = {
                 id: `${group.id}-F${p}`,
                 round: p + 1,
