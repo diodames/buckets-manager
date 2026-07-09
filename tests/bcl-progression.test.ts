@@ -143,7 +143,43 @@ describe('BCL progression', () => {
         expect(winsNeeded(0, league)).toBe(2);
         expect(winsNeeded(1, league)).toBe(1);
         expect(winsNeeded(2, league)).toBe(1);
-        expect(league.playoffs.thirdPlaceWinsNeeded).toBe(1);
+        expect(league.playoffs.includeThirdPlace).toBe(false);
+    });
+
+    it('advances Final Four semis to final without a third-place game', () => {
+        const state = createNewGame(config, 9110, 'NYM');
+        state.competitions.bcl = {
+            id: 'bcl',
+            phase: 'finalFour',
+            fixtures: [],
+            groups: [],
+            playoffs: {
+                stage: 1,
+                seeds: { NYM: 1, 'BCL-LLTF': 2, 'BCL-NYM': 3, 'BCL-UNI': 4 },
+                series: [
+                    { id: 'BCL-SF-0', stage: 1, slot: 0, homeTeamId: 'NYM', awayTeamId: 'BCL-LLTF', homeWins: 1, awayWins: 0, games: [] },
+                    { id: 'BCL-SF-1', stage: 1, slot: 1, homeTeamId: 'BCL-NYM', awayTeamId: 'BCL-UNI', homeWins: 0, awayWins: 1, games: [] },
+                ],
+                championTeamId: null,
+                thirdPlaceSeries: null,
+                thirdPlaceTeamId: null,
+            },
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: null,
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+        repairBclKnockout(state, config.bcl);
+        const playoffs = state.competitions.bcl!.playoffs!;
+        expect(playoffs.stage).toBe(2);
+        expect(playoffs.series.filter((s) => s.stage === 2)).toHaveLength(1);
+        expect(playoffs.thirdPlaceSeries).toBeNull();
+        expect(playoffs.thirdPlaceTeamId).toBeNull();
+        expect(state.competitions.bcl!.phase).toBe('finalFour');
     });
 
     it('does not return pending group fixtures during knockouts', () => {

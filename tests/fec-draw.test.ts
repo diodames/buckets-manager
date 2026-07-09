@@ -64,4 +64,40 @@ describe('fec draw', () => {
         expect(state.competitions.fec!.phase).toBe('semiFinals');
         expect(state.competitions.fec!.playoffs!.stage).toBe(1);
     });
+
+    it('advances FEC semis to finals without a third-place game', () => {
+        const state = createNewGame(config, 9003, 'PCE');
+        state.competitions.fec = {
+            id: 'fec',
+            phase: 'semiFinals',
+            fixtures: [],
+            groups: [],
+            playoffs: {
+                stage: 1,
+                seeds: { 'FEC-SBB': 1, 'FEC-SZOM': 2, 'FEC-BOSN': 3, 'FEC-PTKM': 4 },
+                series: [
+                    { id: 'FEC-SF-0', stage: 1, slot: 0, homeTeamId: 'FEC-SBB', awayTeamId: 'FEC-SZOM', homeWins: 2, awayWins: 0, games: [] },
+                    { id: 'FEC-SF-1', stage: 1, slot: 1, homeTeamId: 'FEC-BOSN', awayTeamId: 'FEC-PTKM', homeWins: 1, awayWins: 2, games: [] },
+                ],
+                championTeamId: null,
+                thirdPlaceSeries: null,
+                thirdPlaceTeamId: null,
+            },
+            qualifyingSeries: null,
+            qualifyingEntrantId: null,
+            qualifyingOpponentId: null,
+            qualifiedTeamIds: [],
+            championTeamId: null,
+            prizePaid: false,
+            weeklyPrizePaidTotal: 0,
+            userFinish: null,
+        };
+        repairFecKnockout(state, config.fec);
+        const playoffs = state.competitions.fec!.playoffs!;
+        expect(playoffs.stage).toBe(2);
+        expect(playoffs.series.filter((s) => s.stage === 2)).toHaveLength(1);
+        expect(playoffs.thirdPlaceSeries).toBeNull();
+        expect(playoffs.thirdPlaceTeamId).toBeNull();
+        expect(state.competitions.fec!.phase).toBe('finals');
+    });
 });
