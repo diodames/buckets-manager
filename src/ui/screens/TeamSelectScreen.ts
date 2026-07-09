@@ -1,35 +1,33 @@
 import type { AppContext, Screen } from '../../app/Screen';
 import type { UiInputFrame } from '../../app/UiInput';
 import { createNewGame } from '../../core/game';
-import { realArenaCapacity, startingBudgetForTeam, generateAmbitionSponsorOffers } from '../../core/economy';
+import { startingBudgetForTeam, generateAmbitionSponsorOffers } from '../../core/economy';
 import { generateLeague, type GeneratedLeague } from '../../core/league/generate';
 import type { Player } from '../../core/model/types';
-import { overallRating, POSITIONS } from '../../core/model/types';
+import { overallRating } from '../../core/model/types';
 import { createRng } from '../../core/rng';
-import { t, teamArenaName, teamCityName, teamDisplayName } from '../../i18n';
+import { t, teamDisplayName } from '../../i18n';
 import { drawChrome } from '../chrome';
-import { formatMoney, shortPlayerName } from '../format';
+import { drawTeamCrest } from '../crests';
+import {
+    renderTeamDetailPanel,
+    sortTeamPlayers,
+    teamArenaSeats,
+    type TeamDetailLayout,
+} from '../teamDetail';
 import { ROLE } from '../theme';
-import { padLeft, padRight } from '../text';
 import { DataTable } from '../widgets/DataTable';
 import { DashboardScreen } from './DashboardScreen';
 import { SponsorChoiceScreen } from './SponsorChoiceScreen';
-import { drawTeamCrest } from '../crests';
 
 const TEAM_TABLE_COL = 2;
 const TEAM_TABLE_ROW = 4;
-// Legacy crest sprites were 16x16 in a two-column band immediately left of the table.
 const LEGACY_CREST_COLS = 2;
-// Table columns total 30 cells (4+1+18+1+6); leave a visible gap before the detail panel.
 const TEAM_TABLE_WIDTH = 30;
 const DETAIL_GAP = 6;
 const DETAIL_FRAME_COL = TEAM_TABLE_COL + TEAM_TABLE_WIDTH + DETAIL_GAP;
 const DETAIL_COL = DETAIL_FRAME_COL + 1;
 const DETAIL_ROW = 4;
-const DETAIL_WIDTH = 38;
-const NAME_WIDTH = 18;
-const POS_WIDTH = 3;
-const OVR_WIDTH = 3;
 
 export class TeamSelectScreen implements Screen {
     private readonly ctx: AppContext;
@@ -39,9 +37,6 @@ export class TeamSelectScreen implements Screen {
 
     constructor(ctx: AppContext) {
         this.ctx = ctx;
-        // The league is generated deterministically from this seed; the same
-        // seed is passed to createNewGame below, so the ratings previewed
-        // here are exactly the league the player will manage.
         this.seed = Math.floor(Math.random() * 0xffffffff) >>> 0;
         this.preview = generateLeague(
             createRng(this.seed).fork('league'),
@@ -67,72 +62,33 @@ export class TeamSelectScreen implements Screen {
         return Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length);
     }
 
-    private teamPlayers(teamId: string): Player[] {
+    private previewPlayers(teamId: string): Player[] {
         const team = this.preview.teams[teamId];
         if (!team) {
             return [];
         }
-        const posOrder = Object.fromEntries(POSITIONS.map((pos, index) => [pos, index]));
-        return team.playerIds
-            .map((id) => this.preview.players[id])
-            .filter((p): p is Player => p !== undefined)
-            .sort((a, b) => {
-                const posDiff = (posOrder[a.position] ?? 99) - (posOrder[b.position] ?? 99);
-                if (posDiff !== 0) {
-                    return posDiff;
-                }
-                return overallRating(b.attributes) - overallRating(a.attributes);
-            });
-    }
-
-    private arenaSeats(teamId: string): number {
-        const real = realArenaCapacity(this.ctx.config.league, teamId);
-        if (real) {
-            return real;
-        }
-        return this.ctx.config.economy.facilities.arenaCapacityByLevel[0] ?? 1500;
+        return sortTeamPlayers(
+            team.playerIds
+                .map((id) => this.preview.players[id])
+                .filter((p): p is Player => p !== undefined),
+        );
     }
 
     private renderDetail(selected: number): void {
-        const grid = this.ctx.grid;
         const teamDef = this.ctx.config.league.teams[selected];
         if (!teamDef) {
             return;
         }
 
-        grid.put(
-            DETAIL_COL,
-            DETAIL_ROW,
-            ROLE.header,
-            `${teamDisplayName(teamDef)} - ${teamCityName(teamDef)}`,
-        );
-        grid.put(
-            DETAIL_COL,
-            DETAIL_ROW + 1,
-            ROLE.text,
-            t('teamSelect.arena', { name: teamArenaName(teamDef), n: this.arenaSeats(teamDef.id) }),
-        );
-        grid.put(
-            DETAIL_COL,
-            DETAIL_ROW + 2,
-            ROLE.accent,
-            t('teamSelect.budget', { amount: formatMoney(startingBudgetForTeam(teamDef, this.ctx.config.economy)) }),
-        );
-        grid.put(DETAIL_COL, DETAIL_ROW + 3, ROLE.textDim, '-'.repeat(DETAIL_WIDTH - 2));
-        grid.put(DETAIL_COL, DETAIL_ROW + 4, ROLE.header, t('teamSelect.roster'));
-        grid.put(
-            DETAIL_COL,
-            DETAIL_ROW + 5,
-            ROLE.textDim,
-            `${padRight(t('col.name'), NAME_WIDTH)} ${padRight(t('col.pos'), POS_WIDTH)} ${padLeft(t('col.ovr'), OVR_WIDTH)}`,
-        );
+        const layout: TeamDetailLayout = {
+            col: DETAIL_COL,
+            row: DETAIL_ROW,
+        };
 
-        const players = this.teamPlayers(teamDef.id);
-        for (let i = 0; i < players.length; i++) {
-            const player = players[i] as Player;
-            const line = `${padRight(shortPlayerName(player), NAME_WIDTH)} ${padRight(player.position, POS_WIDTH)} ${padLeft(String(overallRating(player.attributes)), OVR_WIDTH)}`;
-            grid.put(DETAIL_COL, DETAIL_ROW + 6 + i, ROLE.text, line);
-        }
+        renderTeamDetailPanel(this.ctx.grid, layout, teamDef.id, this.previewPlayers(teamDef.id), {
+            budget: startingBudgetForTeam(teamDef, this.ctx.config.economy),
+            arenaSeats: teamArenaSeats(teamDef.id, null, this.ctx.config),
+        });
     }
 
     update(input: UiInputFrame): void {

@@ -6,6 +6,7 @@ import { drawChrome } from '../chrome';
 import { teamName } from '../format';
 import { ROLE } from '../theme';
 import { DataTable } from '../widgets/DataTable';
+import { TeamDetailScreen } from './TeamDetailScreen';
 
 export class StandingsScreen implements Screen {
     private readonly ctx: AppContext;
@@ -13,7 +14,7 @@ export class StandingsScreen implements Screen {
 
     constructor(ctx: AppContext) {
         this.ctx = ctx;
-        this.table = new DataTable({ col: 4, row: 4, visibleRows: ctx.config.league.teams.length }, false);
+        this.table = new DataTable({ col: 4, row: 4, visibleRows: ctx.config.league.teams.length }, true);
     }
 
     update(input: UiInputFrame): void {
@@ -21,7 +22,23 @@ export class StandingsScreen implements Screen {
             this.ctx.screens.pop();
             return;
         }
-        this.table.update(input, this.ctx.grid);
+        const session = this.ctx.session;
+        if (!session) {
+            return;
+        }
+        const activated = this.table.update(input, this.ctx.grid);
+        if (activated !== null) {
+            const row = computeNblStandings(session.state)[activated];
+            if (row) {
+                this.ctx.screens.push(
+                    new TeamDetailScreen(this.ctx, row.teamId, {
+                        wins: row.wins,
+                        losses: row.losses,
+                        diff: row.pointsFor - row.pointsAgainst,
+                    }),
+                );
+            }
+        }
     }
 
     render(): void {
@@ -55,7 +72,7 @@ export class StandingsScreen implements Screen {
                 ...(row.teamId === session.state.userTeamId ? { color: ROLE.accent } : {}),
             })),
         );
-        drawChrome(this.ctx, t('standings.title'), [t('hint.back')]);
+        drawChrome(this.ctx, t('standings.title'), [t('hint.navigate'), t('hint.select'), t('hint.back')]);
         this.table.render(this.ctx.grid);
     }
 }
