@@ -1,4 +1,5 @@
 import type { RealPlayerDef } from '../config/league';
+import { tierMean } from '../core/league/playerRating';
 
 const p = (
     firstName: string,
@@ -8,7 +9,16 @@ const p = (
     heightCm: number | null = null,
     born: number | null = null,
     nationality: string | null = null,
-): RealPlayerDef => ({ firstName, lastName, position, tier, heightCm, born, nationality });
+): RealPlayerDef => ({
+    firstName,
+    lastName,
+    position,
+    tier,
+    targetOverall: tierMean(tier),
+    heightCm,
+    born,
+    nationality,
+});
 
 /** Hand-curated fallbacks when scoutbasketball has no usable roster page. */
 export const manualEuropeanRosters: Record<string, readonly RealPlayerDef[]> = {

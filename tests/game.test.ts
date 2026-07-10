@@ -32,7 +32,8 @@ describe('createNewGame (real NBL rosters)', () => {
         const nymburk = state.teams.NYM;
         const names = (nymburk?.playerIds ?? []).map((id) => state.players[id]?.lastName);
         expect(names).toContain('Sehnal');
-        expect(names).toContain('Rice');
+        expect(names).toContain('Perkins');
+        expect(names).not.toContain('Rice');
     });
 
     it('stronger real teams rate higher than weaker ones', () => {

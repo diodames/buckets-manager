@@ -9,6 +9,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gudaitis",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -18,6 +19,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Radzevicius",
             "position": "SG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -27,6 +29,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Harding",
             "position": "SG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -36,6 +39,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Marciulionis",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -45,6 +49,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Krizanauskas",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -54,6 +59,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Masiulis",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -63,6 +69,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sargiunas",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -72,6 +79,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Urbonas",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -81,6 +89,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wiley",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -90,6 +99,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Caroline",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -99,6 +109,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Walker",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -108,6 +119,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bruhnke",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -119,6 +131,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Silva",
             "position": "PF",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "GAB"
@@ -128,6 +141,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bartley",
             "position": "SG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -137,6 +151,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gray",
             "position": "SF",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -146,6 +161,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Arms",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -155,6 +171,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Katsivelis",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -164,6 +181,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Flionis",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -173,6 +191,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Skordilis",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -182,6 +201,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Clavell",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -191,6 +211,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Iii",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -200,6 +221,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nunnally",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -209,6 +231,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Feazell",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -218,6 +241,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lekavicius",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -229,6 +253,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Balcerowski",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -238,6 +263,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Perry",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "MNE"
@@ -247,6 +273,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Balbuena",
             "position": "PF",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "DOM"
@@ -256,6 +283,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ortiz",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -265,6 +293,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Butajevas",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -274,6 +303,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rubit",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -283,6 +313,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Audige",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -292,6 +323,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Duarte",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -301,6 +333,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kravish",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -310,6 +343,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sulejmanovic",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -319,6 +353,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Iii",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -328,6 +363,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rodriguez",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -339,6 +375,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Trujillo",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -348,6 +385,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Shermadini",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -357,6 +395,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Huertas",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "BRA"
@@ -366,6 +405,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Doornekamp",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -375,6 +415,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Fitipaldo",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -384,6 +425,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dri",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -393,6 +435,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Diaz",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -402,6 +445,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bernabe",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -411,6 +455,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sastre",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -420,6 +465,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kostadinov",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -429,6 +475,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Martinez",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -438,6 +485,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sangare",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "MAL"
@@ -449,6 +497,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ellis",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -458,6 +507,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bean",
             "position": "PF",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -467,6 +517,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Delow",
             "position": "SG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -476,6 +527,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "O'connell",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -485,6 +537,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nufer",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -494,6 +547,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hundt",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -503,6 +557,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Roberts",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -512,6 +567,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kayil",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -521,6 +577,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mattisseck",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -530,6 +587,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hermannsson",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ISL"
@@ -539,6 +597,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Echodas",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -548,6 +607,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hermann",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -559,6 +619,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thompson",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -568,6 +629,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mintz",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -577,6 +639,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Carr",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -586,6 +649,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pjanic",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -595,6 +659,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ivey",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -604,6 +669,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Skladanowski",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -613,6 +679,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Philipps",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -622,6 +689,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sokolov",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -631,6 +699,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Muenkat",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -640,6 +709,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -649,6 +719,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Scheffs",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -658,6 +729,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Stove",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -669,6 +741,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Angola-Rodas",
             "position": "SG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "COL"
@@ -678,6 +751,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brussino",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "ARG"
@@ -687,6 +761,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pelos",
             "position": "PF",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -696,6 +771,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Panasyuk",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "RUS"
@@ -705,6 +781,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Albicy",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -714,6 +791,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Arrondo",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -723,6 +801,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Heinonen",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FIN"
@@ -732,6 +811,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Martinez",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -741,6 +821,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wong",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -750,6 +831,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Robertson",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -759,6 +841,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kuath",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -768,6 +851,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Labeyrie",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -779,6 +863,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kaufmann",
             "position": "SG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "MEX"
@@ -788,6 +873,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Besson",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -797,6 +883,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Blazevic",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -806,6 +893,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Postel",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -815,6 +903,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Serbest",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -824,6 +913,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Korkmaz",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -833,6 +923,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Whaley",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -842,6 +933,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thomasson",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -851,6 +943,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Floyd",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -860,6 +953,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kidd",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -869,6 +963,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lewis",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -878,6 +973,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cengiz",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -889,6 +985,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brown",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": 196,
             "born": 1994,
             "nationality": "USA"
@@ -898,6 +995,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Frazier",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": 183,
             "born": 1990,
             "nationality": "USA"
@@ -907,6 +1005,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Toupane",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": 201,
             "born": 1992,
             "nationality": "FRA"
@@ -916,6 +1015,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "White",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": 203,
             "born": 1997,
             "nationality": "USA"
@@ -925,6 +1025,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sorokas",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": 206,
             "born": 1994,
             "nationality": "LTU"
@@ -934,6 +1035,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dicko",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 208,
             "born": 2003,
             "nationality": "FRA"
@@ -943,6 +1045,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gauzin",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 193,
             "born": 2001,
             "nationality": "FRA"
@@ -952,6 +1055,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Konate",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 198,
             "born": 2000,
             "nationality": "FRA"
@@ -961,6 +1065,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Loum",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 211,
             "born": 2002,
             "nationality": "SEN"
@@ -970,6 +1075,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Esso Essis",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 185,
             "born": 2004,
             "nationality": "FRA"
@@ -979,6 +1085,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Esso Essis",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 190,
             "born": 2006,
             "nationality": "FRA"
@@ -988,6 +1095,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tchicamboud",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 195,
             "born": 1990,
             "nationality": "FRA"
@@ -999,6 +1107,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sanogo",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "MAL"
@@ -1008,6 +1117,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rosser",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1017,6 +1127,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr.",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1026,6 +1137,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr.",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1035,6 +1147,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Martin",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1044,6 +1157,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Zalmanson",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -1053,6 +1167,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bone",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1062,6 +1177,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mcrae",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1071,6 +1187,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Carreira",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -1080,6 +1197,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Eliaszadeh",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -1089,6 +1207,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Artzi",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -1098,6 +1217,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brooks",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1109,6 +1229,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Golden",
             "position": "C",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1118,6 +1239,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hill",
             "position": "PG",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "CAM"
@@ -1127,6 +1249,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gaudoux",
             "position": "SF",
             "tier": 5,
+            "targetOverall": 72,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1136,6 +1259,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Naji",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1145,6 +1269,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nadolny",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1154,6 +1279,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kante",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1163,6 +1289,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tucker",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1172,6 +1299,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mutts",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1181,6 +1309,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Leray",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1190,6 +1319,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Darling",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -1199,6 +1329,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Anochili-Killen",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1208,6 +1339,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tonnellier",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1219,6 +1351,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jefferson",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1228,6 +1361,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wiggins",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1237,6 +1371,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Horchler",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "GBR"
@@ -1246,6 +1381,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Estrada",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1255,6 +1391,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Madsen",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FIN"
@@ -1264,6 +1401,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jefferson",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1273,6 +1411,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ellis",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1282,6 +1421,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Okoro",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NIG"
@@ -1291,6 +1431,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kamperidis",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -1300,6 +1441,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kaselakis",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -1309,6 +1451,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Liapis",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -1318,6 +1461,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bothwell",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1329,6 +1473,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kountz",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1338,6 +1483,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ayayi",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1347,6 +1493,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Diarra",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1356,6 +1503,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Towo-Nansi",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1365,6 +1513,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Agbo",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "NIG"
@@ -1374,6 +1523,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gholston",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1383,6 +1533,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Diawara",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1392,6 +1543,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Miles",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1401,6 +1553,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mcneace",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1410,6 +1563,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wilamowski",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1419,6 +1573,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Justice",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1428,6 +1583,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sousa",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1439,6 +1595,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Weathers",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1448,6 +1605,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Weathers",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1457,6 +1615,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Horne",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1466,6 +1625,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Neskovic",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -1475,6 +1635,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1484,6 +1645,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ersek",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "AUT"
@@ -1493,6 +1655,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mcclain",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -1502,6 +1665,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kessen",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -1511,6 +1675,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Seric",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -1520,6 +1685,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Flowers",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1529,6 +1695,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wurzner",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -1538,6 +1705,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Koch",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -1549,6 +1717,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mccollum",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1558,6 +1727,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tuncer",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -1567,6 +1737,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ellis",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1576,6 +1747,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Korkmaz",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -1585,6 +1757,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bishop",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1594,6 +1767,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dalgali",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -1603,6 +1777,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Omoruyi",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NIG"
@@ -1612,6 +1787,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr.",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1621,6 +1797,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gillespie",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1630,6 +1807,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr.",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1639,6 +1817,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Robinson",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1648,6 +1827,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Meeks",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1659,6 +1839,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Yaacov",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -1668,6 +1849,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gillet",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -1677,6 +1859,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Melson",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1686,6 +1869,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Estrada",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1695,6 +1879,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Merkviladze",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1704,6 +1889,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gustavson",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FIN"
@@ -1713,6 +1899,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pieters",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -1722,6 +1909,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bratanovic",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -1731,6 +1919,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mennes",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -1740,6 +1929,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Schakel",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1749,6 +1939,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Obanor",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1758,6 +1949,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Fiedler",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1769,6 +1961,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pluta",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -1778,6 +1971,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Graves",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1787,6 +1981,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thompson",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1796,6 +1991,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Shungu",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1805,6 +2001,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Czapla",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -1814,6 +2011,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ponsar",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -1823,6 +2021,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wilczek",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -1832,6 +2031,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tass",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -1841,6 +2041,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kolenda",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -1850,6 +2051,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Silins",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -1859,6 +2061,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hunter",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1868,6 +2071,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tomaszewski",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -1879,6 +2083,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pansa",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "FRE"
@@ -1888,6 +2093,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1897,6 +2103,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cavars",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -1906,6 +2113,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Voinalovych",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "UKR"
@@ -1915,6 +2123,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nichols",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1924,6 +2133,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Poladkhanli",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EUR"
@@ -1933,6 +2143,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Blakes",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1942,6 +2153,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gravett",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1951,6 +2163,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Iii",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1960,6 +2173,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tillman",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1969,6 +2183,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mammadov",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EUR"
@@ -1978,6 +2193,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Guliyev",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "AZE"
@@ -1989,6 +2205,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Broussard",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -1998,6 +2215,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dziewa",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -2007,6 +2225,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Crandall",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2016,6 +2235,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gomes",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -2025,6 +2245,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Relvao",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -2034,6 +2255,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gameiro",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -2043,6 +2265,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Francisco",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ANG"
@@ -2052,6 +2275,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vilhena",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -2061,6 +2285,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sueing",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2070,6 +2295,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mcewen",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -2079,6 +2305,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Romdhane",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUN"
@@ -2088,6 +2315,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Yussuf",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NIG"
@@ -2099,6 +2327,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tyree",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2108,6 +2337,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bess",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2117,6 +2347,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gavrilovic",
             "position": "PF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -2126,6 +2357,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rorie",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2135,6 +2367,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Simanic",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -2144,6 +2377,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Milosavljevic",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -2153,6 +2387,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mustapic",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CRO"
@@ -2162,6 +2397,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lewis",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2171,6 +2407,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jeremic",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -2180,6 +2417,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Milovanovic",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -2189,6 +2427,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ceaser",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2198,6 +2437,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Popovic",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -2209,6 +2449,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Somogyi",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -2218,6 +2459,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Skeens",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2227,6 +2469,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Darthard",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2236,6 +2479,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vrabac",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -2245,6 +2489,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Barnes",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2254,6 +2499,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Krnjajski",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -2263,6 +2509,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rudner",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -2272,6 +2519,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Molnar",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -2281,6 +2529,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Holt",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2290,6 +2539,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pallai",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -2301,6 +2551,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Barea",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2310,6 +2561,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Novitshyi",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "UKR"
@@ -2319,6 +2571,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Porter",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2328,6 +2581,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Andzevs",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2337,6 +2591,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Carlson",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2346,6 +2601,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bertans",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2355,6 +2611,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sydorov",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "UKR"
@@ -2364,6 +2621,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Niedra",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2373,6 +2631,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kilps",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2382,6 +2641,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Butirins",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2391,6 +2651,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vanags",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2400,6 +2661,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Aleksandrovs",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -2411,6 +2673,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Onuaku",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "NIG"
@@ -2420,6 +2683,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Francis",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2429,6 +2693,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Stewart",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2438,6 +2703,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jones",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2447,6 +2713,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Varnado",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2456,6 +2723,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Heidegger",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "AUT"
@@ -2465,6 +2733,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lutaty",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -2474,6 +2743,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lutati",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -2483,6 +2753,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Carter",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2492,6 +2763,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lugashi",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -2501,6 +2773,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dawson",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ISR"
@@ -2510,6 +2783,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Douglas",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2521,6 +2795,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Uthoff",
             "position": "PF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2530,6 +2805,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sissoko",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2539,6 +2815,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brown",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2548,6 +2825,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ross",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2557,6 +2835,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Moretti",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -2566,6 +2845,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Candussi",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -2575,6 +2855,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ramsey",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2584,6 +2865,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brooks",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2593,6 +2875,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bannan",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "AUS"
@@ -2602,6 +2885,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Toscano-Anderson",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2611,6 +2895,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Deangeli",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -2620,6 +2905,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ruzzier",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -2631,6 +2917,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tomic",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "CRO"
@@ -2640,6 +2927,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Parker",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2649,6 +2937,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rubio",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -2658,6 +2947,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hanga",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -2667,6 +2957,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Torre",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -2676,6 +2967,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hunt",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2685,6 +2977,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Santos",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -2694,6 +2987,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Guillen",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -2703,6 +2997,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Torrent",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -2712,6 +3007,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Drell",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -2721,6 +3017,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Zamorano",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -2730,6 +3027,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hakanson",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SWE"
@@ -2741,6 +3039,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Olaseni",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "GBR"
@@ -2750,6 +3049,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "White",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "AUS"
@@ -2759,6 +3059,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2768,6 +3069,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Chassang",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -2777,6 +3079,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Alyanak",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -2786,6 +3089,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr.",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2795,6 +3099,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bentil",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GHA"
@@ -2804,6 +3109,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kilicli",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -2813,6 +3119,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tirpanci",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -2822,6 +3129,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sayili",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -2831,6 +3139,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cobbs",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "MNE"
@@ -2840,6 +3149,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ozmizrak",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -2851,6 +3161,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Coleman",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2860,6 +3171,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mccullum",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2869,6 +3181,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gray",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2878,6 +3191,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lagios",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -2887,6 +3201,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Karagiannidis",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -2896,6 +3211,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bazinas",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -2905,6 +3221,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2914,6 +3231,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kapetakis",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -2923,6 +3241,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Prekas",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -2932,6 +3251,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Macura",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2941,6 +3261,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hammonds",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -2950,6 +3271,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Plotas",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -2961,6 +3283,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sanogo",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "MAL"
@@ -2970,6 +3293,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cappelletti",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -2979,6 +3303,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Alibegovic",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -2988,6 +3313,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pugliatti",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "VEN"
@@ -2997,6 +3323,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Notae",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3006,6 +3333,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Petrucelli",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3015,6 +3343,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ford",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3024,6 +3353,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hurt",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3033,6 +3363,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Eboua",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CAM"
@@ -3042,6 +3373,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rossato",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -3051,6 +3383,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Arcidiacono",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3060,6 +3393,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Allen",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3071,6 +3405,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Berhanemeskel",
             "position": "SG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -3080,6 +3415,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thomas",
             "position": "SF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3089,6 +3425,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hudgins",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3098,6 +3435,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Grasshoff",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -3107,6 +3445,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dileo",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3116,6 +3455,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Simonovic",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3125,6 +3465,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jeanne",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -3134,6 +3475,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dufeal",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -3143,6 +3485,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bogues",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3152,6 +3495,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Penda",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -3161,6 +3505,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Williams",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -3170,6 +3515,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Beracou",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -3181,6 +3527,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nikolic",
             "position": "PF",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3190,6 +3537,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hanlan",
             "position": "PG",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -3199,6 +3547,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thompson",
             "position": "C",
             "tier": 4,
+            "targetOverall": 65,
             "heightCm": null,
             "born": null,
             "nationality": "JAM"
@@ -3208,6 +3557,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bodrozic",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3217,6 +3567,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ilic",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3226,6 +3577,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Drobnjak",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "MNE"
@@ -3235,6 +3587,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hawkins",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3244,6 +3597,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kennedy",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3253,6 +3607,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cerovina",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3262,6 +3617,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rebic",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3271,6 +3627,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Momirov",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3280,6 +3637,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Banjac",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3291,6 +3649,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pedersen",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3300,6 +3659,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Deen",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3309,6 +3669,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Chenery",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3318,6 +3679,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jukic",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3327,6 +3689,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ates",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3336,6 +3699,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ogundiran",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NIG"
@@ -3345,6 +3709,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mollgaard",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3354,6 +3719,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vinther",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3363,6 +3729,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sherry",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3372,6 +3739,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rombley",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SAI"
@@ -3381,6 +3749,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Schwartz",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3390,6 +3759,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bloch",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DEN"
@@ -3401,6 +3771,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Music",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3410,6 +3781,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mcgill",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3419,6 +3791,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Carius",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3428,6 +3801,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kivimaki",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FIN"
@@ -3437,6 +3811,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mawein",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "AUS"
@@ -3446,6 +3821,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Krajcovic",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SVK"
@@ -3455,6 +3831,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wesson",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3464,6 +3841,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bojanovsky",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SVK"
@@ -3473,6 +3851,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Chaban",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SVK"
@@ -3482,6 +3861,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dorsey",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3491,6 +3871,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pazicky",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SVK"
@@ -3500,6 +3881,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Solcansky",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SVK"
@@ -3511,6 +3893,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Peterka",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CZE"
@@ -3520,6 +3903,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bogucki",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3529,6 +3913,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Zalucki",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3538,6 +3923,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bonner",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3547,6 +3933,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Green",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3556,6 +3943,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Montgomery",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3565,6 +3953,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Musial",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3574,6 +3963,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wojdala",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3583,6 +3973,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thomas",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3592,6 +3983,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gray",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3601,6 +3993,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Muhammad",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3610,6 +4003,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Zablocki",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3621,6 +4015,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Moore",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3630,6 +4025,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Melvin",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3639,6 +4035,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dimsa",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -3648,6 +4045,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Koniaris",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -3657,6 +4055,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Slaftsakis",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -3666,6 +4065,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Fillios",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -3675,6 +4075,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jackson",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3684,6 +4085,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Iatridis",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -3693,6 +4095,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jones",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3702,6 +4105,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Persidis",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -3711,6 +4115,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brown",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3720,6 +4125,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Zaras",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GRE"
@@ -3731,6 +4137,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Echenique",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "COL"
@@ -3740,6 +4147,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Barford",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3749,6 +4157,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jr",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3758,6 +4167,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Williams",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3767,6 +4177,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Deme",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SEN"
@@ -3776,6 +4187,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Smith",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3785,6 +4197,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Uglietti",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -3794,6 +4207,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Severini",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -3803,6 +4217,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vitali",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -3812,6 +4227,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Woldetensae",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ITA"
@@ -3821,6 +4237,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Caupain",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3832,6 +4249,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Belo",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GBR"
@@ -3841,6 +4259,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jovanovic",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "SRB"
@@ -3850,6 +4269,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wojcik",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -3859,6 +4279,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Keller",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -3868,6 +4289,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Novakovic",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3877,6 +4299,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dez",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -3886,6 +4309,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Varadi",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -3895,6 +4319,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Whelan",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "WOR"
@@ -3904,6 +4329,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Perl",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -3915,6 +4341,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hermet",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -3924,6 +4351,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kaukiainen",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "FIN"
@@ -3933,6 +4361,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rutherford",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3942,6 +4371,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Miska",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LVA"
@@ -3951,6 +4381,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tongue",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -3960,6 +4391,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Makke",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -3969,6 +4401,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kuuba",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -3978,6 +4411,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Toom",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -3987,6 +4421,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Rosenthal",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -3996,6 +4431,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dorbek",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -4005,6 +4441,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kurbas",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -4014,6 +4451,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Acuff",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4025,6 +4463,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Funk",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4034,6 +4473,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Murray",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4043,6 +4483,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kesteloot",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -4052,6 +4493,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Lasisi",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -4061,6 +4503,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cheeks",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4070,6 +4513,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tumba",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -4079,6 +4523,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Drom",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -4088,6 +4533,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Colak",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -4097,6 +4543,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bello",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4106,6 +4553,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Schoepen",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BEL"
@@ -4117,6 +4565,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Young",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -4126,6 +4575,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Richard",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4135,6 +4585,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bropleh",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LIB"
@@ -4144,6 +4595,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sy",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -4153,6 +4605,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nzekwesi",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -4162,6 +4615,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nastrut",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ROU"
@@ -4171,6 +4625,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nicolescu",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ROU"
@@ -4180,6 +4635,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Torok",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ROU"
@@ -4189,6 +4645,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pridgett",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CAM"
@@ -4200,6 +4657,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Fleming",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4209,6 +4667,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dunn",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4218,6 +4677,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Washpun",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4227,6 +4687,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Toupane",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -4236,6 +4697,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Riley",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4245,6 +4707,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Filipovity",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -4254,6 +4717,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Queiroz",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -4263,6 +4727,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Voytso",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POR"
@@ -4274,6 +4739,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Veinot",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CAN"
@@ -4283,6 +4749,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dijkstra",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -4292,6 +4759,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cork",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4301,6 +4769,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mikalauskas",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -4310,6 +4779,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vliet",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -4319,6 +4789,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kloof",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -4328,6 +4799,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Withers",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4337,6 +4809,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Walton",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4346,6 +4819,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bree",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -4355,6 +4829,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Koehler",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "NLD"
@@ -4366,6 +4841,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ennis",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "JAM"
@@ -4375,6 +4851,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cate",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "ROU"
@@ -4384,6 +4861,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nakic",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CRO"
@@ -4393,6 +4871,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Garcia",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "ESP"
@@ -4402,6 +4881,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dejulius",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4411,6 +4891,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cacok",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "JAM"
@@ -4420,6 +4901,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sant-Roos",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CUB"
@@ -4429,6 +4911,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Radebaugh",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4438,6 +4921,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Forrest",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4447,6 +4931,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Diagne",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SEN"
@@ -4456,6 +4941,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Raieste",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "EST"
@@ -4465,6 +4951,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Falk",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SWE"
@@ -4476,6 +4963,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Griffin",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4485,6 +4973,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hawkins",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4494,6 +4983,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mack",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4503,6 +4993,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Pelczar",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -4512,6 +5003,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Put",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -4521,6 +5013,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Wright",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4530,6 +5023,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Krasuski",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -4539,6 +5033,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Turewicz",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -4548,6 +5043,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ford",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4557,6 +5053,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Szymanski",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "POL"
@@ -4568,6 +5065,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cotture",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CHE"
@@ -4577,6 +5075,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nelson",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4586,6 +5085,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kazadi",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "CHE"
@@ -4595,6 +5095,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kumarasamy",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CHE"
@@ -4604,6 +5105,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Colon",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "DOM"
@@ -4613,6 +5115,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Offurum",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4622,6 +5125,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Smith",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4631,6 +5135,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dell'acqua",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CHE"
@@ -4640,6 +5145,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Smith",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CHE"
@@ -4649,6 +5155,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jurkovitz",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FRA"
@@ -4658,6 +5165,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bernegger",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CHE"
@@ -4669,6 +5177,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Obiesie",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4678,6 +5187,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Scuka",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "SVN"
@@ -4687,6 +5197,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hartwich",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4696,6 +5207,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Worthy",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4705,6 +5217,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Njie",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "SWE"
@@ -4714,6 +5227,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Schroder",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4723,6 +5237,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Flanigan",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4732,6 +5247,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Braun",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4741,6 +5257,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Zylka",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4750,6 +5267,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sherfield",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4759,6 +5277,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Holloway",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GER"
@@ -4770,6 +5289,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Smith",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": 188,
             "born": 1995,
             "nationality": "USA"
@@ -4779,6 +5299,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mrvic",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 195,
             "born": 1998,
             "nationality": "MNE"
@@ -4788,6 +5309,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cincar",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 200,
             "born": 1999,
             "nationality": "MNE"
@@ -4797,6 +5319,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Djurisic",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 203,
             "born": 2001,
             "nationality": "MNE"
@@ -4806,6 +5329,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Radojevic",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 208,
             "born": 1997,
             "nationality": "MNE"
@@ -4815,6 +5339,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ilic",
             "position": "PG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 185,
             "born": 2004,
             "nationality": "MNE"
@@ -4824,6 +5349,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Micovic",
             "position": "SG",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 193,
             "born": 2000,
             "nationality": "MNE"
@@ -4833,6 +5359,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vucenovic",
             "position": "SF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 198,
             "born": 2003,
             "nationality": "MNE"
@@ -4842,6 +5369,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Popovic",
             "position": "PF",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 201,
             "born": 1999,
             "nationality": "MNE"
@@ -4851,6 +5379,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jovanovic",
             "position": "C",
             "tier": 2,
+            "targetOverall": 52,
             "heightCm": 210,
             "born": 1991,
             "nationality": "MNE"
@@ -4862,6 +5391,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Mckinnis",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4871,6 +5401,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Nottage",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "AUS"
@@ -4880,6 +5411,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Cooper",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4889,6 +5421,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Papadopoulos",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CYP"
@@ -4898,6 +5431,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bezhanishvili",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GEO"
@@ -4907,6 +5441,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Panteli",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CYP"
@@ -4916,6 +5451,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Giannaras",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CYP"
@@ -4925,6 +5461,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Diggs",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4934,6 +5471,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hunt",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4943,6 +5481,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hollingsworth",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4954,6 +5493,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Arnett",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -4963,6 +5503,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Bachkov",
             "position": "SF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -4972,6 +5513,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vasov",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "HUN"
@@ -4981,6 +5523,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Yanev",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -4990,6 +5533,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Karamfilov",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -4999,6 +5543,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dimitrov",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -5008,6 +5553,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Thomas",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5017,6 +5563,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Stokes",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5026,6 +5573,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Petrov",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BGR"
@@ -5035,6 +5583,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Edwards",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5046,6 +5595,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Browning",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5055,6 +5605,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Ogunyemi",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5064,6 +5615,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Boykin",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5073,6 +5625,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Berekashvili",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5082,6 +5635,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tcheishvili",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5091,6 +5645,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sulaberidze",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GEO"
@@ -5100,6 +5655,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Alavidze",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GEO"
@@ -5109,6 +5665,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Gilson",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5118,6 +5675,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Darbaidze",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GEO"
@@ -5127,6 +5685,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Soselia",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GEO"
@@ -5136,6 +5695,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Dvalishvili",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "GEO"
@@ -5147,6 +5707,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Brown",
             "position": "C",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5156,6 +5717,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Hajrizi",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "KOS"
@@ -5165,6 +5727,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Payne",
             "position": "PG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5174,6 +5737,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Arslanagic",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "BIH"
@@ -5183,6 +5747,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tuna",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "TUR"
@@ -5192,6 +5757,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Russell",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5201,6 +5767,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Kapiti",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "KOS"
@@ -5210,6 +5777,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Tmusic",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "KOS"
@@ -5219,6 +5787,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Amzil",
             "position": "PF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "FIN"
@@ -5228,6 +5797,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Jones",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "KOS"
@@ -5239,6 +5809,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Venskus",
             "position": "PF",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -5248,6 +5819,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Saulys",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -5257,6 +5829,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Uleckas",
             "position": "SG",
             "tier": 3,
+            "targetOverall": 58,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -5266,6 +5839,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Daniels",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5275,6 +5849,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Sederevicius",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -5284,6 +5859,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Vranes",
             "position": "C",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "CRO"
@@ -5293,6 +5869,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Johnson",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5302,6 +5879,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Valinskas",
             "position": "SG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"
@@ -5311,6 +5889,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Schwieger",
             "position": "PG",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "USA"
@@ -5320,6 +5899,7 @@ export const bclRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "lastName": "Beniusis",
             "position": "SF",
             "tier": 1,
+            "targetOverall": 46,
             "heightCm": null,
             "born": null,
             "nationality": "LTU"

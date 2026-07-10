@@ -29,8 +29,11 @@ export const bclConfig = Object.freeze({
     knockoutWinsNeeded: Object.freeze([2, 1, 1]),
     // Best-of-N for Czech 3rd-place entrant in BCL qualifying.
     qualifyingWinsNeeded: 2,
-    /** Extra attribute mean applied to BCL-only European rosters (not Czech NBL entrants). */
-    playerTierMeanBonus: 6,
+    /**
+     * Extra attribute mean applied to BCL-only European rosters (not Czech NBL entrants).
+     * Sized so continental clubs stay clearly above Maxa NBL after stats-based NBL ratings.
+     */
+    playerTierMeanBonus: 14,
     teams: Object.freeze<BclTeamDef[]>([
         // Tier 5 elite clubs
         bclTeam('BCL-RYT', 'RYT', 'BC Rytas Vilnius', 'Rytas', 'Vilnius', 'LTU', 5, 5000),

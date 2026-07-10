@@ -8,6 +8,17 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { leagueConfig } from '../src/config/league.ts';
 import type { RealPlayerDef } from '../src/config/league.ts';
+import {
+    blendWithTeamTier,
+    clampOverall,
+    clubPrestigeBonus,
+    compositeBoxScore,
+    enforceTopClubOverallGap,
+    NBL_RATING_BAND,
+    overallsFromScores,
+    tierFromOverall,
+    tierMean,
+} from '../src/core/league/playerRating.ts';
 import { manualNblRosters } from '../src/data/nblRosters.manual.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,8 +29,20 @@ const SEASON_YEAR = '2025';
 const SCOUT_SEASON = '2025-2026';
 const PLAYERS_PER_TEAM = 12;
 const MIN_ROSTER_PLAYERS = 8;
+/** Ignore tiny samples when ranking for targetOverall. */
+const MIN_GAMES_FOR_RATING = 5;
 
 type Position = RealPlayerDef['position'];
+
+interface ScrapedStats {
+    games: number;
+    mpg: number;
+    ppg: number;
+    rpg: number;
+    apg: number;
+    spg: number;
+    val: number;
+}
 
 interface ScrapedPlayer {
     firstName: string;
@@ -29,6 +52,7 @@ interface ScrapedPlayer {
     born: number | null;
     nationality: string | null;
     gamesPlayed: number;
+    stats: ScrapedStats | null;
 }
 
 const FLAG_NAT: Record<string, string> = {
@@ -189,7 +213,24 @@ function parseFlagNationality(nameCell: string): string | null {
     return FLAG_NAT[flag[1]!] ?? flag[1]!;
 }
 
-function parseNblSiteRoster(html: string): ScrapedPlayer[] {
+function nameKey(firstName: string, lastName: string): string {
+    return `${firstName} ${lastName}`
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{M}/gu, '')
+        .replace(/[''`\-.,]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function parseNum(raw: string): number {
+    const cleaned = raw.replace(',', '.').replace(/[^\d.-]/g, '');
+    const n = Number.parseFloat(cleaned);
+    return Number.isFinite(n) ? n : 0;
+}
+
+/** Identity roster table (first tbody on the team page). */
+function parseNblIdentityRoster(html: string): ScrapedPlayer[] {
     const tbody = html.match(/<tbody>([\s\S]*?)<\/tbody>/);
     if (!tbody) {
         return [];
@@ -219,9 +260,68 @@ function parseNblSiteRoster(html: string): ScrapedPlayer[] {
             born: parseBorn(bornRaw),
             nationality,
             gamesPlayed: Number.parseInt(gamesRaw, 10) || 0,
+            stats: null,
         });
     }
-    players.sort((a, b) => b.gamesPlayed - a.gamesPlayed);
+    return players;
+}
+
+/**
+ * Season averages table in #tab-pane-two.
+ * Columns: #, Player, Pos, Age, G, Min, Pts, 2B, 2B%, 3B, 3B%, FT, FT%, OR, DR, TR, AS, ST, TO, ..., VAL, +/-
+ */
+function parseNblStatsByName(html: string): Map<string, ScrapedStats> {
+    const pane = html.match(/id="tab-pane-two"([\s\S]*?)id="tab-pane-three"/)
+        ?? html.match(/id="tab-pane-two"([\s\S]*?)$/);
+    const out = new Map<string, ScrapedStats>();
+    if (!pane) {
+        return out;
+    }
+    const tbody = pane[1]!.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+    if (!tbody) {
+        return out;
+    }
+    for (const row of tbody[1]!.matchAll(/<tr>([\s\S]*?)<\/tr>/g)) {
+        const cells = [...row[1]!.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => stripTags(m[1]!));
+        if (cells.length < 18) {
+            continue;
+        }
+        const name = cells[1] ?? '';
+        if (!name || name.length < 2) {
+            continue;
+        }
+        const { firstName, lastName } = splitName(name);
+        const games = Math.round(parseNum(cells[4] ?? '0'));
+        const mpg = parseNum(cells[5] ?? '0');
+        const ppg = parseNum(cells[6] ?? '0');
+        const rpg = parseNum(cells[15] ?? '0');
+        const apg = parseNum(cells[16] ?? '0');
+        const spg = parseNum(cells[17] ?? '0');
+        const val = parseNum(cells[cells.length - 2] ?? '0');
+        out.set(nameKey(firstName, lastName), { games, mpg, ppg, rpg, apg, spg, val });
+    }
+    return out;
+}
+
+function parseNblSiteRoster(html: string): ScrapedPlayer[] {
+    const players = parseNblIdentityRoster(html);
+    const statsByName = parseNblStatsByName(html);
+    for (const player of players) {
+        const stats = statsByName.get(nameKey(player.firstName, player.lastName));
+        if (!stats) {
+            continue;
+        }
+        player.stats = stats;
+        player.gamesPlayed = Math.max(player.gamesPlayed, stats.games);
+    }
+    players.sort((a, b) => {
+        const aMin = a.stats?.mpg ?? 0;
+        const bMin = b.stats?.mpg ?? 0;
+        if (bMin !== aMin) {
+            return bMin - aMin;
+        }
+        return b.gamesPlayed - a.gamesPlayed;
+    });
     return players;
 }
 
@@ -256,6 +356,7 @@ function parseScoutRosterHtml(html: string): ScrapedPlayer[] {
             born: bornMatch ? Number.parseInt(bornMatch[1]!, 10) : null,
             nationality: natMatch ? (FLAG_NAT[natMatch[1]!.slice(0, 2).toUpperCase()] ?? null) : null,
             gamesPlayed: leaders.has(fullName.toLowerCase()) ? 30 : 10,
+            stats: null,
         });
     }
     players.sort((a, b) => b.gamesPlayed - a.gamesPlayed);
@@ -275,16 +376,86 @@ function assignTier(teamTier: number, index: number, isLeader: boolean): number 
     return Math.max(1, teamTier - 2);
 }
 
-function pickRoster(players: ScrapedPlayer[], teamTier: number): RealPlayerDef[] {
-    return players.slice(0, PLAYERS_PER_TEAM).map((pl, index) => ({
-        firstName: pl.firstName,
-        lastName: pl.lastName,
-        position: pl.position,
-        tier: assignTier(teamTier, index, index === 0 && pl.gamesPlayed >= 20),
-        heightCm: pl.heightCm,
-        born: pl.born,
-        nationality: pl.nationality ?? (pl.firstName.match(/[ěščřžýáíéúůďťň]/i) ? 'CZE' : null),
-    }));
+function scoreForPlayer(pl: ScrapedPlayer): number | null {
+    if (!pl.stats || pl.stats.games < MIN_GAMES_FOR_RATING) {
+        return null;
+    }
+    return compositeBoxScore(pl.stats);
+}
+
+function pickRosterShell(players: ScrapedPlayer[], teamTier: number): Array<RealPlayerDef & { _score: number | null }> {
+    return players.slice(0, PLAYERS_PER_TEAM).map((pl, index) => {
+        const tier = assignTier(teamTier, index, index === 0 && pl.gamesPlayed >= 20);
+        const score = scoreForPlayer(pl);
+        return {
+            firstName: pl.firstName,
+            lastName: pl.lastName,
+            position: pl.position,
+            tier,
+            heightCm: pl.heightCm,
+            born: pl.born,
+            nationality: pl.nationality ?? (pl.firstName.match(/[ěščřžýáíéúůďťň]/i) ? 'CZE' : null),
+            mpg: pl.stats?.mpg ?? null,
+            _score: score,
+        };
+    });
+}
+
+function applyLeagueRatings(
+    shells: Record<string, Array<RealPlayerDef & { _score: number | null }>>,
+    teamTierById: Record<string, number>,
+): Record<string, RealPlayerDef[]> {
+    const flat: Array<{ teamId: string; index: number; score: number | null }> = [];
+    for (const [teamId, roster] of Object.entries(shells)) {
+        roster.forEach((pl, index) => flat.push({ teamId, index, score: pl._score }));
+    }
+    const mapped = overallsFromScores(
+        flat.map((row) => row.score),
+        NBL_RATING_BAND,
+    );
+    const overallByKey = new Map<string, number | null>();
+    flat.forEach((row, i) => {
+        overallByKey.set(`${row.teamId}:${row.index}`, mapped[i] ?? null);
+    });
+
+    const out: Record<string, RealPlayerDef[]> = {};
+    for (const [teamId, roster] of Object.entries(shells)) {
+        out[teamId] = roster.map((pl, index) => {
+            const statsOverall = overallByKey.get(`${teamId}:${index}`) ?? null;
+            const clubTier = teamTierById[teamId] ?? 3;
+            const targetOverall = clampOverall(
+                (statsOverall != null
+                    ? blendWithTeamTier(statsOverall, clubTier)
+                    : tierMean(pl.tier)) + clubPrestigeBonus(clubTier),
+                NBL_RATING_BAND,
+            );
+            const { _score: _ignored, ...rest } = pl;
+            return {
+                ...rest,
+                targetOverall,
+                tier: tierFromOverall(targetOverall),
+                mpg: pl.mpg ?? null,
+            };
+        });
+    }
+
+    // Keep the tier-5 flagship (Nymburk) clearly above the field on roster mean.
+    const teamAvgs: Record<string, number> = {};
+    for (const [teamId, roster] of Object.entries(out)) {
+        teamAvgs[teamId] = roster.reduce((s, p) => s + (p.targetOverall ?? 0), 0) / Math.max(1, roster.length);
+    }
+    const topClubs = Object.entries(teamTierById)
+        .filter(([, tier]) => tier >= 5)
+        .map(([id]) => id);
+    const bumps = enforceTopClubOverallGap(teamAvgs, topClubs, 2);
+    for (const [teamId, bump] of Object.entries(bumps)) {
+        out[teamId] = out[teamId]!.map((p) => {
+            const targetOverall = clampOverall((p.targetOverall ?? tierMean(p.tier)) + bump, NBL_RATING_BAND);
+            return { ...p, targetOverall, tier: tierFromOverall(targetOverall) };
+        });
+    }
+
+    return out;
 }
 
 async function fetchNblSiteRoster(slug: string): Promise<ScrapedPlayer[]> {
@@ -324,11 +495,18 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = ${JS
 `;
 }
 
-async function scrapeTeam(teamId: string, teamTier: number): Promise<RealPlayerDef[] | null> {
+async function scrapeTeamShell(
+    teamId: string,
+    teamTier: number,
+): Promise<Array<RealPlayerDef & { _score: number | null }> | null> {
     const manual = manualNblRosters[teamId];
     if (manual) {
         console.log(`MAN ${teamId}: ${manual.length} players (manual fallback)`);
-        return [...manual];
+        return manual.map((pl) => ({
+            ...pl,
+            mpg: pl.mpg ?? null,
+            _score: null,
+        }));
     }
 
     const siteSlug = NBL_SITE_SLUGS[teamId];
@@ -338,8 +516,9 @@ async function scrapeTeam(teamId: string, teamTier: number): Promise<RealPlayerD
         try {
             const scraped = await fetchNblSiteRoster(siteSlug);
             if (scraped.length >= MIN_ROSTER_PLAYERS) {
-                const roster = pickRoster(scraped, teamTier);
-                console.log(`OK ${teamId}: ${roster.length} players (nbl.basketball/${siteSlug})`);
+                const roster = pickRosterShell(scraped, teamTier);
+                const withStats = scraped.filter((p) => p.stats && p.stats.games >= MIN_GAMES_FOR_RATING).length;
+                console.log(`OK ${teamId}: ${roster.length} players, ${withStats} with stats (nbl.basketball/${siteSlug})`);
                 return roster;
             }
         } catch (err) {
@@ -351,8 +530,8 @@ async function scrapeTeam(teamId: string, teamTier: number): Promise<RealPlayerD
         try {
             const scraped = await fetchScoutRoster(scoutSlug);
             if (scraped.length >= MIN_ROSTER_PLAYERS) {
-                const roster = pickRoster(scraped, teamTier);
-                console.log(`OK ${teamId}: ${roster.length} players (scoutbasketball/${scoutSlug})`);
+                const roster = pickRosterShell(scraped, teamTier);
+                console.log(`OK ${teamId}: ${roster.length} players (scoutbasketball/${scoutSlug}, tier fallback)`);
                 return roster;
             }
         } catch (err) {
@@ -365,13 +544,15 @@ async function scrapeTeam(teamId: string, teamTier: number): Promise<RealPlayerD
 
 async function main(): Promise<void> {
     mkdirSync(join(ROOT, 'src', 'data'), { recursive: true });
-    const rosters: Record<string, RealPlayerDef[]> = {};
+    const shells: Record<string, Array<RealPlayerDef & { _score: number | null }>> = {};
+    const teamTierById: Record<string, number> = {};
     const failures: string[] = [];
 
     for (const team of leagueConfig.teams) {
-        const roster = await scrapeTeam(team.id, team.tier);
+        teamTierById[team.id] = team.tier;
+        const roster = await scrapeTeamShell(team.id, team.tier);
         if (roster) {
-            rosters[team.id] = roster;
+            shells[team.id] = roster;
         } else {
             failures.push(team.id);
         }
@@ -383,9 +564,14 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
+    const rosters = applyLeagueRatings(shells, teamTierById);
     writeFileSync(OUT, toModule(rosters));
     const count = Object.values(rosters).reduce((n, r) => n + r.length, 0);
-    console.log(`\nWrote ${Object.keys(rosters).length} NBL teams (${count} players) -> ${OUT}`);
+    const rated = Object.values(rosters).reduce(
+        (n, r) => n + r.filter((p) => p.targetOverall != null).length,
+        0,
+    );
+    console.log(`\nWrote ${Object.keys(rosters).length} NBL teams (${count} players, ${rated} with targetOverall) -> ${OUT}`);
 }
 
 main().catch((err) => {

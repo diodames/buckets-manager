@@ -102,7 +102,8 @@ export const economyConfig = Object.freeze({
         { maxRank: 12, prize: 130_000 },
     ]),
     // Weekly NBL central income (TV / league pool) by club tier 1..5.
-    leagueSharePerRoundByTier: Object.freeze([70_000, 100_000, 130_000, 165_000, 210_000]),
+    // Raised to fund stats-driven payrolls (league floor ~mid-50s OVR vs old tier means).
+    leagueSharePerRoundByTier: Object.freeze([125_000, 155_000, 185_000, 225_000, 275_000]),
     /** Bonus multiplier for clubs currently in the NBL top four (e.g. 0.15 = +15%). */
     leagueShareTop4Bonus: 0.15,
     // AI weekly gate-income estimate by club tier (replaces flat 45k heuristic).
@@ -170,7 +171,8 @@ export const economyConfig = Object.freeze({
     }),
     // Board wage budget and cashflow warning thresholds (Football Manager-style).
     financial: Object.freeze({
-        wageBudgetPct: 0.64,
+        // Allows flagship opening payrolls after stats-mapped overalls (~13.5–14M).
+        wageBudgetPct: 0.70,
         minEndBalance: 500_000,
         lowCashRunwayWeeks: 2,
     }),

@@ -1,4 +1,6 @@
 import { marketConfig } from '../config/market';
+import type { PreferredStarter } from '../config/openingLineups';
+import { normalizePlayerNameKey } from '../config/rosterAdjustments';
 import { isCzech } from './contracts';
 import type { GameState, Player, PlayerId, Position, TeamId } from './model/types';
 import { overallRating, POSITIONS } from './model/types';
@@ -117,17 +119,67 @@ export function formTrend(state: GameState, playerId: PlayerId, seasonPpg: numbe
     return 'steady';
 }
 
-/** Pick best available starter at each position from a player list. */
-export function pickStarters(players: Player[]): Record<Position, PlayerId> {
-    const byPos = (pos: Position) =>
-        players
-            .filter((p) => p.position === pos && p.injury === null)
-            .sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes));
+function matchesPreferred(player: Player, preferred: PreferredStarter): boolean {
+    const last = normalizePlayerNameKey('', preferred.lastName).trim();
+    const full = normalizePlayerNameKey(player.firstName, player.lastName);
+    const playerLast = normalizePlayerNameKey('', player.lastName).trim();
+    const lastOk = playerLast === last || full.endsWith(` ${last}`) || full === last;
+    if (!lastOk) {
+        return false;
+    }
+    if (!preferred.firstName) {
+        return true;
+    }
+    const first = normalizePlayerNameKey(preferred.firstName, '').trim();
+    const playerFirst = normalizePlayerNameKey(player.firstName, '').trim();
+    return playerFirst === first || playerFirst.startsWith(first) || first.startsWith(playerFirst);
+}
+
+function bestAvailable(players: readonly Player[], used: Set<PlayerId>, preferPos?: Position): Player | undefined {
+    const pool = players.filter((p) => !used.has(p.id) && p.injury === null);
+    const ranked = [...pool].sort((a, b) => {
+        const posBoostA = preferPos && a.position === preferPos ? 1000 : 0;
+        const posBoostB = preferPos && b.position === preferPos ? 1000 : 0;
+        return posBoostB + overallRating(b.attributes) - (posBoostA + overallRating(a.attributes));
+    });
+    return ranked[0];
+}
+
+/**
+ * Pick starters at each position. When `preferred` is provided (NBL opening
+ * lineups), match those players by name first, then fill gaps by OVR.
+ */
+export function pickStarters(
+    players: Player[],
+    preferred?: Readonly<Partial<Record<Position, PreferredStarter>>>,
+): Record<Position, PlayerId> {
     const starters = {} as Record<Position, PlayerId>;
     const used = new Set<PlayerId>();
+
+    if (preferred) {
+        for (const pos of POSITIONS) {
+            const want = preferred[pos];
+            if (!want) {
+                continue;
+            }
+            const match = players.find(
+                (p) => !used.has(p.id) && p.injury === null && matchesPreferred(p, want),
+            );
+            if (match) {
+                starters[pos] = match.id;
+                used.add(match.id);
+            }
+        }
+    }
+
     for (const pos of POSITIONS) {
-        const pick = byPos(pos).find((p) => !used.has(p.id)) ?? players.filter((p) => !used.has(p.id) && p.injury === null)
-            .sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes))[0];
+        if (starters[pos]) {
+            continue;
+        }
+        const byPos = players
+            .filter((p) => p.position === pos && p.injury === null && !used.has(p.id))
+            .sort((a, b) => overallRating(b.attributes) - overallRating(a.attributes));
+        const pick = byPos[0] ?? bestAvailable(players, used, pos);
         if (!pick) {
             throw new Error('pickStarters: not enough players');
         }

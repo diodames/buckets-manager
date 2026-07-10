@@ -11,6 +11,8 @@ describe('european rosters', () => {
             for (const player of team.roster) {
                 expect(player.tier).toBeGreaterThanOrEqual(1);
                 expect(player.tier).toBeLessThanOrEqual(5);
+                expect(player.targetOverall).toBeGreaterThanOrEqual(46);
+                expect(player.targetOverall).toBeLessThanOrEqual(72);
             }
         }
     });
@@ -23,6 +25,8 @@ describe('european rosters', () => {
             for (const player of team.roster) {
                 expect(player.tier).toBeGreaterThanOrEqual(1);
                 expect(player.tier).toBeLessThanOrEqual(5);
+                expect(player.targetOverall).toBeGreaterThanOrEqual(46);
+                expect(player.targetOverall).toBeLessThanOrEqual(72);
             }
         }
     });

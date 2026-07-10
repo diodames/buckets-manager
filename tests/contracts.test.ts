@@ -31,6 +31,42 @@ function mockRng(): Rng {
     return rng;
 }
 
+/** Playoff-era FA pool is thin; inject an elite free agent for BCL gate tests. */
+function injectEliteFreeAgent(state: GameState, overall = 68, nationality = 'USA'): Player {
+    const attrs = {
+        shooting2: overall,
+        shooting3: overall,
+        freeThrows: overall,
+        passing: overall,
+        dribbling: overall,
+        defense: overall,
+        rebounding: overall,
+        blocking: overall,
+        stealing: overall,
+        speed: overall,
+        stamina: overall,
+        iq: overall,
+    };
+    const player: Player = {
+        id: 'TEST-ELITE-FA',
+        firstName: 'Elite',
+        lastName: 'FreeAgent',
+        nationality,
+        age: 25,
+        heightCm: 195,
+        position: 'SG',
+        attributes: attrs,
+        potential: overall + 4,
+        fatigue: 0,
+        morale: 70,
+        injury: null,
+        teamId: null,
+        contract: null,
+    };
+    state.players[player.id] = player;
+    return player;
+}
+
 function addPlayedFixtures(state: GameState, playerId: PlayerId, teamId: string, games: number, points: number): void {
     const opponent = Object.keys(state.teams).find((id) => id !== teamId) ?? 'AWAY';
     for (let i = 0; i < games; i++) {
@@ -168,11 +204,8 @@ describe('BCL elite signing gate', () => {
         state.lastSeasonStandings['DEC'] = 8;
         state.lastBclQualifierIds = ['NYM', 'PCE'];
         state.bclQualified = false;
-        const elite = Object.values(state.players).find((p) => p.teamId === null && overallRating(p.attributes) >= 62);
-        expect(elite).toBeDefined();
-        if (!elite) {
-            return;
-        }
+        const elite = injectEliteFreeAgent(state);
+        expect(overallRating(elite.attributes)).toBeGreaterThanOrEqual(marketConfig.aiRenewal.bclOnlyMinOverall);
         expect(canClubSignElite(state, 'DEC', elite, 0, marketConfig, externalOffersConfig)).toBe(false);
         expect(canNegotiate(state, elite, marketConfig)).toBe(false);
     });
@@ -186,11 +219,7 @@ describe('BCL elite signing gate', () => {
         const qualifiers = bclQualifiedNblTeams(state, 2);
         expect(qualifiers).toContain('NYM');
         expect(qualifiers).not.toContain('DEC');
-        const elite = Object.values(state.players).find((p) => p.teamId === null && overallRating(p.attributes) >= 62);
-        expect(elite).toBeDefined();
-        if (!elite) {
-            return;
-        }
+        const elite = injectEliteFreeAgent(state);
         expect(canClubSignElite(state, 'NYM', elite, 0, marketConfig, externalOffersConfig)).toBe(true);
     });
 });
@@ -327,12 +356,7 @@ describe('BCL prestige flavour', () => {
         state.lastSeasonStandings['NYM'] = 1;
         state.lastBclQualifierIds = ['NYM', 'PCE'];
         state.bclQualified = true;
-        const fa = Object.values(state.players).find((p) => p.teamId === null && p.nationality === 'USA');
-        expect(fa).toBeDefined();
-        if (!fa) {
-            return;
-        }
-        fa.age = 25;
+        const fa = injectEliteFreeAgent(state, 68, 'USA');
         const bclDemand = negotiationDemand(state, fa, 'freeAgent', marketConfig, config.economy);
 
         state.lastSeasonStandings['NYM'] = 9;

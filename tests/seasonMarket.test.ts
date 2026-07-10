@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { seasonMarket2025, seasonMarket2027, seasonMarket2028 } from '../src/config/seasonSignings';
-import { advanceRoundInstant, createNewGame } from '../src/core/game';
+import { createNewGame } from '../src/core/game';
 import { initializeSeasonMarket } from '../src/core/seasonMarket';
 import { createRng } from '../src/core/rng';
 import { testConfig as config } from './helpers';
@@ -12,70 +12,26 @@ function freeAgentNames(state: ReturnType<typeof createNewGame>): string[] {
 }
 
 describe('season market pool', () => {
-    it('seeds opening-day real free agents and keeps mid-season signings off rosters', () => {
+    it('seeds playoff-snapshot free agents and keeps late arrivals on club rosters', () => {
         const state = createNewGame(config, 7001, 'NYM');
         const names = freeAgentNames(state);
 
-        expect(names).toContain('Ross Williams');
         expect(names).toContain('Petr Šafarčík');
-        expect(names.some((n) => n.includes('Perkins'))).toBe(false);
-        expect(names.some((n) => n.includes('Evans'))).toBe(false);
-        expect(names.some((n) => n.includes('Nikkarinen'))).toBe(false);
+        expect(names.some((n) => n.includes('Williams'))).toBe(false);
+        expect(seasonMarket2025.timedSignings).toHaveLength(0);
+        expect(seasonMarket2025.departures).toHaveLength(0);
+        expect(state.market.pendingFreeAgents.length).toBe(0);
 
         const nymRoster = state.teams.NYM?.playerIds.map((id) => state.players[id]?.lastName) ?? [];
-        expect(nymRoster).toContain('Rice');
-        expect(nymRoster.some((n) => n?.includes('Perkins'))).toBe(false);
+        expect(nymRoster.some((n) => n?.includes('Rice'))).toBe(false);
+        expect(nymRoster.some((n) => n?.includes('Perkins'))).toBe(true);
 
         const pceRoster = state.teams.PCE?.playerIds.map((id) => state.players[id]?.lastName) ?? [];
-        expect(pceRoster.some((n) => n?.includes('Evans'))).toBe(false);
+        expect(pceRoster.some((n) => n?.includes('Evans'))).toBe(true);
 
-        expect(state.market.pendingFreeAgents.length).toBe(
-            seasonMarket2025.timedSignings.filter((s) => s.availableFromRound > 1).length,
-        );
-    });
-
-    it('releases timed signings when the matching round begins', () => {
-        const state = createNewGame(config, 7002, 'NYM');
-        expect(freeAgentNames(state).some((n) => n.includes('Nikkarinen'))).toBe(false);
-
-        while (state.currentRound < 8) {
-            advanceRoundInstant(state, config);
-        }
-
-        expect(freeAgentNames(state).some((n) => n.includes('Nikkarinen'))).toBe(true);
-        expect(freeAgentNames(state).some((n) => n.includes('John'))).toBe(true);
-    });
-
-    it('releases Sir\'Jabari Rice to free agency when his departure round starts', () => {
-        const state = createNewGame(config, 7003, 'NYM');
-        const riceBefore = state.teams.NYM?.playerIds.some(
-            (id) => state.players[id]?.lastName === 'Rice',
-        );
-        expect(riceBefore).toBe(true);
-
-        while (state.currentRound < 10) {
-            advanceRoundInstant(state, config);
-        }
-
-        const riceOnRoster = state.teams.NYM?.playerIds.some(
-            (id) => state.players[id]?.lastName === 'Rice',
-        );
-        expect(riceOnRoster).toBe(false);
-        expect(freeAgentNames(state).some((n) => n.includes('Rice'))).toBe(true);
-
-        const hintedSg = Object.entries(state.market.signingHints).filter(([, teamId]) => teamId === 'NYM')
-            .map(([id]) => state.players[id])
-            .filter((p) => p?.position === 'SG');
-        expect(hintedSg.length).toBeGreaterThan(0);
-    });
-
-    it('stores signing hints for likely AI destinations', () => {
-        const state = createNewGame(config, 7004, 'NYM');
-        const perkinsId = Object.keys(state.market.signingHints).find((id) => id.includes('perkins'));
-        expect(perkinsId).toBeDefined();
-        if (perkinsId) {
-            expect(state.market.signingHints[perkinsId]).toBe('NYM');
-        }
+        const brnRoster = state.teams.BRN?.playerIds.map((id) => state.players[id]?.lastName) ?? [];
+        expect(brnRoster.some((n) => n?.includes('Williams'))).toBe(false);
+        expect(brnRoster.some((n) => n?.includes('Langley'))).toBe(true);
     });
 
     it('defines 2027 veteran returnees with expected tiers and hints', () => {

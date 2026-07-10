@@ -1,4 +1,5 @@
 import type { RealPlayerDef } from './league';
+import { tierMean } from '../core/league/playerRating';
 
 /** A real player who enters the free-agent pool during a season. */
 export interface SeasonSigningDef extends RealPlayerDef {
@@ -47,6 +48,7 @@ const s = (
         lastName,
         position,
         tier,
+        targetOverall: tierMean(tier),
         availableFromRound,
         heightCm,
         born,
@@ -58,38 +60,17 @@ const s = (
     return def;
 };
 
-// Maxa NBL 2025/26: mid-season moves compiled from nbl.basketball, idnes.cz,
-// and svetbasketu.cz roster roundups. Opening rosters in league.ts exclude these
-// signings; they enter the market here instead.
+// Maxa NBL 2025/26 uses a playoff-era opening snapshot (see rosterAdjustments.ts).
+// Mid-season arrivals/departures are absorbed into opening rosters, so timed
+// signings and departures stay empty to avoid double-appearing players.
 export const seasonMarket2025 = Object.freeze<SeasonMarketConfig>({
     seasonYear: 2025,
     openingFreeAgents: Object.freeze([
-        // Veterans between clubs at season start.
-        s('Ross', 'Williams', 'PG', 4, 1, null, null, 1998, 'USA'),
+        // Between clubs / not on a playoff opening roster.
         s('Petr', 'Šafarčík', 'SG', 3, 1, null, 190, 1994, 'CZE'),
     ]),
-    timedSignings: Object.freeze([
-        // HKR mid-season imports (svetbasketu.cz).
-        s('Lassi', 'Nikkarinen', 'PG', 4, 8, 'HKR', null, 1997, 'FIN'),
-        s('Cody', 'John', 'SF', 3, 8, 'HKR', null, 1996, 'USA'),
-        s('Austin', 'Johnson', 'PF', 2, 9, 'HKR', null, 1999, 'USA'),
-        // NYM roster churn after BCL exits (svetbasketu.cz).
-        s('KeyShawn', 'Feazell', 'C', 4, 9, null, 208, 1997, 'USA'),
-        s('Wesley', 'Dreamer', 'SF', 3, 9, null, null, 1999, 'USA'),
-        s('Jhamir', 'Brickus', 'PG', 3, 9, null, null, 2001, 'USA'),
-        s('Tony', 'Perkins', 'SG', 4, 9, 'NYM', 193, 2001, 'USA'),
-        // OLO injury replacement (svetbasketu.cz).
-        s('Kevin', 'Mervart', 'C', 3, 9, 'OLO', 206, 2002, 'CAN'),
-        // PCE playoff push (nbl.basketball).
-        s('Jacob', 'Evans III', 'SG', 4, 10, 'PCE', 196, 1997, 'USA'),
-        // BRN before playoffs (idnes.cz).
-        s('Keyshaun', 'Langley', 'PG', 3, 11, 'BRN', null, 2000, 'USA'),
-        // Loan from NYM to HKR (svetbasketu.cz).
-        s('Vojtěch', 'Synáček', 'SG', 2, 9, 'HKR', 190, 2003, 'CZE'),
-    ]),
-    departures: Object.freeze<SeasonDepartureDef[]>([
-        { teamId: 'NYM', firstName: "Sir'Jabari", lastName: 'Rice', departureRound: 10 },
-    ]),
+    timedSignings: Object.freeze([]),
+    departures: Object.freeze<SeasonDepartureDef[]>([]),
     fictionalPadding: 4,
 });
 

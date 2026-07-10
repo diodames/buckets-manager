@@ -11,7 +11,14 @@ export interface RealPlayerDef {
     heightCm: number | null;
     born: number | null;
     nationality: string | null;
+    /** Discrete 1..5 strength band (fallback / display; derived from targetOverall when present). */
     tier: number;
+    /** Preferred attribute mean for generation (stats-derived when available). */
+    targetOverall?: number;
+    /** Absolute potential override; otherwise age/minutes headroom is rolled. */
+    potentialHint?: number;
+    /** Season minutes per game used for potential headroom (optional). */
+    mpg?: number | null;
 }
 
 export interface TeamDef {

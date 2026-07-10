@@ -72,7 +72,7 @@ describe('contracts (M1-M5)', () => {
         }
         const freeAgents = Object.values(state.players).filter((p) => p.teamId === null);
         expect(freeAgents.length).toBeGreaterThanOrEqual(6);
-        expect(freeAgents.some((p) => p.lastName === 'Williams')).toBe(true);
+        expect(freeAgents.some((p) => p.lastName === 'Šafarčík')).toBe(true);
     });
 
     it('demand scales with morale (unhappy players want more)', () => {
@@ -205,7 +205,16 @@ describe('transferTerms negotiation', () => {
 
     it('accepts at the hinted salary when fee meets transfer value', () => {
         const state = createNewGame(config, 921, 'NYM');
-        const aiPlayer = Object.values(state.players).find((p) => p.teamId && p.teamId !== 'NYM' && p.contract);
+        // Playoff NYM sits on the foreign cap; free a slot before importing.
+        const foreignOnNym = Object.values(state.players).find(
+            (p) => p.teamId === 'NYM' && p.nationality !== 'CZE',
+        );
+        if (foreignOnNym) {
+            expect(releasePlayer(state, foreignOnNym.id, marketConfig, config.economy)).toBe('released');
+        }
+        const aiPlayer = Object.values(state.players).find(
+            (p) => p.teamId && p.teamId !== 'NYM' && p.contract && p.nationality !== 'CZE',
+        );
         expect(aiPlayer).toBeDefined();
         if (!aiPlayer) {
             return;
@@ -402,6 +411,13 @@ describe('transfers (M6-M9)', () => {
     it('an agreed bid plus personal terms moves the player and books the fee', () => {
         const state = createNewGame(config, 913, 'NYM');
         state.club.budget = 50_000_000;
+        // Playoff NYM is at the foreign cap; free a slot before buying a foreigner.
+        const foreignOnNym = Object.values(state.players).find(
+            (p) => p.teamId === 'NYM' && p.nationality !== 'CZE',
+        );
+        if (foreignOnNym) {
+            expect(releasePlayer(state, foreignOnNym.id, marketConfig, config.economy)).toBe('released');
+        }
         // Cheap surplus target: weakest player of another club.
         const target = Object.values(state.players)
             .filter((p): p is Player => p.teamId !== null && p.teamId !== state.userTeamId)

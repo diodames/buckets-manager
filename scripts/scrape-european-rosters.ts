@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { bclConfig } from '../src/config/bcl.ts';
 import { fecConfig } from '../src/config/fec.ts';
 import type { RealPlayerDef } from '../src/config/league.ts';
+import { tierMean } from '../src/core/league/playerRating.ts';
 import { manualEuropeanRosters } from '../src/data/europeanRosters.manual.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -305,15 +306,19 @@ function assignTier(teamTier: number, index: number, isLeader: boolean): number 
 }
 
 function pickRoster(players: ScrapedPlayer[], teamTier: number): RealPlayerDef[] {
-    return players.slice(0, PLAYERS_PER_TEAM).map((pl, index) => ({
-        firstName: pl.firstName,
-        lastName: pl.lastName,
-        position: pl.position,
-        tier: assignTier(teamTier, index, pl.leader),
-        heightCm: pl.heightCm,
-        born: pl.born,
-        nationality: pl.nationality,
-    }));
+    return players.slice(0, PLAYERS_PER_TEAM).map((pl, index) => {
+        const tier = assignTier(teamTier, index, pl.leader);
+        return {
+            firstName: pl.firstName,
+            lastName: pl.lastName,
+            position: pl.position,
+            tier,
+            targetOverall: tierMean(tier),
+            heightCm: pl.heightCm,
+            born: pl.born,
+            nationality: pl.nationality,
+        };
+    });
 }
 
 function sourcesFor(teamId: string, defaultCompetition: string, slugMap: Record<string, string>): SourceRef[] {

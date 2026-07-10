@@ -5,150 +5,182 @@ import type { RealPlayerDef } from '../config/league';
 export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
     "NYM": [
         {
-            "firstName": "Matěj",
-            "lastName": "Svoboda",
-            "position": "SF",
-            "tier": 5,
-            "heightCm": null,
-            "born": 1996,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Martin",
-            "lastName": "Kříž",
-            "position": "PF",
-            "tier": 5,
-            "heightCm": null,
-            "born": 1993,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Jaquan",
-            "lastName": "Lawrence",
-            "position": "SF",
-            "tier": 4,
-            "heightCm": null,
-            "born": 1999,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "František",
-            "lastName": "Rylich",
-            "position": "SF",
-            "tier": 4,
-            "heightCm": null,
-            "born": 2002,
-            "nationality": "CZE"
-        },
-        {
             "firstName": "Jaromír",
             "lastName": "Bohačík",
             "position": "SG",
             "tier": 4,
             "heightCm": null,
             "born": 1992,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 22.4,
+            "targetOverall": 68
         },
         {
             "firstName": "Ondřej",
             "lastName": "Sehnal",
             "position": "PG",
-            "tier": 3,
+            "tier": 5,
             "heightCm": null,
             "born": 1997,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Vojtěch",
-            "lastName": "Hruban",
-            "position": "SF",
-            "tier": 3,
-            "heightCm": null,
-            "born": 1989,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 22.4,
+            "targetOverall": 71
         },
         {
             "firstName": "Jay",
             "lastName": "Shumate",
             "position": "PF",
-            "tier": 3,
+            "tier": 4,
             "heightCm": null,
             "born": 1999,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 21,
+            "targetOverall": 67
         },
         {
-            "firstName": "Marcus Armani Santos -",
-            "lastName": "Silva",
-            "position": "SF",
-            "tier": 3,
+            "firstName": "David",
+            "lastName": "Böhm",
+            "position": "PF",
+            "tier": 4,
             "heightCm": null,
-            "born": 1997,
-            "nationality": "USA"
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 31.6,
+            "targetOverall": 66
+        },
+        {
+            "firstName": "Wesley",
+            "lastName": "Dreamer",
+            "position": "SF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 20.3,
+            "targetOverall": 64
         },
         {
             "firstName": "Sir Jabari",
             "lastName": "Rice",
             "position": "SF",
-            "tier": 3,
+            "tier": 5,
             "heightCm": null,
             "born": 1998,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 19.7,
+            "targetOverall": 73
         },
         {
-            "firstName": "Tony",
-            "lastName": "Perkins",
+            "firstName": "Matěj",
+            "lastName": "Svoboda",
             "position": "SF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1996,
+            "nationality": "CZE",
+            "mpg": 19.6,
+            "targetOverall": 64
+        },
+        {
+            "firstName": "Keyshawn Maklik",
+            "lastName": "Feazell",
+            "position": "C",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1998,
+            "nationality": "USA",
+            "mpg": 19.3,
+            "targetOverall": 68
+        },
+        {
+            "firstName": "František",
+            "lastName": "Rylich",
+            "position": "SG",
             "tier": 3,
             "heightCm": null,
+            "born": 2002,
+            "nationality": "CZE",
+            "mpg": 19.1,
+            "targetOverall": 59
+        },
+        {
+            "firstName": "Jhamir",
+            "lastName": "Brickus",
+            "position": "C",
+            "tier": 4,
+            "heightCm": null,
             "born": 2001,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 18.8,
+            "targetOverall": 63
+        },
+        {
+            "firstName": "Martin",
+            "lastName": "Kříž",
+            "position": "PF",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1993,
+            "nationality": "CZE",
+            "mpg": 18.5,
+            "targetOverall": 61
         },
         {
             "firstName": "Goran",
             "lastName": "Filipovic",
-            "position": "SF",
-            "tier": 3,
+            "position": "PG",
+            "tier": 4,
             "heightCm": null,
             "born": 1996,
-            "nationality": "CRO"
+            "nationality": "CRO",
+            "mpg": 17.8,
+            "targetOverall": 64
+        },
+        {
+            "firstName": "Tony",
+            "lastName": "Perkins",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 17.6,
+            "targetOverall": 63
         }
     ],
     "PCE": [
         {
-            "firstName": "Jamonda Roshawn",
-            "lastName": "Bryant",
-            "position": "SF",
-            "tier": 5,
-            "heightCm": null,
-            "born": 2000,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Kamil",
-            "lastName": "Švrdlík",
-            "position": "C",
-            "tier": 4,
-            "heightCm": null,
-            "born": 1986,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Jakub",
-            "lastName": "Tůma",
-            "position": "PG",
-            "tier": 3,
-            "heightCm": null,
-            "born": 1998,
-            "nationality": "CZE"
-        },
-        {
             "firstName": "Ryan Everett",
             "lastName": "Moffatt",
             "position": "SF",
-            "tier": 3,
+            "tier": 4,
             "heightCm": null,
             "born": 2000,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 27.7,
+            "targetOverall": 64
+        },
+        {
+            "firstName": "Jamonda Roshawn",
+            "lastName": "Bryant",
+            "position": "SG",
+            "tier": 5,
+            "heightCm": null,
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 26.8,
+            "targetOverall": 73
+        },
+        {
+            "firstName": "Robert Lee",
+            "lastName": "Bonham",
+            "position": "PG",
+            "tier": 5,
+            "heightCm": null,
+            "born": 2002,
+            "nationality": "USA",
+            "mpg": 26,
+            "targetOverall": 72
         },
         {
             "firstName": "Luboš",
@@ -157,34 +189,75 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 3,
             "heightCm": null,
             "born": 2000,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 25.4,
+            "targetOverall": 62
         },
         {
-            "firstName": "Robert Lee",
-            "lastName": "Bonham",
-            "position": "SF",
-            "tier": 2,
+            "firstName": "Jakub",
+            "lastName": "Tůma",
+            "position": "PG",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1998,
+            "nationality": "CZE",
+            "mpg": 24,
+            "targetOverall": 60
+        },
+        {
+            "firstName": "Zed Jackson",
+            "lastName": "Key",
+            "position": "C",
+            "tier": 4,
             "heightCm": null,
             "born": 2002,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 21.7,
+            "targetOverall": 66
         },
         {
             "firstName": "Adam",
             "lastName": "Lukeš",
             "position": "PG",
-            "tier": 2,
+            "tier": 4,
             "heightCm": null,
             "born": 2004,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 20.9,
+            "targetOverall": 55
         },
         {
-            "firstName": "Zed Jackson",
-            "lastName": "Key",
-            "position": "SF",
+            "firstName": "Jacob Nicholas",
+            "lastName": "Evans",
+            "position": "SG",
             "tier": 2,
             "heightCm": null,
-            "born": 2002,
-            "nationality": "USA"
+            "born": 1997,
+            "nationality": "USA",
+            "mpg": 19,
+            "targetOverall": 58
+        },
+        {
+            "firstName": "Kamil",
+            "lastName": "Švrdlík",
+            "position": "C",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1986,
+            "nationality": "CZE",
+            "mpg": 16.8,
+            "targetOverall": 55
+        },
+        {
+            "firstName": "Michal",
+            "lastName": "Svojanovský",
+            "position": "SF",
+            "tier": 3,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 8.5,
+            "targetOverall": 52
         },
         {
             "firstName": "Martin",
@@ -193,72 +266,99 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 2,
             "heightCm": null,
             "born": 1998,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 7.9,
+            "targetOverall": 50
         },
         {
-            "firstName": "Jacob Nicholas Evans",
-            "lastName": "III",
-            "position": "SG",
-            "tier": 2,
+            "firstName": "Marek",
+            "lastName": "Simonides",
+            "position": "PF",
+            "tier": 1,
             "heightCm": null,
-            "born": 1997,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Michal",
-            "lastName": "Svojanovský",
-            "position": "SF",
-            "tier": 2,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
+            "born": 2006,
+            "nationality": "SVK",
+            "mpg": 4.6,
+            "targetOverall": 49
         },
         {
             "firstName": "Petr",
-            "lastName": "Šťovíček",
+            "lastName": "Stovicek",
             "position": "PF",
-            "tier": 2,
+            "tier": 3,
+            "heightCm": null,
+            "born": 2005,
+            "nationality": "CZE",
+            "mpg": 4.6,
+            "targetOverall": 52
+        },
+        {
+            "firstName": "Vladimir",
+            "lastName": "Vondra",
+            "position": "C",
+            "tier": 3,
             "heightCm": null,
             "born": 2004,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 4.6,
+            "targetOverall": 53
         }
     ],
     "BRN": [
         {
-            "firstName": "Šimon",
-            "lastName": "Svoboda",
+            "firstName": "David",
+            "lastName": "Jelínek",
             "position": "SF",
             "tier": 5,
             "heightCm": null,
-            "born": 2004,
-            "nationality": "CZE"
+            "born": 1990,
+            "nationality": "CZE",
+            "mpg": 28.5,
+            "targetOverall": 69
         },
         {
-            "firstName": "Milan Tomáš",
-            "lastName": "Stráněl",
+            "firstName": "Jacob Austin",
+            "lastName": "Groves",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 25.9,
+            "targetOverall": 65
+        },
+        {
+            "firstName": "Tevin Thomas",
+            "lastName": "Olison",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1998,
+            "nationality": "USA",
+            "mpg": 24.5,
+            "targetOverall": 68
+        },
+        {
+            "firstName": "Ryker Broden",
+            "lastName": "Cisarik",
             "position": "PF",
             "tier": 4,
             "heightCm": null,
-            "born": 2005,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Radek",
-            "lastName": "Farský",
-            "position": "SG",
-            "tier": 3,
-            "heightCm": null,
-            "born": 1999,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Adam",
-            "lastName": "Kejval",
-            "position": "C",
-            "tier": 3,
-            "heightCm": null,
             "born": 2002,
-            "nationality": "CZE"
+            "nationality": "USA",
+            "mpg": 24.3,
+            "targetOverall": 66
+        },
+        {
+            "firstName": "Keyshaun Darrius",
+            "lastName": "Langley",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 24,
+            "targetOverall": 53
         },
         {
             "firstName": "Viktor",
@@ -267,108 +367,143 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 3,
             "heightCm": null,
             "born": 1996,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 21.9,
+            "targetOverall": 59
         },
         {
-            "firstName": "Kevin Chukwuemeka",
-            "lastName": "Kalu",
-            "position": "SF",
-            "tier": 2,
-            "heightCm": null,
-            "born": 2003,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Tomáš",
-            "lastName": "Jansa",
-            "position": "PG",
-            "tier": 2,
+            "firstName": "Adam",
+            "lastName": "Kejval",
+            "position": "C",
+            "tier": 4,
             "heightCm": null,
             "born": 2002,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "David",
-            "lastName": "Jelínek",
-            "position": "SF",
-            "tier": 2,
-            "heightCm": null,
-            "born": 1990,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Matěj",
-            "lastName": "Rychtecký",
-            "position": "SG",
-            "tier": 2,
-            "heightCm": null,
-            "born": 2004,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 21.3,
+            "targetOverall": 64
         },
         {
             "firstName": "Petr",
             "lastName": "Křivánek",
             "position": "PG",
-            "tier": 2,
+            "tier": 3,
             "heightCm": null,
             "born": 2003,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 21,
+            "targetOverall": 60
         },
         {
-            "firstName": "Ryker Broden",
-            "lastName": "Cisarik",
-            "position": "SF",
-            "tier": 2,
+            "firstName": "Radek",
+            "lastName": "Farský",
+            "position": "SG",
+            "tier": 3,
             "heightCm": null,
-            "born": 2002,
-            "nationality": "USA"
+            "born": 1999,
+            "nationality": "CZE",
+            "mpg": 19.6,
+            "targetOverall": 57
         },
         {
-            "firstName": "Tevin Thomas",
-            "lastName": "Olison",
-            "position": "SF",
+            "firstName": "Šimon",
+            "lastName": "Svoboda",
+            "position": "PF",
             "tier": 2,
             "heightCm": null,
-            "born": 1998,
-            "nationality": "USA"
+            "born": 2004,
+            "nationality": "CZE",
+            "mpg": 19.4,
+            "targetOverall": 55
+        },
+        {
+            "firstName": "Kevin Chukwuemeka",
+            "lastName": "Kalu",
+            "position": "C",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2003,
+            "nationality": "USA",
+            "mpg": 19.1,
+            "targetOverall": 62
         }
     ],
     "UST": [
         {
-            "firstName": "Jayhlon",
-            "lastName": "Young",
-            "position": "SF",
+            "firstName": "Nicholas",
+            "lastName": "Johnson",
+            "position": "SG",
             "tier": 4,
             "heightCm": null,
             "born": 2001,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 28.5,
+            "targetOverall": 68
         },
         {
-            "firstName": "Nicholas",
-            "lastName": "Johnson",
+            "firstName": "Isaac",
+            "lastName": "Davidson",
             "position": "SF",
-            "tier": 3,
+            "tier": 4,
             "heightCm": null,
-            "born": 2001,
-            "nationality": "USA"
+            "born": 1997,
+            "nationality": "NZL",
+            "mpg": 27.8,
+            "targetOverall": 63
+        },
+        {
+            "firstName": "Tomáš",
+            "lastName": "Vyoral",
+            "position": "PG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1992,
+            "nationality": "CZE",
+            "mpg": 27.7,
+            "targetOverall": 68
         },
         {
             "firstName": "Ladislav",
             "lastName": "Pecka",
             "position": "PF",
-            "tier": 2,
+            "tier": 3,
             "heightCm": null,
             "born": 1991,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 26.2,
+            "targetOverall": 61
         },
         {
-            "firstName": "Filip",
-            "lastName": "Kábrt",
-            "position": "SF",
-            "tier": 2,
+            "firstName": "Kimani",
+            "lastName": "Lawrence",
+            "position": "C",
+            "tier": 4,
             "heightCm": null,
-            "born": 2002,
-            "nationality": "CZE"
+            "born": 1998,
+            "nationality": "USA",
+            "mpg": 24.1,
+            "targetOverall": 62
+        },
+        {
+            "firstName": "Jayhlon",
+            "lastName": "Young",
+            "position": "SG",
+            "tier": 3,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 22.3,
+            "targetOverall": 58
+        },
+        {
+            "firstName": "Adam",
+            "lastName": "Pecháček",
+            "position": "C",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1995,
+            "nationality": "CZE",
+            "mpg": 20.5,
+            "targetOverall": 60
         },
         {
             "firstName": "Josef",
@@ -377,218 +512,255 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 2,
             "heightCm": null,
             "born": 1996,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 17.3,
+            "targetOverall": 51
         },
         {
-            "firstName": "Adam",
-            "lastName": "Pecháček",
+            "firstName": "Filip",
+            "lastName": "Kábrt",
+            "position": "SG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2002,
+            "nationality": "CZE",
+            "mpg": 16.3,
+            "targetOverall": 51
+        },
+        {
+            "firstName": "Ahmad",
+            "lastName": "Rand",
             "position": "C",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
-            "born": 1995,
-            "nationality": "CZE"
+            "born": 1998,
+            "nationality": "USA",
+            "mpg": 15.4,
+            "targetOverall": 55
         },
         {
-            "firstName": "Tomáš",
-            "lastName": "Vyoral",
-            "position": "PG",
+            "firstName": "Jordan",
+            "lastName": "Glover",
+            "position": "SG",
             "tier": 1,
             "heightCm": null,
-            "born": 1992,
-            "nationality": "CZE"
+            "born": 1996,
+            "nationality": "USA",
+            "mpg": 14.3,
+            "targetOverall": 46
         },
         {
-            "firstName": "David",
-            "lastName": "Žikla",
+            "firstName": "Shamarkus",
+            "lastName": "Kennedy",
             "position": "PF",
             "tier": 1,
             "heightCm": null,
             "born": 1998,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Isaac",
-            "lastName": "Davidson",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1997,
-            "nationality": "NZL"
-        },
-        {
-            "firstName": "Kimani",
-            "lastName": "Lawrence",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1998,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Petr",
-            "lastName": "Krupka",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2003,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "J´D Derryus",
-            "lastName": "Eatmon",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 13.6,
+            "targetOverall": 48
         }
     ],
     "OPA": [
         {
-            "firstName": "Jan",
-            "lastName": "Švandrlík",
-            "position": "SF",
-            "tier": 4,
-            "heightCm": null,
-            "born": 1994,
-            "nationality": "CZE"
-        },
-        {
             "firstName": "Clevon Brown",
             "lastName": "Jr",
-            "position": "SF",
-            "tier": 3,
+            "position": "PF",
+            "tier": 4,
             "heightCm": null,
             "born": 1998,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 26,
+            "targetOverall": 65
+        },
+        {
+            "firstName": "Wesley Lavon Person",
+            "lastName": "Jr",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1995,
+            "nationality": "USA",
+            "mpg": 25.2,
+            "targetOverall": 65
+        },
+        {
+            "firstName": "Radovan",
+            "lastName": "Kouřil",
+            "position": "PG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1995,
+            "nationality": "CZE",
+            "mpg": 23.5,
+            "targetOverall": 63
+        },
+        {
+            "firstName": "Isaiah John",
+            "lastName": "Gray",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 22.8,
+            "targetOverall": 65
+        },
+        {
+            "firstName": "Jan",
+            "lastName": "Švandrlík",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1994,
+            "nationality": "CZE",
+            "mpg": 22.2,
+            "targetOverall": 55
         },
         {
             "firstName": "Jakub",
             "lastName": "Šiřina",
             "position": "PG",
-            "tier": 2,
+            "tier": 3,
             "heightCm": null,
             "born": 1987,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 22.2,
+            "targetOverall": 61
         },
         {
             "firstName": "Šimon",
             "lastName": "Puršl",
             "position": "C",
-            "tier": 2,
+            "tier": 3,
             "heightCm": null,
             "born": 1997,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 21.9,
+            "targetOverall": 61
         },
         {
             "firstName": "Jakub",
             "lastName": "Slavík",
             "position": "SF",
-            "tier": 2,
+            "tier": 3,
             "heightCm": null,
             "born": 1999,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Wesley Lavon Person",
-            "lastName": "Jr",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1995,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Kryštof",
-            "lastName": "Kavan",
-            "position": "SG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2002,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 20.4,
+            "targetOverall": 56
         },
         {
             "firstName": "Marek",
             "lastName": "Vyroubal",
             "position": "PG",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
             "born": 2001,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 20.4,
+            "targetOverall": 55
+        },
+        {
+            "firstName": "Kryštof",
+            "lastName": "Kavan",
+            "position": "SF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2002,
+            "nationality": "CZE",
+            "mpg": 14.9,
+            "targetOverall": 51
         },
         {
             "firstName": "Filip",
             "lastName": "Zbránek",
-            "position": "SF",
-            "tier": 1,
+            "position": "PF",
+            "tier": 2,
             "heightCm": null,
             "born": 1990,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "David",
-            "lastName": "Motyčka",
-            "position": "PF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 13.7,
+            "targetOverall": 50
         },
         {
             "firstName": "František",
             "lastName": "Váňa",
-            "position": "SF",
+            "position": "SG",
             "tier": 1,
             "heightCm": null,
             "born": 1998,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Isaiah John",
-            "lastName": "Gray",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "USA"
+            "nationality": "CZE",
+            "mpg": 11,
+            "targetOverall": 49
         }
     ],
     "PIS": [
         {
-            "firstName": "Josef",
+            "firstName": "Martin",
             "lastName": "Svoboda",
-            "position": "SG",
+            "position": "PF",
+            "tier": 5,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 29.7,
+            "targetOverall": 70
+        },
+        {
+            "firstName": "Kevin",
+            "lastName": "Týml",
+            "position": "SF",
+            "tier": 5,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 26.8,
+            "targetOverall": 69
+        },
+        {
+            "firstName": "Vojtěch",
+            "lastName": "Sýkora",
+            "position": "PG",
             "tier": 4,
             "heightCm": null,
-            "born": 2005,
-            "nationality": "CZE"
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 26.8,
+            "targetOverall": 67
+        },
+        {
+            "firstName": "Matěj",
+            "lastName": "Burda",
+            "position": "PG",
+            "tier": 3,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 25.8,
+            "targetOverall": 60
         },
         {
             "firstName": "Jan",
             "lastName": "Karlovský",
             "position": "PF",
-            "tier": 3,
+            "tier": 4,
             "heightCm": null,
             "born": 1999,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 23.6,
+            "targetOverall": 67
         },
         {
-            "firstName": "Johan",
-            "lastName": "Haiblík",
-            "position": "PF",
-            "tier": 2,
+            "firstName": "Josef",
+            "lastName": "Svoboda",
+            "position": "SG",
+            "tier": 3,
             "heightCm": null,
-            "born": 2000,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Michal",
-            "lastName": "Kozák",
-            "position": "PF",
-            "tier": 2,
-            "heightCm": null,
-            "born": 1998,
-            "nationality": "CZE"
+            "born": 2005,
+            "nationality": "CZE",
+            "mpg": 20.4,
+            "targetOverall": 56
         },
         {
             "firstName": "Petr",
@@ -597,90 +769,154 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 2,
             "heightCm": null,
             "born": 1995,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 20.2,
+            "targetOverall": 54
         },
         {
-            "firstName": "Matěj",
-            "lastName": "Burda",
-            "position": "PG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Kevin",
-            "lastName": "Týml",
+            "firstName": "Matyáš",
+            "lastName": "Ježek",
             "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "František",
-            "lastName": "Suchánek",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Vojtěch",
-            "lastName": "Sýkora",
-            "position": "PG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Jakub",
-            "lastName": "Zvolánek",
-            "position": "PG",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
             "born": 2005,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Martin",
-            "lastName": "Svoboda",
-            "position": "PF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 18.3,
+            "targetOverall": 54
         },
         {
             "firstName": "Jakub",
-            "lastName": "Šimonek",
+            "lastName": "Šurý",
             "position": "PG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2002,
+            "nationality": "CZE",
+            "mpg": 17,
+            "targetOverall": 51
+        },
+        {
+            "firstName": "Michal",
+            "lastName": "Kozák",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1998,
+            "nationality": "CZE",
+            "mpg": 16.6,
+            "targetOverall": 51
+        },
+        {
+            "firstName": "Dalibor",
+            "lastName": "Fait",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1993,
+            "nationality": "CZE",
+            "mpg": 15.6,
+            "targetOverall": 53
+        },
+        {
+            "firstName": "Johan",
+            "lastName": "Haiblík",
+            "position": "C",
             "tier": 1,
             "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
+            "born": 2000,
+            "nationality": "CZE",
+            "mpg": 13.4,
+            "targetOverall": 49
         }
     ],
     "DEC": [
         {
-            "firstName": "Filip",
-            "lastName": "Kroutil",
+            "firstName": "Al-Amir",
+            "lastName": "Dawes",
+            "position": "SG",
+            "tier": 5,
+            "heightCm": null,
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 29.5,
+            "targetOverall": 71
+        },
+        {
+            "firstName": "Dashawn Calvin",
+            "lastName": "Davis",
+            "position": "PG",
+            "tier": 5,
+            "heightCm": null,
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 27.5,
+            "targetOverall": 69
+        },
+        {
+            "firstName": "Posh",
+            "lastName": "Alexander",
             "position": "SF",
             "tier": 4,
             "heightCm": null,
-            "born": 1996,
-            "nationality": "CZE"
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 25.8,
+            "targetOverall": 65
         },
         {
             "firstName": "Jaden Bryce",
             "lastName": "Dewar",
-            "position": "SF",
-            "tier": 3,
+            "position": "SG",
+            "tier": 4,
             "heightCm": null,
             "born": 1999,
-            "nationality": "CAN"
+            "nationality": "CAN",
+            "mpg": 25,
+            "targetOverall": 65
+        },
+        {
+            "firstName": "Tomáš",
+            "lastName": "Pomikálek",
+            "position": "PF",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1989,
+            "nationality": "CZE",
+            "mpg": 23.5,
+            "targetOverall": 57
+        },
+        {
+            "firstName": "Filip",
+            "lastName": "Kroutil",
+            "position": "SG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1996,
+            "nationality": "CZE",
+            "mpg": 23.3,
+            "targetOverall": 53
+        },
+        {
+            "firstName": "Tadeáš",
+            "lastName": "Slowiak",
+            "position": "PG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2004,
+            "nationality": "CZE",
+            "mpg": 18.3,
+            "targetOverall": 54
+        },
+        {
+            "firstName": "Oleksandr",
+            "lastName": "Belikov",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1992,
+            "nationality": "UKR",
+            "mpg": 17.4,
+            "targetOverall": 51
         },
         {
             "firstName": "Lukáš",
@@ -689,16 +925,9 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 2,
             "heightCm": null,
             "born": 1994,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Tomáš",
-            "lastName": "Pomikálek",
-            "position": "SF",
-            "tier": 2,
-            "heightCm": null,
-            "born": 1989,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 16.6,
+            "targetOverall": 51
         },
         {
             "firstName": "Maksim",
@@ -707,81 +936,99 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 2,
             "heightCm": null,
             "born": 1988,
-            "nationality": "SRB"
-        },
-        {
-            "firstName": "Jan",
-            "lastName": "Štěrba",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1995,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Dashawn Calvin",
-            "lastName": "Davis",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2000,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Josef",
-            "lastName": "Gabriel",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Oliver",
-            "lastName": "Žižka",
-            "position": "C",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2005,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Marek",
-            "lastName": "Houška",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2009,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Posh",
-            "lastName": "Alexander",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Michal",
-            "lastName": "Grill",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
+            "nationality": "SRB",
+            "mpg": 15.4,
+            "targetOverall": 52
         }
     ],
     "OST": [
         {
+            "firstName": "Michal",
+            "lastName": "Svoboda",
+            "position": "SG",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1999,
+            "nationality": "CZE",
+            "mpg": 27.4,
+            "targetOverall": 61
+        },
+        {
+            "firstName": "Adam",
+            "lastName": "Číž",
+            "position": "PG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1991,
+            "nationality": "CZE",
+            "mpg": 26.8,
+            "targetOverall": 53
+        },
+        {
+            "firstName": "Lynn Terence",
+            "lastName": "Greer",
+            "position": "SF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2002,
+            "nationality": "USA",
+            "mpg": 26.1,
+            "targetOverall": 64
+        },
+        {
             "firstName": "Lukáš",
             "lastName": "Palyza",
-            "position": "SF",
+            "position": "PF",
             "tier": 3,
             "heightCm": null,
             "born": 1989,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 23.1,
+            "targetOverall": 58
+        },
+        {
+            "firstName": "Keenon",
+            "lastName": "Cole",
+            "position": "SF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 23.1,
+            "targetOverall": 63
+        },
+        {
+            "firstName": "Mikuláš",
+            "lastName": "Čank",
+            "position": "PG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2006,
+            "nationality": "CZE",
+            "mpg": 22.7,
+            "targetOverall": 53
+        },
+        {
+            "firstName": "Elias",
+            "lastName": "Cato",
+            "position": "PF",
+            "tier": 3,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "AUS",
+            "mpg": 21.3,
+            "targetOverall": 57
+        },
+        {
+            "firstName": "Samuel Dennis",
+            "lastName": "Godwin",
+            "position": "SG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 18.6,
+            "targetOverall": 55
         },
         {
             "firstName": "Dominik",
@@ -790,126 +1037,121 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 2,
             "heightCm": null,
             "born": 1995,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 18.3,
+            "targetOverall": 50
         },
         {
-            "firstName": "Adam",
-            "lastName": "Číž",
-            "position": "PG",
-            "tier": 1,
+            "firstName": "Julian Thomas Tane",
+            "lastName": "Roche",
+            "position": "C",
+            "tier": 2,
             "heightCm": null,
-            "born": 1991,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Mikuláš",
-            "lastName": "Čank",
-            "position": "PG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Michal",
-            "lastName": "Svoboda",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1999,
-            "nationality": "CZE"
+            "born": 1997,
+            "nationality": "CAN",
+            "mpg": 18.3,
+            "targetOverall": 55
         },
         {
             "firstName": "Matěj",
             "lastName": "Snopek",
-            "position": "SG",
+            "position": "PF",
             "tier": 1,
             "heightCm": null,
             "born": 2000,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Keenon",
-            "lastName": "Cole",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2000,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Elias",
-            "lastName": "Cato",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "AUS"
-        },
-        {
-            "firstName": "Samuel Dennis",
-            "lastName": "Godwin",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "USA"
+            "nationality": "CZE",
+            "mpg": 10.7,
+            "targetOverall": 46
         },
         {
             "firstName": "Pavel",
             "lastName": "Novák",
-            "position": "SF",
+            "position": "SG",
             "tier": 1,
             "heightCm": null,
             "born": 2002,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Lynn Terence",
-            "lastName": "Greer",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2002,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Matyáš",
-            "lastName": "Janů",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2002,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 10.2,
+            "targetOverall": 46
         }
     ],
     "OLO": [
         {
-            "firstName": "Adam",
-            "lastName": "Goga",
+            "firstName": "Lamb",
+            "lastName": "Autrey",
             "position": "PG",
-            "tier": 3,
+            "tier": 5,
             "heightCm": null,
-            "born": 1997,
-            "nationality": "CZE"
+            "born": 1989,
+            "nationality": "USA",
+            "mpg": 34.1,
+            "targetOverall": 70
+        },
+        {
+            "firstName": "Jaren Jamir",
+            "lastName": "Holmes",
+            "position": "SF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1998,
+            "nationality": "USA",
+            "mpg": 30.8,
+            "targetOverall": 68
+        },
+        {
+            "firstName": "Kobe",
+            "lastName": "Elvis",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "CAN",
+            "mpg": 29.4,
+            "targetOverall": 67
         },
         {
             "firstName": "Kyler",
             "lastName": "Filewich",
-            "position": "SF",
-            "tier": 2,
+            "position": "C",
+            "tier": 4,
             "heightCm": null,
             "born": 2001,
-            "nationality": "CAN"
+            "nationality": "CAN",
+            "mpg": 28.4,
+            "targetOverall": 66
+        },
+        {
+            "firstName": "Jonathan Leonard",
+            "lastName": "Andre",
+            "position": "PF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1997,
+            "nationality": "USA",
+            "mpg": 27.9,
+            "targetOverall": 64
+        },
+        {
+            "firstName": "Marek Ayers",
+            "lastName": "Nelson",
+            "position": "SF",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1999,
+            "nationality": "USA",
+            "mpg": 26.1,
+            "targetOverall": 60
         },
         {
             "firstName": "Ondřej",
             "lastName": "Šiška",
-            "position": "SF",
-            "tier": 1,
+            "position": "PG",
+            "tier": 3,
             "heightCm": null,
             "born": 1993,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 25.5,
+            "targetOverall": 56
         },
         {
             "firstName": "Dominik",
@@ -918,25 +1160,31 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 1,
             "heightCm": null,
             "born": 2001,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 23.3,
+            "targetOverall": 49
         },
         {
-            "firstName": "Marek Ayers",
-            "lastName": "Nelson",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1999,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Jonathan Leonard",
-            "lastName": "Andre",
-            "position": "SF",
+            "firstName": "Adam",
+            "lastName": "Goga",
+            "position": "PG",
             "tier": 1,
             "heightCm": null,
             "born": 1997,
-            "nationality": "USA"
+            "nationality": "CZE",
+            "mpg": 18.5,
+            "targetOverall": 48
+        },
+        {
+            "firstName": "Miroslav",
+            "lastName": "Kvapil",
+            "position": "C",
+            "tier": 1,
+            "heightCm": null,
+            "born": 1993,
+            "nationality": "CZE",
+            "mpg": 10.2,
+            "targetOverall": 47
         },
         {
             "firstName": "Jordan",
@@ -945,55 +1193,67 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 1,
             "heightCm": null,
             "born": 2005,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Miroslav",
-            "lastName": "Kvapil",
-            "position": "PF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1993,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Kobe",
-            "lastName": "Elvis",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CAN"
+            "nationality": "CZE",
+            "mpg": 6.5,
+            "targetOverall": 45
         },
         {
             "firstName": "Jiří",
             "lastName": "Svojanovský",
-            "position": "SF",
+            "position": "SG",
             "tier": 1,
             "heightCm": null,
             "born": 2002,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Jaren Jamir",
-            "lastName": "Holmes",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1998,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Šimon",
-            "lastName": "Čermák",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 6.2,
+            "targetOverall": 44
         }
     ],
     "USK": [
+        {
+            "firstName": "Ondřej",
+            "lastName": "Švec",
+            "position": "PG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2003,
+            "nationality": "CZE",
+            "mpg": 30.6,
+            "targetOverall": 64
+        },
+        {
+            "firstName": "Terry Henderson",
+            "lastName": "Jr.",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1994,
+            "nationality": "USA",
+            "mpg": 30.4,
+            "targetOverall": 66
+        },
+        {
+            "firstName": "Jalen Terence",
+            "lastName": "Montgomery",
+            "position": "SG",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "USA",
+            "mpg": 28.2,
+            "targetOverall": 65
+        },
+        {
+            "firstName": "Petr",
+            "lastName": "Šafarčík",
+            "position": "PG",
+            "tier": 3,
+            "heightCm": null,
+            "born": 1994,
+            "nationality": "CZE",
+            "mpg": 26.2,
+            "targetOverall": 58
+        },
         {
             "firstName": "Matěj",
             "lastName": "Šafařík",
@@ -1001,34 +1261,42 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 3,
             "heightCm": null,
             "born": 2003,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 26.1,
+            "targetOverall": 58
+        },
+        {
+            "firstName": "Touko",
+            "lastName": "Tainamo",
+            "position": "PF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "FIN",
+            "mpg": 24.9,
+            "targetOverall": 62
+        },
+        {
+            "firstName": "Hameir",
+            "lastName": "Wright",
+            "position": "PF",
+            "tier": 4,
+            "heightCm": null,
+            "born": 1999,
+            "nationality": "USA",
+            "mpg": 24.3,
+            "targetOverall": 62
         },
         {
             "firstName": "Dalibor",
             "lastName": "Vlk",
             "position": "SF",
-            "tier": 2,
+            "tier": 3,
             "heightCm": null,
             "born": 2002,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Touko",
-            "lastName": "Tainamo",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "FIN"
-        },
-        {
-            "firstName": "Ondřej",
-            "lastName": "Švec",
-            "position": "PG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2003,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 24.1,
+            "targetOverall": 57
         },
         {
             "firstName": "Cortesao Joao",
@@ -1037,16 +1305,31 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 1,
             "heightCm": null,
             "born": 2002,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 18.7,
+            "targetOverall": 49
         },
         {
-            "firstName": "Jalen Terence",
-            "lastName": "Montgomery",
-            "position": "SF",
+            "firstName": "Esli",
+            "lastName": "Edigin",
+            "position": "SG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2005,
+            "nationality": "GER",
+            "mpg": 17.7,
+            "targetOverall": 51
+        },
+        {
+            "firstName": "Jakub",
+            "lastName": "Soldán",
+            "position": "C",
             "tier": 1,
             "heightCm": null,
-            "born": 2001,
-            "nationality": "USA"
+            "born": 2006,
+            "nationality": "CZE",
+            "mpg": 13.6,
+            "targetOverall": 48
         },
         {
             "firstName": "František",
@@ -1055,272 +1338,255 @@ export const nblRostersByTeamId: Record<string, readonly RealPlayerDef[]> = {
             "tier": 1,
             "heightCm": null,
             "born": 2000,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Jakub",
-            "lastName": "Soldán",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Lukáš",
-            "lastName": "Dejmek",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Terry Henderson",
-            "lastName": "Jr.",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1994,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Samuel",
-            "lastName": "Macht",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Tomáš",
-            "lastName": "Palas",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2004,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 11.1,
+            "targetOverall": 45
         }
     ],
     "SLA": [
         {
-            "firstName": "Matyáš",
-            "lastName": "Ježek",
-            "position": "SF",
-            "tier": 3,
-            "heightCm": null,
-            "born": 2005,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Jan",
-            "lastName": "Matušík",
-            "position": "SF",
-            "tier": 2,
-            "heightCm": null,
-            "born": 2006,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "David",
-            "lastName": "Böhm",
-            "position": "PF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
-        },
-        {
             "firstName": "Rubin Patrick",
             "lastName": "Jones",
-            "position": "SF",
-            "tier": 1,
+            "position": "SG",
+            "tier": 5,
             "heightCm": null,
             "born": 2001,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Radovan",
-            "lastName": "Mrázek",
-            "position": "PG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2004,
-            "nationality": "CZE"
+            "nationality": "USA",
+            "mpg": 31,
+            "targetOverall": 69
         },
         {
             "firstName": "Matěj",
             "lastName": "Dáňa",
             "position": "SG",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
             "born": 2003,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 24.5,
+            "targetOverall": 53
         },
         {
-            "firstName": "Nikolaos",
-            "lastName": "Noumeros",
+            "firstName": "Ricky Jamel",
+            "lastName": "Clemons",
             "position": "SF",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Petr",
-            "lastName": "Macháč",
-            "position": "PF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1999,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Meshack Wandja",
-            "lastName": "Lufile",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1992,
-            "nationality": "CAN"
+            "born": 2000,
+            "nationality": "USA",
+            "mpg": 24.2,
+            "targetOverall": 54
         },
         {
             "firstName": "Radek",
             "lastName": "Pumprla",
             "position": "SG",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
             "born": 1995,
-            "nationality": "CZE"
+            "nationality": "CZE",
+            "mpg": 23.7,
+            "targetOverall": 54
+        },
+        {
+            "firstName": "Radovan",
+            "lastName": "Mrázek",
+            "position": "PG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2004,
+            "nationality": "CZE",
+            "mpg": 23,
+            "targetOverall": 53
+        },
+        {
+            "firstName": "Jan",
+            "lastName": "Matušík",
+            "position": "SF",
+            "tier": 1,
+            "heightCm": null,
+            "born": 2006,
+            "nationality": "CZE",
+            "mpg": 20.4,
+            "targetOverall": 49
         },
         {
             "firstName": "Tyrel Devonte",
             "lastName": "Bladen",
             "position": "SF",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
             "born": 2001,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 19,
+            "targetOverall": 50
         },
         {
-            "firstName": "Vojtěch",
-            "lastName": "Zeithammer",
+            "firstName": "Petr",
+            "lastName": "Macháč",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1999,
+            "nationality": "CZE",
+            "mpg": 18.3,
+            "targetOverall": 51
+        },
+        {
+            "firstName": "David Emmanuel",
+            "lastName": "Walker",
             "position": "SF",
             "tier": 1,
             "heightCm": null,
-            "born": 2005,
-            "nationality": "CZE"
+            "born": 1999,
+            "nationality": "CAN",
+            "mpg": 18,
+            "targetOverall": 45
+        },
+        {
+            "firstName": "Meshack Wandja",
+            "lastName": "Lufile",
+            "position": "C",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1992,
+            "nationality": "CAN",
+            "mpg": 17.3,
+            "targetOverall": 53
         }
     ],
     "HKR": [
         {
-            "firstName": "Martin",
-            "lastName": "Roub",
-            "position": "C",
-            "tier": 2,
-            "heightCm": null,
-            "born": 1997,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Tomáš",
-            "lastName": "Merta",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2001,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "David",
-            "lastName": "Škranc",
-            "position": "SF",
-            "tier": 1,
+            "firstName": "Cody Chevell Christian",
+            "lastName": "John",
+            "position": "SG",
+            "tier": 4,
             "heightCm": null,
             "born": 1996,
-            "nationality": "CZE"
+            "nationality": "CAN",
+            "mpg": 29.4,
+            "targetOverall": 65
         },
         {
-            "firstName": "Kareem Lamonte",
-            "lastName": "Brewton",
-            "position": "SF",
-            "tier": 1,
+            "firstName": "Lassi Paavo Verner",
+            "lastName": "Nikkarinen",
+            "position": "PG",
+            "tier": 3,
             "heightCm": null,
-            "born": 1995,
-            "nationality": "USA"
+            "born": 1997,
+            "nationality": "FIN",
+            "mpg": 28.9,
+            "targetOverall": 58
         },
         {
             "firstName": "Kameron Jamal",
             "lastName": "Chatman",
             "position": "PF",
-            "tier": 1,
+            "tier": 3,
             "heightCm": null,
             "born": 1996,
-            "nationality": "USA"
+            "nationality": "USA",
+            "mpg": 27,
+            "targetOverall": 61
         },
         {
-            "firstName": "Jan",
-            "lastName": "Bubeníček",
-            "position": "SG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2005,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Tomáš",
-            "lastName": "Dvořák",
-            "position": "PG",
-            "tier": 1,
-            "heightCm": null,
-            "born": 2002,
-            "nationality": "CZE"
-        },
-        {
-            "firstName": "Austin Calvin",
-            "lastName": "Johnson",
-            "position": "SF",
-            "tier": 1,
-            "heightCm": null,
-            "born": 1999,
-            "nationality": "USA"
-        },
-        {
-            "firstName": "Lassi Paavo Verner",
-            "lastName": "Nikkarinen",
-            "position": "SF",
-            "tier": 1,
+            "firstName": "Martin",
+            "lastName": "Roub",
+            "position": "C",
+            "tier": 4,
             "heightCm": null,
             "born": 1997,
-            "nationality": "FIN"
+            "nationality": "CZE",
+            "mpg": 25.3,
+            "targetOverall": 62
         },
         {
-            "firstName": "Tomáš",
-            "lastName": "Tkadlec",
+            "firstName": "Kareem Lamonte",
+            "lastName": "Brewton",
             "position": "SF",
-            "tier": 1,
+            "tier": 3,
             "heightCm": null,
-            "born": 1999,
-            "nationality": "CZE"
+            "born": 1995,
+            "nationality": "USA",
+            "mpg": 24.9,
+            "targetOverall": 60
         },
         {
-            "firstName": "Alessandro",
-            "lastName": "Petric",
-            "position": "SF",
-            "tier": 1,
+            "firstName": "Vojtěch",
+            "lastName": "Synáček",
+            "position": "SG",
+            "tier": 2,
             "heightCm": null,
-            "born": 1998,
-            "nationality": "CZE"
+            "born": 2006,
+            "nationality": "CZE",
+            "mpg": 24.5,
+            "targetOverall": 55
+        },
+        {
+            "firstName": "David",
+            "lastName": "Škranc",
+            "position": "PF",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1996,
+            "nationality": "CZE",
+            "mpg": 23.6,
+            "targetOverall": 50
         },
         {
             "firstName": "Matija",
             "lastName": "Popović",
             "position": "SF",
-            "tier": 1,
+            "tier": 2,
             "heightCm": null,
             "born": 1996,
-            "nationality": "SRB"
+            "nationality": "SRB",
+            "mpg": 22.1,
+            "targetOverall": 55
+        },
+        {
+            "firstName": "Tomáš",
+            "lastName": "Dvořák",
+            "position": "PG",
+            "tier": 2,
+            "heightCm": null,
+            "born": 2002,
+            "nationality": "CZE",
+            "mpg": 21.5,
+            "targetOverall": 51
+        },
+        {
+            "firstName": "Tomáš",
+            "lastName": "Merta",
+            "position": "PF",
+            "tier": 1,
+            "heightCm": null,
+            "born": 2001,
+            "nationality": "CZE",
+            "mpg": 18.9,
+            "targetOverall": 46
+        },
+        {
+            "firstName": "Austin Calvin",
+            "lastName": "Johnson",
+            "position": "C",
+            "tier": 2,
+            "heightCm": null,
+            "born": 1999,
+            "nationality": "USA",
+            "mpg": 18.7,
+            "targetOverall": 52
+        },
+        {
+            "firstName": "Alessandro",
+            "lastName": "Petric",
+            "position": "PG",
+            "tier": 1,
+            "heightCm": null,
+            "born": 1998,
+            "nationality": "CZE",
+            "mpg": 16.7,
+            "targetOverall": 45
         }
     ]
 } as const;
